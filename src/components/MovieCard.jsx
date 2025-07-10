@@ -1,7 +1,8 @@
 import "../styles/MovieCard.css";
 import { useMovieContext } from "../contexts/MovieContext.jsx";
 
-function MovieCard({ movie }) {
+function MovieCard({ movie}) {
+
   const { isFavourite, addToFavourites, removeFromFavourites } =
     useMovieContext();
   const favourite = isFavourite(movie.id);
@@ -33,6 +34,12 @@ function MovieCard({ movie }) {
       <div className="movie-info">
         <h3>{movie.title}</h3>
         <p>{movie.release_date.slice(0,4)}</p>
+        <div className="imdb-rating">
+          <img src="/imdbicon.png" className="imdb-movie-card "/>
+          <img src="/staricon.png" className="star-movie-card"/>
+          
+        </div>
+        
       </div>
     </div>
   );

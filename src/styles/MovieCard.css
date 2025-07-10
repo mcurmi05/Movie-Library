@@ -108,3 +108,17 @@
   margin-top: auto;
 }
 
+.imdb-rating {
+  display:flex;
+  align-items: center;
+  gap:0.5rem;
+}
+
+.imdb-movie-card {
+  width: 35px;
+}
+
+.star-movie-card {
+  width:15px;
+  height:15px;
+}
