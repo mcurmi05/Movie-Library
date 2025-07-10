@@ -108,18 +108,3 @@
   margin-top: auto;
 }
 
-@media (max-width: 768px) {
-  .movie-card {
-    font-size: 0.9rem;
-  }
-
-  .movie-info {
-    padding: 0.75rem;
-  }
-
-  .favorite-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1.2rem;
-  }
-}
