@@ -77,3 +77,78 @@
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
 }
+
+
+
+
+
+
+.search-container {
+  position: relative;
+  margin: 0 0 2rem;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #555;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #444;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-poster {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 0.75rem;
+}
+
+.dropdown-info h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: white;
+}
+
+.dropdown-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.dropdown-loading,
+.dropdown-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: #ccc;
+  font-style: italic;
+}
+
+/* Make sure search form is positioned correctly */
+.search-form {
+  position: relative;
+  z-index: 1001;
+}
