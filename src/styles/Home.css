@@ -18,6 +18,8 @@
   padding: 0 1rem;
   box-sizing: border-box;
   flex-wrap:wrap;
+  position: relative;
+  z-index: 1001;
 }
 
 .search-input {
@@ -85,7 +87,7 @@
 
 .search-container {
   position: relative;
-  margin: 0 0 2rem;
+  margin: 0 0;
 }
 
 .search-dropdown {
@@ -96,7 +98,7 @@
   background: #333;
   border: 1px solid #555;
   border-radius: 4px;
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
   z-index: 1000;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -115,15 +117,10 @@
   background-color: #444;
 }
 
-.dropdown-item:last-child {
-  border-bottom: none;
-}
-
 .dropdown-poster {
   width: 40px;
-  height: 60px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 3px;
   margin-right: 0.75rem;
 }
 
@@ -147,8 +144,3 @@
   font-style: italic;
 }
 
-/* Make sure search form is positioned correctly */
-.search-form {
-  position: relative;
-  z-index: 1001;
-}
