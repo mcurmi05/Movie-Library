@@ -4,7 +4,7 @@ import { useSearch } from "../contexts/SearchContext";
 import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
 
-function SearchBar({ onSearchResults, onMovieSelect }) {
+function SearchBar() {
   const { 
     searchQuery, 
     setSearchQuery, 
@@ -34,14 +34,14 @@ function SearchBar({ onSearchResults, onMovieSelect }) {
           setShowDropdown(true);
         } catch (err) {
           console.log("Search error:", err);
-          setSearchResults([]);
+          setDropdownResults([]);
         } finally {
           setSearchLoading(false);
         }
       }, 1000);
     } else {
       setShowDropdown(false);
-      setSearchResults([]);
+      setDropdownResults([]);
     }
 
     return () => {
@@ -72,7 +72,7 @@ function SearchBar({ onSearchResults, onMovieSelect }) {
     navigate("/search")
     try {
       const searchResults = await searchMovies(searchQuery);
-      onSearchResults(searchResults);
+      setSearchResults(searchResults);
       setSearchError(null);
     } catch (err) {
       console.log(err);
@@ -84,7 +84,6 @@ function SearchBar({ onSearchResults, onMovieSelect }) {
   const handleDropdownClick = (movie) => {
     setSearchQuery(movie.primaryTitle);
     setShowDropdown(false);
-    onMovieSelect(movie);
     setSearchResults(null);
     setSearchError(null);
     navigate("/search");

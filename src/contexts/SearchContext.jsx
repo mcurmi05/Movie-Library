@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
 
 const SearchContext = createContext();
 

@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { searchMovies } from "../services/api.js";
 import { useSearch } from "../contexts/SearchContext";
 import "../styles/Search.css";
 import MovieCard from "../components/MovieCard.jsx";
 
 function Search() {
 
-  const { searchResults, selectedMovie, searchError, searchQuery } = useSearch();
+  const { searchResults, selectedMovie, searchError } = useSearch();
 
   const [movies, setMovies] = useState([]);
   const [error, setError] = useState(null);
