@@ -1,12 +1,11 @@
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-const BASE_URL = "https://api.themoviedb.org/3";
+const VITE_IMDB_API_KEY = import.meta.env.VITE_IMDB_API_KEY;
 
 export const getPopularMovies = async () => {
     const url = 'https://imdb236.p.rapidapi.com/api/imdb/most-popular-movies';
     const options = {
       method: 'GET',
       headers: {
-        'x-rapidapi-key': '46b22bd385mshe768d6b11d1a286p1ce852jsn385e4fb1e9e3',
+        'x-rapidapi-key': VITE_IMDB_API_KEY,
         'x-rapidapi-host': 'imdb236.p.rapidapi.com'
       }
     };
@@ -27,7 +26,7 @@ export const searchMovies = async (query) => {
     const options = {
       method: 'GET',
       headers: {
-        'x-rapidapi-key': '46b22bd385mshe768d6b11d1a286p1ce852jsn385e4fb1e9e3',
+        'x-rapidapi-key': VITE_IMDB_API_KEY,
         'x-rapidapi-host': 'imdb236.p.rapidapi.com'
       }
     };
