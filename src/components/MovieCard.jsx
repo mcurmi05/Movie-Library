@@ -1,8 +1,7 @@
 import "../styles/MovieCard.css";
 import { useMovieContext } from "../contexts/MovieContext.jsx";
 
-function MovieCard({ movie}) {
-
+function MovieCard({ movie }) {
   const { isFavourite, addToFavourites, removeFromFavourites } =
     useMovieContext();
   const favourite = isFavourite(movie.id);
@@ -19,7 +18,14 @@ function MovieCard({ movie}) {
   return (
     <div className="movie-card">
       <div className="movie-poster">
-        <img src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} />
+        <img
+          className="movie-poster-img"
+          src={
+            movie.poster_path
+              ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+              : "/placeholderimage.jpg"
+          }
+        />
 
         <div className="movie-overlay">
           <button
@@ -33,13 +39,11 @@ function MovieCard({ movie}) {
 
       <div className="movie-info">
         <h3>{movie.title}</h3>
-        <p>{movie.release_date.slice(0,4)}</p>
+        <p>{movie.release_date.slice(0, 4)}</p>
         <div className="imdb-rating">
-          <img src="/imdbicon.png" className="imdb-movie-card "/>
-          <img src="/staricon.png" className="star-movie-card"/>
-          
+          <img src="/imdbicon.png" className="imdb-movie-card " />
+          <img src="/staricon.png" className="star-movie-card" />
         </div>
-        
       </div>
     </div>
   );
