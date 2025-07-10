@@ -64,7 +64,7 @@ function MovieCard({ movie }) {
           <img src="/imdbicon.png" className="imdb-movie-card " />
           <img src="/staricon.png" className="star-movie-card" />
           <p>
-            {movie.averageRating ? movie.averageRating : "No ratings yet"} {movie.numVotes ? formatVotes(movie.numVotes): null} 
+            {movie.averageRating ? movie.averageRating.toFixed(1) : "No ratings yet"} {movie.numVotes ? formatVotes(movie.numVotes): null} 
           </p>
         </a>
       </div>
