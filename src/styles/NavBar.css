@@ -55,3 +55,11 @@
   }
 }
 
+@media (max-width: 470px) {
+    .navbar{
+      justify-content:center;
+      gap:0;
+      flex-wrap:wrap;
+    }
+}
+
