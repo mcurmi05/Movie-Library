@@ -18,7 +18,7 @@ function App() {
             <NavBar/>
             <main className="main-content">
               <Routes>
-                <Route path="/" element={<Trending></Trending>}></Route>
+                <Route path="/" element={null}></Route>
                 <Route path="/trending" element={<Trending></Trending>}></Route>
                 <Route path="/favourites" element={<Favourites></Favourites>}></Route>
                 <Route path="/search" element={<Search></Search>}></Route>

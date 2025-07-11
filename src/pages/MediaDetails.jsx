@@ -59,6 +59,8 @@ function MediaDetails() {
                   <iframe className="youtube-embed"
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(
                       movie.trailer
+                    )}?autoplay=1&mute=1&controls=1&loop=1&playlist=${getYouTubeVideoId(
+                      movie.trailer
                     )}`}
                     title={`${movie.primaryTitle} - Trailer`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
