@@ -1,13 +1,18 @@
 import "../styles/MovieCard.css";
 import { useMovieContext } from "../contexts/MovieContext.jsx";
+import { useNavigate } from "react-router-dom";
+import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
+import IMDBInfo from "./IMDBInfo.jsx";
 
 function MovieCard({ movie }) {
   const { isFavourite, addToFavourites, removeFromFavourites } =
     useMovieContext();
   const favourite = isFavourite(movie.id);
+  const navigate = useNavigate();
 
   function onFavouriteClick(e) {
     e.preventDefault();
+    e.stopPropagation();
     if (favourite) {
       removeFromFavourites(movie.id);
     } else {
@@ -15,21 +20,16 @@ function MovieCard({ movie }) {
     }
   }
 
-  const formatVotes = (votes) => {
-    if (!votes) return "0";
+  function onMovieCardClick() {
+    console.log("Navigating to movie details for:", movie.primaryTitle);
+    navigate(`/mediadetails/${movie.id}`);
+  }
 
-    if (votes >= 1000000) {
-      return "(" + (votes / 1000000).toFixed(1) + "M)";
-    } else if (votes >= 1000) {
-      return "(" + (votes / 1000).toFixed(0) + "K)";
-    } else {
-      return "(" + votes.toString() + ")";
-    }
-  };
+  
 
   return (
     <div className="movie-card">
-      <div className="movie-poster">
+      <div className="movie-poster" onClick={onMovieCardClick}>
         <img
           className="movie-poster-img"
           src={
@@ -50,23 +50,9 @@ function MovieCard({ movie }) {
       </div>
 
       <div className="movie-info">
-        <h3>{movie.primaryTitle}</h3>
-        <p>
-          {movie.startYear ? movie.startYear : "Unknown year"} -{" "}
-          {Math.floor(movie.runtimeMinutes / 60)
-            ? Math.floor(movie.runtimeMinutes / 60) + "h"
-            : null}{" "}
-          {movie.runtimeMinutes % 60
-            ? (movie.runtimeMinutes % 60) + "m"
-            : "Unknown runtime"}
-        </p>
-        <a href={movie.url} target="_blank" className="imdb-rating">
-          <img src="/imdbicon.png" className="imdb-movie-card " />
-          <img src="/staricon.png" className="star-movie-card" />
-          <p>
-            {movie.averageRating ? movie.averageRating.toFixed(1) : "No ratings yet"} {movie.numVotes ? formatVotes(movie.numVotes): null} 
-          </p>
-        </a>
+        <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
+        <ReleaseAndRunTime movie={movie}/>
+        <IMDBInfo movie={movie}></IMDBInfo>
       </div>
     </div>
   );

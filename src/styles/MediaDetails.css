@@ -1,0 +1,46 @@
+.page-container{
+    display:flex;
+    justify-content:center;
+}
+
+.media-details{
+    max-width:70%;
+}
+
+
+.youtube-embed{
+    height:60vh;
+    aspect-ratio:16/10;
+    border-radius:8px;
+    border: none;
+}
+
+.subtitle{
+    display:flex;
+    gap:0.3rem;
+    align-items: center;
+}
+
+.poster{
+    border-radius:8px;
+    height:60vh;
+}
+
+.poster-and-trailer{
+    display:flex;
+    
+    gap:2rem;
+}
+
+.description-container{
+    max-width:30vw;
+    border-radius: 5px;
+    padding:10px;
+    font-size:1.2rem;
+}
+
+.media-genres-and-description{
+    display:flex;
+    align-items: center;
+    
+}

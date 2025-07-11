@@ -16,9 +16,9 @@ function NavBar() {
       <SearchBar></SearchBar>
 
       <div className="navbar-links">
-        <Link to="/" className="nav-link" onClick={clearSearch}>Trending</Link>
-        <Link to="/favourites" className="nav-link">
-          Favourites
+        <Link to="/trending" className="nav-link" onClick={clearSearch}>Trending</Link>
+        <Link to="/favourites" className="nav-link" onClick={clearSearch}>
+          ♥ Favourites 
         </Link>
       </div>
     </nav>

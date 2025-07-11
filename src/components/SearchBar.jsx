@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { searchMovies } from "../services/api.js";
+import { searchMovies, searchMoviesFIRSTFIVEONLY } from "../services/api.js";
 import { useSearch } from "../contexts/SearchContext";
 import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
@@ -29,8 +29,8 @@ function SearchBar() {
       searchTimeoutRef.current = setTimeout(async () => {
         setSearchLoading(true);
         try {
-          const results = await searchMovies(searchQuery);
-          setDropdownResults(results.slice(0, 5));
+          const results = await searchMoviesFIRSTFIVEONLY(searchQuery);
+          setDropdownResults(results);
           setShowDropdown(true);
         } catch (err) {
           console.log("Search error:", err);
@@ -82,11 +82,8 @@ function SearchBar() {
   };
 
   const handleDropdownClick = (movie) => {
-    setSearchQuery(movie.primaryTitle);
     setShowDropdown(false);
-    setSearchResults(null);
-    setSearchError(null);
-    navigate("/search");
+    navigate(`/mediadetails/${movie.id}`);
   };
 
   const handleInputChange = (e) => {

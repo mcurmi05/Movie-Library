@@ -8,7 +8,12 @@
   display: flex;
   flex-direction: column;
   max-width:340px;
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.3s ease;
 }
+
+
 
 .movie-card:hover {
   transform: translateY(-5px);
@@ -17,6 +22,7 @@
 .movie-poster {
   position: relative;
   width: 100%;
+  cursor:pointer;
 }
 
 .movie-poster img {
@@ -95,6 +101,7 @@
 .movie-info h3 {
   font-size: 1rem;
   margin: 0;
+  cursor:pointer;
 }
 
 .movie-info p {
