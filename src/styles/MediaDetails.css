@@ -3,6 +3,10 @@
     justify-content:center;
 }
 
+.loading{
+    margin:0 auto;
+}
+
 .media-details{
     max-width:70%;
 }

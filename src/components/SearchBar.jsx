@@ -98,7 +98,7 @@ function SearchBar() {
       <form onSubmit={handleSearch} className="search-form">
         <input
           type="text"
-          placeholder="Search for a movie..."
+          placeholder="Search for a movie or show..."
           className="search-input"
           value={searchQuery}
           onChange={handleInputChange}
