@@ -9,16 +9,26 @@ function NavBar() {
 
   return (
     <nav className="navbar">
-      <div className="navbar-brand">
-        <Link to="/" onClick={clearSearch}>Movie Library</Link>
-      </div>
+      
+      <Link to="/" className="nav-link home-button" onClick={clearSearch}>
+        <img className="nav-icon" src="/home.png"></img>
+      </Link>
+      
 
       <SearchBar></SearchBar>
 
       <div className="navbar-links">
-        <Link to="/trending" className="nav-link" onClick={clearSearch}>Trending</Link>
+        <Link to="/trending" className="nav-link" onClick={clearSearch}>
+          <div className="navbar-icon-div">
+            <img className="nav-icon" src="/trending.png"></img>
+            <p className="names-to-links">Trending</p>
+          </div>
+        </Link>
         <Link to="/favourites" className="nav-link" onClick={clearSearch}>
-          ♥ Favourites 
+          <div className="navbar-icon-div">
+            <img className="nav-icon" src="/heart.png"></img> 
+            <p className="names-to-links">Favourites</p>
+          </div>
         </Link>
       </div>
     </nav>

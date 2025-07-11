@@ -98,13 +98,13 @@ function SearchBar() {
       <form onSubmit={handleSearch} className="search-form">
         <input
           type="text"
-          placeholder="Search for a movie or show..."
+          placeholder="Search..."
           className="search-input"
           value={searchQuery}
           onChange={handleInputChange}
         />
         <button type="submit" className="search-button">
-          Search
+          <img src="/search.png" className="search-button-img"></img>
         </button>
       </form>
 

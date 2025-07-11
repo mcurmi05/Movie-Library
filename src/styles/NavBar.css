@@ -7,9 +7,8 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.navbar-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
+.navbar-brand:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .navbar-links {
@@ -19,29 +18,40 @@
 
 .nav-link {
   font-size: 1rem;
-  padding: 0.5rem 1rem;
+  padding:1rem;
   border-radius: 4px;
   transition: background-color 0.2s;
+}
+
+.home-button{
+  padding-bottom:0.5rem;
+  margin-top:5px;
 }
 
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 768px) {
-  .navbar {
-    padding: 1rem;
+
+.nav-icon{
+  width:30px;
+  margin-top:-5px;
+
+}
+
+.navbar-icon-div{
+  display:flex;
+  align-items:center;
+  gap:1rem;
+}
+
+@media (max-width: 900px) {
+  .names-to-links {
+    display: none;
   }
 
-  .navbar-brand {
-    font-size: 1.2rem;
-  }
-
-  .navbar-links {
-    gap: 1rem;
-  }
-
-  .nav-link {
-    padding: 0.5rem;
+  .navbar-links{
+    gap:0.01rem;
   }
 }
+
