@@ -1,7 +1,8 @@
 .navbar {
   background-color: #1f1e1e;
-  padding: 1rem 2rem;
   display: flex;
+  padding-left:1rem;
+  padding-right:1rem;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -19,6 +20,8 @@
 .nav-link {
   font-size: 1rem;
   padding:1rem;
+  padding-left: 0.4rem;
+  padding-right:0.4rem;
   border-radius: 4px;
   transition: background-color 0.2s;
 }
@@ -55,11 +58,5 @@
   }
 }
 
-@media (max-width: 470px) {
-    .navbar{
-      justify-content:center;
-      gap:0;
-      flex-wrap:wrap;
-    }
-}
+
 
