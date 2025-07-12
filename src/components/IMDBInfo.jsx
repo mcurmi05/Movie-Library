@@ -21,5 +21,6 @@ function IMDBInfo({movie}){
         </p>
         </a>
     );
+    
 }
 export default IMDBInfo;

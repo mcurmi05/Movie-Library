@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
 
 function SearchBar() {
+
   const { 
     searchQuery, 
     setSearchQuery, 
@@ -21,7 +22,9 @@ function SearchBar() {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
+
     if (searchQuery.trim().length > 1) {
+      
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }

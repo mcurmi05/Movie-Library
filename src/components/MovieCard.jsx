@@ -1,24 +1,11 @@
 import "../styles/MovieCard.css";
-import { useFavouritesContext } from "../contexts/FavouritesContext.jsx";
 import { useNavigate } from "react-router-dom";
 import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
 import IMDBInfo from "./IMDBInfo.jsx";
 
 function MovieCard({ movie }) {
-  const { isFavourite, addToFavourites, removeFromFavourites } =
-    useFavouritesContext();
-  const favourite = isFavourite(movie.id);
-  const navigate = useNavigate();
 
-  function onFavouriteClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (favourite) {
-      removeFromFavourites(movie.id);
-    } else {
-      addToFavourites(movie);
-    }
-  }
+  const navigate = useNavigate();
 
   function onMovieCardClick() {
     console.log("Navigating to movie details for:", movie.primaryTitle);
@@ -36,15 +23,6 @@ function MovieCard({ movie }) {
               : "/placeholderimage.jpg"
           }
         />
-
-        <div className="movie-overlay">
-          <button
-            className={`favourite-btn ${favourite ? "active" : ""}`}
-            onClick={onFavouriteClick}
-          >
-            ♥
-          </button>
-        </div>
       </div>
 
       <div className="movie-info">
@@ -54,6 +32,7 @@ function MovieCard({ movie }) {
       </div>
     </div>
   );
+  
 }
 
 export default MovieCard;

@@ -12,6 +12,7 @@ function MediaGenres({movie}){
             ))}
         </div>
     );
+    
 }
 
 export default MediaGenres;

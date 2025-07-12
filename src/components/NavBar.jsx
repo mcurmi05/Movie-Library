@@ -24,15 +24,10 @@ function NavBar() {
             <p className="names-to-links">Trending</p>
           </div>
         </Link>
-        <Link to="/favourites" className="nav-link" onClick={clearSearch}>
-          <div className="navbar-icon-div">
-            <img className="nav-icon" src="/heart.png"></img> 
-            <p className="names-to-links">Favourites</p>
-          </div>
-        </Link>
       </div>
     </nav>
   );
+  
 }
 
 export default NavBar;
