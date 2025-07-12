@@ -20,6 +20,7 @@ function App() {
               <Route path="/trending" element={<Trending></Trending>}></Route>
               <Route path="/search" element={<Search></Search>}></Route>
               <Route path="/mediadetails/:id" element={<MediaDetails />} />
+              <Route path="/signin" element={null} />
             </Routes>
           </main>
         </PopularMoviesCacheProvider>
