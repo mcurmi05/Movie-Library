@@ -42,11 +42,9 @@ function NavBar() {
 
       <SearchBar></SearchBar>
 
-      {/* Burger menu container */}
       <div className="burger-menu-container navbar-icon-div nav-link" ref={burgerMenuRef} onClick={toggleMenu}>
         <img className="nav-icon" src="/burgermenu.png"></img>
       
-        {/* Burger dropdown menu */}
         {isMenuOpen && (
           <div className="burger-dropdown">
             <Link to="/trending" className="dropdown-nav-item" onClick={handleLinkClick}>
