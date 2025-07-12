@@ -3,7 +3,7 @@ import Search from "./pages/Search.jsx";
 import Trending from "./pages/Trending.jsx";
 import Favourites from "./pages/Favourites.jsx";
 import NavBar from "./components/NavBar.jsx";
-import {MovieProvider} from "./contexts/MovieContext.jsx"
+import {FavouritesProvider} from "./contexts/FavouritesContext.jsx"
 import { SearchProvider } from "./contexts/SearchContext";
 import { PopularMoviesCacheProvider } from "./contexts/PopularMoviesCacheContext.jsx";
 import { Routes, Route } from "react-router-dom";
@@ -12,7 +12,7 @@ import MediaDetails from "./pages/MediaDetails.jsx";
 function App() {
   return (
     <div>
-      <MovieProvider>
+      <FavouritesProvider>
         <SearchProvider>
           <PopularMoviesCacheProvider>
             <NavBar/>
@@ -27,7 +27,7 @@ function App() {
             </main>
           </PopularMoviesCacheProvider>
         </SearchProvider>
-      </MovieProvider>
+      </FavouritesProvider>
     </div>
   );
 }

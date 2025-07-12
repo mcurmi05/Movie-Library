@@ -1,12 +1,12 @@
 import "../styles/MovieCard.css";
-import { useMovieContext } from "../contexts/MovieContext.jsx";
+import { useFavouritesContext } from "../contexts/FavouritesContext.jsx";
 import { useNavigate } from "react-router-dom";
 import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
 import IMDBInfo from "./IMDBInfo.jsx";
 
 function MovieCard({ movie }) {
   const { isFavourite, addToFavourites, removeFromFavourites } =
-    useMovieContext();
+    useFavouritesContext();
   const favourite = isFavourite(movie.id);
   const navigate = useNavigate();
 
@@ -24,8 +24,6 @@ function MovieCard({ movie }) {
     console.log("Navigating to movie details for:", movie.primaryTitle);
     navigate(`/mediadetails/${movie.id}`);
   }
-
-  
 
   return (
     <div className="movie-card">
@@ -51,7 +49,7 @@ function MovieCard({ movie }) {
 
       <div className="movie-info">
         <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
-        <ReleaseAndRunTime movie={movie}/>
+        <ReleaseAndRunTime movie={movie} />
         <IMDBInfo movie={movie}></IMDBInfo>
       </div>
     </div>

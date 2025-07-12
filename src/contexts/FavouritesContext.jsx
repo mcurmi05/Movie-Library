@@ -3,17 +3,11 @@
 
 import { createContext, useState, useContext, useEffect } from "react";
 
-const MovieContext = createContext();
+const FavouritesContext = createContext();
 
-export const useMovieContext = () => useContext(MovieContext);
+export const useFavouritesContext = () => useContext(FavouritesContext);
 
-//children is a reserved prop when you write a component and children is anything thats inside of the component you rendered
-//eg <MovieProvider>
-//        <Thing></Thing>
-//   </MovieProvider>
-// here thing is a child of movieprovider so the children prop of movieprovider contains the thing component
-
-export const MovieProvider = ({ children }) => {
+export const FavouritesProvider = ({ children }) => {
   const [favourites, setFavourites] = useState(() => {
     const storedFavourites = localStorage.getItem("favourites");
     return storedFavourites ? JSON.parse(storedFavourites) : [];
@@ -44,6 +38,6 @@ export const MovieProvider = ({ children }) => {
   };
 
   return (
-    <MovieContext.Provider value={value}>{children}</MovieContext.Provider>
+    <FavouritesContext.Provider value={value}>{children}</FavouritesContext.Provider>
   );
 };
