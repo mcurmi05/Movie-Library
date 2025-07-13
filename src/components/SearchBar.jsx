@@ -77,6 +77,7 @@ function SearchBar() {
       const searchResults = await searchMovies(searchQuery);
       setSearchResults(searchResults);
       setSearchError(null);
+      setShowDropdown(false);
     } catch (err) {
       console.log(err);
       setSearchError("Failed to search movies");
