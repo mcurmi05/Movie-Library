@@ -54,7 +54,7 @@ function NavBar() {
   }, []);
 
   const getAvatarUrl = (email) => {
-    if (!email) return "/default-avatar.png";
+    if (!email) return "/placeholderimage.jpg";
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=random`;
   };
 

@@ -101,7 +101,7 @@
   font-style: italic;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 630px) {
   .search-input{
     width:30vw;
   }
