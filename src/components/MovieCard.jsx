@@ -2,8 +2,16 @@ import "../styles/MovieCard.css";
 import { useNavigate } from "react-router-dom";
 import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
 import IMDBInfo from "./IMDBInfo.jsx";
+import{useState,useEffect} from "react";
+import { useAuth } from "../contexts/AuthContext";
+
+import { getUserRatings } from "../services/ratingsfromtable.js";
 
 function MovieCard({ movie }) {
+
+  const [rated, setRated] = useState(false);
+  const [rating, setRating] = useState(0);
+  const { isAuthenticated } = useAuth();
 
   const navigate = useNavigate();
 
@@ -31,8 +39,10 @@ function MovieCard({ movie }) {
         <IMDBInfo movie={movie}></IMDBInfo>
 
         <div className="user-rating-movie-card">
-          <img className="user-rating-star" src="/user-rating-star2.png"/>
-          <p className="user-rating-number">7</p>
+          {!rated?
+              <><img className="user-rating-star" src="/user-rating-star.png"/><p className="user-rating-number"></p></>:
+              <><img className="user-rating-star" src="/user-rating-star2.png"/><p className="user-rating-number">{rating}</p></>
+            }
         </div>
 
       </div>
