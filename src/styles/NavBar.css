@@ -148,6 +148,16 @@
   }
 }
 
+.user-avatar-container{
+  padding-bottom:0;
+  padding-top:7px;
+  cursor:pointer;
+}
+
+.user-avatar{
+  width:40px;
+  border-radius:5px;
+}
 
 
 

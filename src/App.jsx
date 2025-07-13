@@ -9,6 +9,7 @@ import MediaDetails from "./pages/MediaDetails.jsx";
 import {SignIn} from "./pages/SignIn.jsx"
 import {supabase} from "./services/supabase-client.js"
 import {useState, useEffect} from "react"
+import { AuthProvider } from "./contexts/AuthContext.jsx";
 
 function App() {
 
@@ -20,28 +21,30 @@ function App() {
     setSession(currentSession.data.session);
   };
 
-
   useEffect(() => {
     fetchSession();
   },[])
 
   return (
     <div>
-      
+      <AuthProvider>
       <SearchProvider>
-        <PopularMoviesCacheProvider>
-          <NavBar/>
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={null}></Route>
-              <Route path="/trending" element={<Trending></Trending>}></Route>
-              <Route path="/search" element={<Search></Search>}></Route>
-              <Route path="/mediadetails/:id" element={<MediaDetails />} />
-              <Route path="/signin" element={<SignIn></SignIn>} />
-            </Routes>
-          </main>
-        </PopularMoviesCacheProvider>
+      <PopularMoviesCacheProvider>
+        <NavBar/>
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={null}></Route>
+            <Route path="/trending" element={<Trending></Trending>}></Route>
+            <Route path="/search" element={<Search></Search>}></Route>
+            <Route path="/mediadetails/:id" element={<MediaDetails></MediaDetails>} />
+            <Route path="/signin" element={<SignIn></SignIn>} />
+            <Route path="/ratings" element={null} />
+            <Route path="/lists" element={null} />
+          </Routes>
+        </main>
+      </PopularMoviesCacheProvider>
       </SearchProvider>
+      </AuthProvider>
       
     </div>
   );

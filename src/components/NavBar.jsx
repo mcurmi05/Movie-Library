@@ -1,5 +1,6 @@
-import {Link} from "react-router-dom"
+import {Link, useNavigate} from "react-router-dom"
 import { useSearch } from "../contexts/SearchContext";
+import { useAuth } from "../contexts/AuthContext";
 import SearchBar from "./SearchBar";
 import { useState, useEffect, useRef } from "react";
 import "../styles/NavBar.css"
@@ -10,6 +11,9 @@ function NavBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const burgerMenuRef = useRef(null);
 
+  const { isAuthenticated, user, signOut, loading } = useAuth();
+  const navigate = useNavigate();
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -17,6 +21,23 @@ function NavBar() {
   const handleLinkClick = () => {
     clearSearch();
     setIsMenuOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    clearSearch();
+    setIsMenuOpen(false);
+  };
+
+  const handleAuthOnlyRouteClick = (route) => {
+    clearSearch();
+    setIsMenuOpen(false);
+    
+    if (isAuthenticated) {
+      navigate(route);
+    } else {
+      navigate('/signin');
+    }
   };
 
   useEffect(() => {
@@ -32,18 +53,27 @@ function NavBar() {
     };
   }, []);
 
+  const getAvatarUrl = (email) => {
+    if (!email) return "/default-avatar.png";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=random`;
+  };
+
+  if (loading) {
+    return <nav className="navbar">Loading...</nav>;
+  }
+
   return (
     <nav className="navbar">
       
+      
       <Link to="/" className="nav-link home-button" onClick={clearSearch}>
-        <img className="nav-icon" src="/home.png"></img>
+        <img className="nav-icon" src="/home.png" alt="Home"></img>
       </Link>
       
-
       <SearchBar></SearchBar>
 
-      <div className="burger-menu-container navbar-icon-div nav-link" ref={burgerMenuRef} onClick={toggleMenu}>
-        <img className="nav-icon" src="/burgermenu.png"></img>
+      <div className="burger-menu-container navbar-icon-div nav-link" ref={burgerMenuRef}>
+        <img className="nav-icon" src="/burgermenu.png" onClick={toggleMenu} alt="Menu"></img>
       
         {isMenuOpen && (
           <div className="burger-dropdown">
@@ -54,15 +84,35 @@ function NavBar() {
               </div>
             </Link>
 
-            <Link to="/signin" className="dropdown-nav-item" onClick={handleLinkClick}>
+            <a to="/ratings" className="dropdown-nav-item" onClick={() => handleAuthOnlyRouteClick('/ratings')}>
               <div className="navbar-icon-div">
-                <img id="auth-img" className="nav-icon" src="/signin.png"></img>
-                <p id="auth-text" className="names-to-links">Sign In</p>
+                <img className="nav-icon" src="/ratings.png"></img>
+                <p className="names-to-links">Ratings</p>
               </div>
-            </Link>
+            </a>
+
+            <a to="/lists" className="dropdown-nav-item" onClick={() => handleAuthOnlyRouteClick('/lists')}>
+              <div className="navbar-icon-div">
+                <img className="nav-icon" src="/lists.png"></img>
+                <p className="names-to-links">Lists</p>
+              </div>
+            </a>
+
+            {isAuthenticated ? (
+              <div className="user-avatar-container">
+                <img className="user-avatar" src={getAvatarUrl(user?.email)} onClick={handleSignOut}/>
+              </div>
+            ) : (
+              <Link to="/signin" className="dropdown-nav-item" onClick={handleLinkClick}>
+                <div className="navbar-icon-div">
+                  <img className="nav-icon" src="/signin.png"></img>
+                  <p className="names-to-links">Sign In</p>
+                </div>
+              </Link>
+            )}
           </div>
-        )}
-      </div>
+            )}
+        </div>
       
       <div className="navbar-links">
 
@@ -73,14 +123,34 @@ function NavBar() {
           </div>
         </Link>
 
-        <Link to="/signin" className="nav-link" onClick={clearSearch}>
-          <div className="navbar-icon-div" >
-            <img id="auth-img" className="nav-icon" src="/signin.png"></img>
-            <p id="auth-text" className="names-to-links">Sign In</p>
+        <a to="/ratings" className="nav-link" onClick={() => handleAuthOnlyRouteClick('/ratings')}>
+          <div className="navbar-icon-div">
+            <img className="nav-icon" src="/ratings.png"></img>
+            <p className="names-to-links">Ratings</p>
           </div>
-        </Link>
+        </a>
 
+        <a to="/lists" className="nav-link" onClick={() => handleAuthOnlyRouteClick('/lists')}>
+          <div className="navbar-icon-div">
+            <img className="nav-icon" src="/lists.png"></img>
+            <p className="names-to-links">Lists</p>
+          </div>
+        </a>
+
+        {isAuthenticated ? (
+          <div className="user-avatar-container">
+            <img className="user-avatar" src={getAvatarUrl(user?.email)} onClick={handleSignOut}/>
+          </div>
+        ) : (
+          <Link to="/signin" className="nav-link" onClick={clearSearch}>
+            <div className="navbar-icon-div">
+              <img className="nav-icon" src="/signin.png"></img>
+              <p className="names-to-links">Sign In</p>
+            </div>
+          </Link>
+        )}
       </div>
+
     </nav>
   );
 
