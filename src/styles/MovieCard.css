@@ -7,13 +7,11 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  max-width:340px;
+  max-width: 340px;
   opacity: 1;
   transform: scale(1);
   transition: all 0.3s ease;
 }
-
-
 
 .movie-card:hover {
   transform: translateY(-5px);
@@ -22,7 +20,7 @@
 .movie-poster {
   position: relative;
   width: 100%;
-  cursor:pointer;
+  cursor: pointer;
 }
 
 .movie-poster img {
@@ -101,7 +99,7 @@
 .movie-info h3 {
   font-size: 1rem;
   margin: 0;
-  cursor:pointer;
+  cursor: pointer;
 }
 
 .movie-info p {
@@ -109,16 +107,10 @@
   font-size: 0.9rem;
 }
 
-.user-rating {
-  color: #ffd700;
-  font-size: 0.9rem;
-  margin-top: auto;
-}
-
 .imdb-rating {
-  display:flex;
+  display: flex;
   align-items: center;
-  gap:0.5rem;
+  gap: 0.5rem;
 }
 
 .imdb-movie-card {
@@ -126,6 +118,46 @@
 }
 
 .star-movie-card {
-  width:15px;
-  height:15px;
+  width: 15px;
+  height: 15px;
 }
+
+.user-rating-movie-card {
+  display: flex;
+  position: absolute;
+  bottom: 25px;
+  right: 30px;
+  margin-top: 7px;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  align-items: center; 
+  justify-content: center;
+  width:70px;
+  height:70px;
+}
+
+.user-rating-movie-card:hover {
+  background-color: rgba(255, 255, 255, 0.1) ;
+}
+
+.user-rating-star {
+  width: 50px !important;
+  height: 50px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  position: absolute; 
+  z-index: 1;
+  margin-top:-2px;
+}
+
+.user-rating-number {
+  color: rgb(255, 255, 255) !important;
+  font-weight: 1200;
+  font-size: 20px !important;
+  position: relative; 
+  z-index: 2; 
+  margin-left:-1px;
+}
+
+

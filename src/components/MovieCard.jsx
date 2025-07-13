@@ -29,6 +29,12 @@ function MovieCard({ movie }) {
         <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
         <ReleaseAndRunTime movie={movie} />
         <IMDBInfo movie={movie}></IMDBInfo>
+
+        <div className="user-rating-movie-card">
+          <img className="user-rating-star" src="/user-rating-star.png"/>
+          <p className="user-rating-number"></p>
+        </div>
+
       </div>
     </div>
   );
