@@ -31,8 +31,8 @@ function MovieCard({ movie }) {
         <IMDBInfo movie={movie}></IMDBInfo>
 
         <div className="user-rating-movie-card">
-          <img className="user-rating-star" src="/user-rating-star.png"/>
-          <p className="user-rating-number"></p>
+          <img className="user-rating-star" src="/user-rating-star2.png"/>
+          <p className="user-rating-number">7</p>
         </div>
 
       </div>
