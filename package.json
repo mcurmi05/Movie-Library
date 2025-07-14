@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.2.0",
     "@react-login-page/page3": "^1.0.5",
     "@supabase/supabase-js": "^2.50.5",
     "react": "^19.1.0",
