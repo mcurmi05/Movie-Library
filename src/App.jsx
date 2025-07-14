@@ -10,7 +10,7 @@ import {SignIn} from "./pages/SignIn.jsx"
 import {supabase} from "./services/supabase-client.js"
 import {useState, useEffect} from "react"
 import { AuthProvider } from "./contexts/AuthContext.jsx";
-
+import { UserRatingsProvider } from "./contexts/UserRatingsContext.jsx";
 function App() {
 
   const [session, setSession] = useState(null);
@@ -30,6 +30,7 @@ function App() {
       <AuthProvider>
       <SearchProvider>
       <PopularMoviesCacheProvider>
+      <UserRatingsProvider>
         <NavBar/>
         <main className="main-content">
           <Routes>
@@ -42,6 +43,7 @@ function App() {
             <Route path="/lists" element={null} />
           </Routes>
         </main>
+      </UserRatingsProvider>
       </PopularMoviesCacheProvider>
       </SearchProvider>
       </AuthProvider>

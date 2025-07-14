@@ -30,7 +30,7 @@ function MediaDetails() {
 
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
-  if (!movie) return <div className="error">Movie not found</div>;
+  if (!movie) return <div className="error">Movie not found 😔</div>;
 
   const getYouTubeVideoId = (url) => {
     const regex =
@@ -66,7 +66,7 @@ function MediaDetails() {
                     allowFullScreen
                   ></iframe>
               ) : (
-                <h2>No trailer found</h2>
+                <h2>No trailer found 😔</h2>
               )}
             </div>
             {/*description and genres*/}

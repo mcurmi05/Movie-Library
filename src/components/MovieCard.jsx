@@ -2,22 +2,89 @@ import "../styles/MovieCard.css";
 import { useNavigate } from "react-router-dom";
 import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
 import IMDBInfo from "./IMDBInfo.jsx";
-import{useState,useEffect} from "react";
+import{useState, useEffect} from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useRatings } from "../contexts/UserRatingsContext.jsx";
 
-import { getUserRatings } from "../services/ratingsfromtable.js";
+import { getRatingFromArray } from "../services/ratingsfromtable.js";
+import { supabase } from "../services/supabase-client.js";
 
 function MovieCard({ movie }) {
 
   const [rated, setRated] = useState(false);
   const [rating, setRating] = useState(0);
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
+  const {userRatings, userRatingsLoaded} = useRatings();
 
   const navigate = useNavigate();
+
+
+  useEffect( () => {
+    if (isAuthenticated && userRatingsLoaded){
+      const movieRating = getRatingFromArray(userRatings, movie.id);
+
+      if (movieRating){
+        setRating(movieRating);
+        console.log(`movie has been given ${movieRating}`)
+        setRated(true);
+      } else{
+        setRating(0);
+        setRated(false);
+      }
+
+    } else {
+      setRating(0);
+      setRated(false);
+    }
+
+  },[isAuthenticated, userRatings, userRatingsLoaded, movie.id]);
 
   function onMovieCardClick() {
     console.log("Navigating to movie details for:", movie.primaryTitle);
     navigate(`/mediadetails/${movie.id}`);
+  }
+
+  async function handleNewRatingClick(){
+    if (!isAuthenticated){
+      navigate("/signin")
+    } else{
+
+      let rating = prompt("Enter the rating cuh");
+      setRating(rating)
+
+      const {error} = await supabase
+        .from('ratings')
+        .insert({imdb_movie_id:movie.id , user_id:user.id, rating:rating})
+
+      if (error){
+        console.error(error)
+      } else{
+        setRated(true);
+      }
+    }
+  }
+
+  async function handleReRatingClick(){
+    if (!isAuthenticated){
+      navigate("/signin")
+    } else{
+
+      let newRating = parseInt(prompt("Enter the rating cuh"));
+      setRating(newRating);
+
+      const {error} = await supabase
+        .from('ratings')
+        .update({rating:parseInt(newRating)})
+        .eq('imdb_movie_id', movie.id)
+        .eq('user_id', user.id);
+
+      if (error){
+        console.error(error)
+      } else{
+        setRated(true);
+      }
+    }
   }
 
   return (
@@ -40,8 +107,8 @@ function MovieCard({ movie }) {
 
         <div className="user-rating-movie-card">
           {!rated?
-              <><img className="user-rating-star" src="/user-rating-star.png"/><p className="user-rating-number"></p></>:
-              <><img className="user-rating-star" src="/user-rating-star2.png"/><p className="user-rating-number">{rating}</p></>
+              <><img className="user-rating-star" src="/user-rating-star.png"  onClick={handleNewRatingClick}/><p className="user-rating-number"></p></>:
+              <><img className="user-rating-star" src="/user-rating-star2.png" onClick={handleReRatingClick}/><p className="user-rating-number">{rating}</p></>
             }
         </div>
 
