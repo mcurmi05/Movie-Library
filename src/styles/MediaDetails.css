@@ -29,7 +29,6 @@
 .poster{
     border-radius:8px;
     width:30%;
-    aspect-ratio: 2/3 !important;
 }
 .secondary-poster{
     display:none;
@@ -86,10 +85,9 @@
 
     .secondary-poster{
         display:block;
-        border-radius:8px;
+        object-fit:cover;
+        border-radius:8px !important;
         width:40%;
-        object-fit:contain;
-        aspect-ratio: 2/3 !important;
         
     }
 
