@@ -43,7 +43,7 @@ function MediaDetails() {
       <div className="page-container">
         <div className="media-details">
             {/*title*/}
-            <h1>{movie.primaryTitle}</h1>
+            <h1 className="title">{movie.primaryTitle}</h1>
             {/*release and runtime*/}
             <div className="subtitle">
               <ReleaseAndRunTime movie={movie}/>
@@ -55,7 +55,6 @@ function MediaDetails() {
             <div className="poster-and-trailer">
               <img className="poster" src={movie.primaryImage}/>
               {movie.trailer ? (
-                <div className="trailer-container">
                   <iframe className="youtube-embed"
                     src={`https://www.youtube.com/embed/${getYouTubeVideoId(
                       movie.trailer
@@ -66,14 +65,23 @@ function MediaDetails() {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   ></iframe>
-                </div>
               ) : (
                 <h2>No trailer found</h2>
               )}
             </div>
             {/*description and genres*/}
-            <div className="media-genres-and-description">
+            
+            <div className="primary-under-part">
               <div className="description-container"><p className="description">{movie.description}</p></div>
+              <MediaGenres movie={movie}></MediaGenres>
+            </div>
+            
+
+            <div className="secondary-under-part">
+              <div className="secondary-poster-and-description">
+                <img className="secondary-poster" src={movie.primaryImage}/>
+                <div className="description-container"><p className="description">{movie.description}</p></div>
+              </div>
               <MediaGenres movie={movie}></MediaGenres>
             </div>
             

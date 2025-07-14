@@ -1,18 +1,26 @@
 .genres-container{
     display:flex;
     gap:1rem;
-    flex-wrap:wrap;
-    margin-left:auto;
-    max-width:50%;
-    margin-left:1rem;
+    overflow-x: auto;
+    width:50%;
 }
 
 .genre-tag{
     border: solid white 1px;
-    border-radius:30px;
     font-weight: bold;
-    padding-top:3px;
-    padding-bottom:3px;
-    padding-left:20px;
-    padding-right:20px;
+    font-size:0.8rem;
+    border-radius:20px;
+    padding:10px;
+    text-wrap: nowrap;
+}
+
+@media (max-width:900px){
+    .genres-container{
+        width:100%;
+        overflow-x:none;
+        flex-wrap:wrap;
+    }   
+    .genre-tag{
+        font-size:2vw;
+    }
 }
