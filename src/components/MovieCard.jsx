@@ -5,10 +5,11 @@ import IMDBInfo from "./IMDBInfo.jsx";
 import RatingModal from "./RatingModal.jsx";
 import{useState, useEffect} from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useRatings } from "../contexts/UserRatingsContext.jsx";
+import { useRatings} from "../contexts/UserRatingsContext.jsx";
 
 import { getRatingFromArray } from "../services/ratingsfromtable.js";
 import { supabase } from "../services/supabase-client.js";
+
 
 function MovieCard({ movie }) {
 
@@ -16,7 +17,7 @@ function MovieCard({ movie }) {
   const [rating, setRating] = useState(0);
   const { user, isAuthenticated } = useAuth();
 
-  const {userRatings, userRatingsLoaded} = useRatings();
+  const {userRatings, userRatingsLoaded, addRating, updateRating, removeRating} = useRatings();
 
   const [showRatingModal, setShowRatingModal] = useState(false);
 
@@ -88,6 +89,12 @@ function MovieCard({ movie }) {
       } else {
         setRated(true);
         console.log(`Rating ${rated ? 'updated' : 'added'}: ${newRating}`);
+
+        if (rated) {
+          updateRating(movie.id, newRating);
+        } else {
+          addRating(movie.id, newRating);
+        }
       }
     } catch (err) {
       console.error('Error handling rating:', err);
@@ -107,6 +114,7 @@ function MovieCard({ movie }) {
       } else {
         setRating(0);
         setRated(false);
+        removeRating(movie.id);
       }
     } catch (err) {
       console.error(err);

@@ -60,7 +60,7 @@ export default function RatingModal({ open, onClose, onRate, onRemove, currentRa
   };
 
   const handleClose = () => {
-    setValue(currentRating); // Reset to original value
+    setValue(currentRating);
     onClose();
   };
 
@@ -89,8 +89,8 @@ export default function RatingModal({ open, onClose, onRate, onRemove, currentRa
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', alignItems:'center' }}>
+          <Box sx={{ display: 'flex', gap: 1}}>
             <Button 
               variant="outlined" 
               onClick={handleClose}
@@ -133,7 +133,7 @@ export default function RatingModal({ open, onClose, onRate, onRemove, currentRa
               backgroundColor: '#ff0000ff',
               '&:hover': { backgroundColor: '#cc0000' },
               fontWeight:'bold',
-              textTransform: 'none'
+              textTransform: 'none',
             }}
           >
             {isRated ? 'Update' : 'Rate'}

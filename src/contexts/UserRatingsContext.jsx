@@ -20,6 +20,31 @@ export const UserRatingsProvider = ({ children }) => {
   const [userRatingsLoaded, setUserRatingsLoaded] = useState(false);
   const { isAuthenticated, user } = useAuth();
 
+  const addRating = (movieId, rating) => {
+    const newRating = {
+      imdb_movie_id: movieId,
+      user_id: user.id,
+      rating: rating,
+    };
+    setUserRatings(prev => [...prev, newRating]);
+  };
+
+  const updateRating = (movieId, newRating) => {
+    setUserRatings(prev => 
+      prev.map(rating => 
+        rating.imdb_movie_id === movieId 
+          ? { ...rating, rating: newRating }
+          : rating
+      )
+    );
+  };
+
+  const removeRating = (movieId) => {
+    setUserRatings(prev => 
+      prev.filter(rating => rating.imdb_movie_id !== movieId)
+    );
+  };
+
 
   useEffect(() => {
   const loadRatings = async () => {
@@ -38,7 +63,6 @@ export const UserRatingsProvider = ({ children }) => {
       setUserRatingsLoaded(false);
     }
   };
-
   loadRatings();
 }, [isAuthenticated, user]);
 
@@ -46,7 +70,10 @@ export const UserRatingsProvider = ({ children }) => {
     <UserRatingsContext.Provider value={{
       userRatings,
       userRatingsLoaded,
-      setUserRatings
+      setUserRatings,
+      addRating,
+      removeRating,
+      updateRating
     }}>
       {children}
     </UserRatingsContext.Provider>
