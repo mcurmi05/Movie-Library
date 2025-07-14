@@ -117,8 +117,8 @@ function MovieCard({ movie }) {
 
           <div className="user-rating-movie-card">
             {!rated?
-                <><img className="user-rating-star" src="/user-rating-star.png"  onClick={handleNewRatingClick}/><p className="user-rating-number"></p></>:
-                <><img className="user-rating-star" src="/user-rating-star2.png" onClick={handleReRatingClick}/><p className="user-rating-number">{rating}</p></>
+                <><img className="user-rating-star" src="/user-rating-star.png"  onClick={handleNewRatingClick}/><p className="user-rating-number" onClick={handleNewRatingClick}></p></>:
+                <><img className="user-rating-star" src="/user-rating-star2.png" onClick={handleReRatingClick}/><p className="user-rating-number" onClick={handleReRatingClick}>{rating}</p></>
               }
           </div>
 
