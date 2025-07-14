@@ -80,7 +80,7 @@ function MovieCard({ movie }) {
       } else {
         const result = await supabase
           .from('ratings')
-          .insert({imdb_movie_id: movie.id, user_id: user.id, rating: newRating});
+          .insert({imdb_movie_id: movie.id, user_id: user.id, rating: newRating, movie_object:movie });
         error = result.error;
       }
 
