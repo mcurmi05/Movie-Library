@@ -70,7 +70,6 @@ function MovieCard({ movie }) {
       let error;
       
       if (rated) {
-        // Update existing rating
         const result = await supabase
           .from('ratings')
           .update({rating: newRating})
@@ -78,7 +77,6 @@ function MovieCard({ movie }) {
           .eq('user_id', user.id);
         error = result.error;
       } else {
-        // Insert new rating
         const result = await supabase
           .from('ratings')
           .insert({imdb_movie_id: movie.id, user_id: user.id, rating: newRating});
@@ -93,6 +91,25 @@ function MovieCard({ movie }) {
       }
     } catch (err) {
       console.error('Error handling rating:', err);
+    }
+  }
+
+  async function handleRemoveRating() {
+    try {
+      const { error } = await supabase
+        .from('ratings')
+        .delete()
+        .eq('imdb_movie_id', movie.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error(error);
+      } else {
+        setRating(0);
+        setRated(false);
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -129,8 +146,10 @@ function MovieCard({ movie }) {
         open={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         onRate={handleRating}
+        onRemove={handleRemoveRating}
         currentRating={rating}
         movieTitle={movie.primaryTitle}
+        isRated={rated}
       />
     </>
   );

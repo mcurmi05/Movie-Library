@@ -1,3 +1,6 @@
+//unlike the rest of my code in this project, a lot of the code in this file in particular was written using ai, i thought this little component
+//would be a good opportunity to test out its capabilities since im importing an external component someone else made anyway, im happy with how it turned out though!
+
 import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Rating from '@mui/material/Rating';
@@ -5,6 +8,8 @@ import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
+
+import { useEffect } from 'react';
 
 const StyledRating = styled(Rating)({
   '& .MuiRating-iconFilled': {
@@ -29,8 +34,12 @@ const modalStyle = {
   fontWeight:'bold'
 };
 
-export default function RatingModal({ open, onClose, onRate, currentRating = 0, movieTitle }) {
+export default function RatingModal({ open, onClose, onRate, onRemove, currentRating = 0, movieTitle, isRated = false }) {
   const [value, setValue] = useState(currentRating);
+
+  useEffect(() => {
+    setValue(currentRating);
+  }, [currentRating]);
 
   const handleRatingChange = (event, newValue) => {
     setValue(newValue);
@@ -39,6 +48,13 @@ export default function RatingModal({ open, onClose, onRate, currentRating = 0, 
   const handleSubmit = () => {
     if (value > 0) {
       onRate(value);
+      onClose();
+    }
+  };
+
+  const handleRemove = () => {
+    if (onRemove) {
+      onRemove();
       onClose();
     }
   };
@@ -73,33 +89,54 @@ export default function RatingModal({ open, onClose, onRate, currentRating = 0, 
           </Typography>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleClose}
-            sx={{ 
-              color: 'white', 
-              borderColor: '#666',
-              '&:hover': { borderColor: '#888' },
-              fontWeight:'bold' ,
-              textTransform: 'none'
-
-            }}
-          >
-            Cancel
-          </Button>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              onClick={handleClose}
+              sx={{ 
+                color: 'white', 
+                borderColor: '#666',
+                '&:hover': { borderColor: '#888' },
+                fontWeight:'bold',
+                textTransform: 'none'
+              }}
+            >
+              Cancel
+            </Button>
+            
+            {isRated && (
+              <Button 
+                variant="outlined" 
+                onClick={handleRemove}
+                sx={{ 
+                  color: '#ff0000ff', 
+                  borderColor: '#ff0000ff',
+                  '&:hover': { 
+                    borderColor: '#ff5252',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)' 
+                  },
+                  fontWeight:'bold',
+                  textTransform: 'none'
+                }}
+              >
+                Remove Rating
+              </Button>
+            )}
+          </Box>
+          
           <Button 
             variant="contained" 
             onClick={handleSubmit}
             disabled={!value}
             sx={{ 
               backgroundColor: '#ff0000ff',
-              '&:hover': { backgroundColor: '#ff0000ff' },
-              fontWeight:'bold' ,
+              '&:hover': { backgroundColor: '#cc0000' },
+              fontWeight:'bold',
               textTransform: 'none'
             }}
           >
-            Rate
+            {isRated ? 'Update' : 'Rate'}
           </Button>
         </Box>
       </Box>
