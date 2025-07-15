@@ -1,7 +1,6 @@
 import { useRatings} from "../contexts/UserRatingsContext.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import Rating from "../components/Rating.jsx";
-import MovieRatingStar from "../components/MovieRatingStar.jsx";
 
 function Ratings() {
 
@@ -22,7 +21,7 @@ function Ratings() {
      return(
         <div>
             <h1>Your Ratings</h1>
-            {userRatings.map((rating) => (
+            {userRatings.slice().reverse().map((rating) => (
                 <div key={rating.imdb_movie_id}>
                   <Rating movie_object={rating.movie_object}></Rating>
                 </div>
