@@ -16,7 +16,9 @@
     "@react-login-page/page3": "^1.0.5",
     "@supabase/supabase-js": "^2.50.5",
     "@vercel/speed-insights": "^1.2.0",
+    "date-fns": "^4.1.0",
     "react": "^19.1.0",
+    "react-day-picker": "^9.8.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3"
   },

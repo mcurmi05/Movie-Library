@@ -2,6 +2,7 @@ import {useState} from "react";
 import {supabase} from "../services/supabase-client.js";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
+import {Dialog} from "../components/ReactDayPicker.jsx";
 
 export const SignIn = () => {
 
@@ -58,6 +59,7 @@ export const SignIn = () => {
 
     return (
         <div>
+            <Dialog></Dialog>
             <h2>{isSignUp ? "Sign Up" : "Sign In"}</h2>
             
             {message && (
