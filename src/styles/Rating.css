@@ -1,6 +1,7 @@
 .rating-poster{
     width:200px;
     border-radius:8px;
+    cursor:pointer;
 }
 
 .top{
@@ -9,4 +10,13 @@
 
 .rating-star-div{
     margin-top:40px;
+}
+
+.movie-title{
+    cursor:pointer;
+    font-weight: bold;
+}
+
+.movie-title:hover{
+    color:rgba(255,255,255,0.7)
 }

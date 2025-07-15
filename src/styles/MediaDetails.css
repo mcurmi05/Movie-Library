@@ -120,3 +120,11 @@
     
 }
 
+.top-container{
+    display:flex;
+    gap:1rem;
+}
+
+.star-container{
+    margin-top:33px;
+}

@@ -5,6 +5,7 @@ import "../styles/MediaDetails.css"
 import ReleaseAndRunTime from "../components/ReleaseAndRunTime";
 import IMDBInfo from "../components/IMDBInfo";
 import MediaGenres from "../components/MediaGenres.jsx";
+import MovieRatingStar from '../components/MovieRatingStar';
 
 function MediaDetails() {
   const { id } = useParams();
@@ -43,7 +44,10 @@ function MediaDetails() {
       <div className="page-container">
         <div className="media-details">
             {/*title*/}
-            <h1 className="title">{movie.primaryTitle}</h1>
+            <div className="top-container">
+              <h1 className="title">{movie.primaryTitle}</h1>
+              <div className="star-container"><MovieRatingStar movie={movie}></MovieRatingStar></div>
+            </div>
             {/*release and runtime*/}
             <div className="subtitle">
               <ReleaseAndRunTime movie={movie}/>
