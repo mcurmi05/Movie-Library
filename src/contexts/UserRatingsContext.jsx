@@ -20,20 +20,21 @@ export const UserRatingsProvider = ({ children }) => {
   const [userRatingsLoaded, setUserRatingsLoaded] = useState(false);
   const { isAuthenticated, user } = useAuth();
 
-  const addRating = (movieId, rating) => {
+  const addRating = (movieId, rating, movie) => {
     const newRating = {
       imdb_movie_id: movieId,
       user_id: user.id,
       rating: rating,
+      movie_object: movie
     };
     setUserRatings(prev => [...prev, newRating]);
   };
 
-  const updateRating = (movieId, newRating) => {
+  const updateRating = (movieId, newRating, movie) => {
     setUserRatings(prev => 
       prev.map(rating => 
         rating.imdb_movie_id === movieId 
-          ? { ...rating, rating: newRating }
+          ? { ...rating, rating: newRating, movie_object:movie }
           : rating
       )
     );

@@ -1,0 +1,37 @@
+.user-rating-star {
+  width: 50px !important;
+  height: 50px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  z-index: 1;
+  margin-top:-2px;
+}
+
+.user-rating-number {
+  color: rgb(255, 255, 255) !important;
+  font-weight: 1000;
+  font-size: 1.2rem !important;
+  z-index: 2; 
+  position: absolute;
+  margin-left:-0.px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.user-rating-movie-card {
+  display: flex;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  align-items: center; 
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  position: relative; 
+  margin-top:-40px;
+}
+
+.user-rating-movie-card:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
