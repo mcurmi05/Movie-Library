@@ -6,6 +6,7 @@ import RatingModal from "./RatingModal";
 import { useRatings } from "../contexts/UserRatingsContext";
 import { supabase } from "../services/supabase-client";
 import { getRatingFromArray } from "../services/ratingsfromtable";
+import { getMovieById } from "../services/api";
 
 function MovieRatingStar({movie}) {
 
@@ -53,21 +54,24 @@ function MovieRatingStar({movie}) {
 
   async function handleRating(newRating) {
       setRating(newRating);
-  
+      console.log("calling api to get more information about movie for database entry")
+      const movie_object = await getMovieById(movie.id)
+
       try {
         let error;
         
         if (rated) {
           const result = await supabase
             .from('ratings')
-            .update({rating: newRating, movie_object:movie})
+            .update({rating: newRating})
             .eq('imdb_movie_id', movie.id)
             .eq('user_id', user.id);
           error = result.error;
         } else {
+          
           const result = await supabase
             .from('ratings')
-            .insert({imdb_movie_id: movie.id, user_id: user.id, rating: newRating, movie_object:movie });
+            .insert({imdb_movie_id: movie.id, user_id: user.id, rating: newRating, movie_object:movie_object });
           error = result.error;
         }
   
@@ -76,9 +80,9 @@ function MovieRatingStar({movie}) {
         } else {
           setRated(true);
           if (rated) {
-            updateRating(movie.id, newRating, movie);
+            updateRating(movie.id, newRating, movie_object);
           } else {
-            addRating(movie.id, newRating, movie);
+            addRating(movie.id, newRating, movie_object);
           }
         }
       } catch (err) {

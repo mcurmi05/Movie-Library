@@ -23,7 +23,7 @@ function Ratings() {
             <h1>Your Ratings</h1>
             {userRatings.slice().reverse().map((rating) => (
                 <div key={rating.imdb_movie_id}>
-                  <Rating movie_object={rating.movie_object}></Rating>
+                  <Rating movie_object={rating.movie_object} ratingDate={rating.created_at}></Rating>
                 </div>
             ))}
         </div>

@@ -1,8 +1,9 @@
 import "../styles/Rating.css"
 import { useNavigate } from "react-router-dom";
 import MovieRatingStar from "./MovieRatingStar";
+import ReleaseAndRunTime from "./ReleaseAndRunTime";
 
-function Rating({movie_object}){
+function Rating({movie_object, ratingDate}){
 
     const navigate = useNavigate();
 
@@ -10,17 +11,30 @@ function Rating({movie_object}){
         console.log("Navigating to movie details for:", movie_object.primaryTitle);
         navigate(`/mediadetails/${movie_object.id}`);
     }
+
+    const formattedDate = ratingDate
+        ? new Date(ratingDate).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        })
+        : '';
     
 
     return(
         <div className="container">
             <div className="top">
-                
+                <p>Rated on: {formattedDate}</p>
                 <img src={movie_object.primaryImage} className="rating-poster" onClick={onMovieClick}/>
                 <div className="rating-star-div">
                     <MovieRatingStar movie={movie_object}  ></MovieRatingStar>
                 </div>
                 <p className="movie-title" onClick={onMovieClick} >{movie_object.primaryTitle} </p>
+                <p>{movie_object.description}</p>
+                <ReleaseAndRunTime movie={movie_object}></ReleaseAndRunTime>
+                <p>Director: {movie_object.directors[0].fullName} </p>
+                {/* can get their photos and make a x scroll */}
+                <p>Cast - {movie_object.cast.map((castMember) => `!${castMember.fullName}: ${castMember.characters.map(character => character)} ! `)}</p>
             </div>
             
         </div>
