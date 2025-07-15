@@ -25,7 +25,9 @@ export const UserRatingsProvider = ({ children }) => {
       imdb_movie_id: movieId,
       user_id: user.id,
       rating: rating,
-      movie_object: movie
+      movie_object: movie,
+      created_at: new Date().toISOString(), 
+
     };
     setUserRatings(prev => [...prev, newRating]);
   };
@@ -34,7 +36,7 @@ export const UserRatingsProvider = ({ children }) => {
     setUserRatings(prev => 
       prev.map(rating => 
         rating.imdb_movie_id === movieId 
-          ? { ...rating, rating: newRating, movie_object:movie }
+          ? { ...rating, rating: newRating, movie_object:movie, created_at: new Date().toISOString() }
           : rating
       )
     );

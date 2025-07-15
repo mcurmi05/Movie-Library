@@ -34,7 +34,12 @@ function Rating({movie_object, ratingDate}){
                 <ReleaseAndRunTime movie={movie_object}></ReleaseAndRunTime>
                 <p>Director: {movie_object.directors[0].fullName} </p>
                 {/* can get their photos and make a x scroll */}
-                <p>Cast - {movie_object.cast.map((castMember) => `!${castMember.fullName}: ${castMember.characters.map(character => character)} ! `)}</p>
+                <p>Actors - 
+                    {movie_object.cast
+                    .filter(castMember => castMember.job === "actress" || castMember.job === "actor")
+                    .map(castMember => `${castMember.fullName} as ${castMember.characters&&castMember.characters.length>0?castMember.characters:castMember.fullName}`)
+                    .join(", ")}
+                </p>
             </div>
             
         </div>
