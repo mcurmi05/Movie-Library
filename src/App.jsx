@@ -11,6 +11,7 @@ import {supabase} from "./services/supabase-client.js"
 import {useState, useEffect} from "react"
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { UserRatingsProvider } from "./contexts/UserRatingsContext.jsx";
+import Ratings from "./pages/Ratings.jsx"
 function App() {
 
   const [session, setSession] = useState(null);
@@ -39,7 +40,7 @@ function App() {
             <Route path="/search" element={<Search></Search>}></Route>
             <Route path="/mediadetails/:id" element={<MediaDetails></MediaDetails>} />
             <Route path="/signin" element={<SignIn></SignIn>} />
-            <Route path="/ratings" element={null} />
+            <Route path="/ratings" element={<Ratings></Ratings>} />
             <Route path="/lists" element={null} />
           </Routes>
         </main>

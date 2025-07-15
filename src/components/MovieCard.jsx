@@ -88,8 +88,6 @@ function MovieCard({ movie }) {
         console.error(error);
       } else {
         setRated(true);
-        console.log(`Rating ${rated ? 'updated' : 'added'}: ${newRating}`);
-
         if (rated) {
           updateRating(movie.id, newRating);
         } else {
