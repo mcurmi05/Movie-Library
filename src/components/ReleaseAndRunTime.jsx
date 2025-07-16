@@ -13,7 +13,7 @@ function ReleaseAndRunTime({movie}) {
             : null}{" "}
             {movie.runtimeMinutes % 60
             ? (movie.runtimeMinutes % 60) + "m"
-            : ""}
+            : "Unknown runtime"}
         </p>
     );
     

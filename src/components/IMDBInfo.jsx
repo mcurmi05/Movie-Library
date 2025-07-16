@@ -15,7 +15,7 @@ function IMDBInfo({ movie }) {
     <a href={movie.url} target="_blank" className="imdb-rating">
       <img src="/imdbicon.png" className="imdb-movie-card " />
       <img src="/staricon.png" className="star-movie-card" />
-      <p>
+      <p style={{whiteSpace:"nowrap"}}>
         {movie.averageRating
           ? movie.averageRating.toFixed(1)
           : "No ratings yet"}{" "}
