@@ -110,12 +110,12 @@ function NavBar() {
             </a>
 
             <a
-              to="/lists"
+              to="/log"
               className="dropdown-nav-item"
-              onClick={() => handleAuthOnlyRouteClick("/lists")}
+              onClick={() => handleAuthOnlyRouteClick("/log")}
             >
               <div className="navbar-icon-div">
-                <img className="nav-icon" src="/lists.png"></img>
+                <img className="nav-icon" src="/log.png"></img>
                 <p className="names-to-links">Log</p>
               </div>
             </a>
@@ -164,12 +164,12 @@ function NavBar() {
         </a>
 
         <a
-          to="/lists"
+          to="/log"
           className="nav-link"
-          onClick={() => handleAuthOnlyRouteClick("/lists")}
+          onClick={() => handleAuthOnlyRouteClick("/log")}
         >
           <div className="navbar-icon-div">
-            <img className="nav-icon" src="/lists.png"></img>
+            <img className="nav-icon" src="/log.png"></img>
             <p className="names-to-links">Log</p>
           </div>
         </a>

@@ -12,6 +12,7 @@ import {useState, useEffect} from "react"
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { UserRatingsProvider } from "./contexts/UserRatingsContext.jsx";
 import Ratings from "./pages/Ratings.jsx"
+import Log from "./pages/Log.jsx"
 function App() {
 
   const [session, setSession] = useState(null);
@@ -41,7 +42,7 @@ function App() {
             <Route path="/mediadetails/:id" element={<MediaDetails></MediaDetails>} />
             <Route path="/signin" element={<SignIn></SignIn>} />
             <Route path="/ratings" element={<Ratings></Ratings>} />
-            <Route path="/lists" element={null} />
+            <Route path="/log" element={<Log></Log>} />
           </Routes>
         </main>
       </UserRatingsProvider>
