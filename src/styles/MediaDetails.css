@@ -132,7 +132,8 @@
 .director-cast-lists {
   display: flex;
   flex-direction: row;
+  justify-content:space-around;
   align-items: flex-start;
-  gap: 2rem; 
+  gap: 6rem; 
   margin-top: 2rem; 
 }

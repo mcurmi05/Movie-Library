@@ -1,20 +1,18 @@
 .container-cast-main{
-    margin:0;
-    padding:0;
+    max-width:70%;
 }
 
-.list-title{
+.list-title-cast{
     font-weight:bold;
     font-size:1.5rem;
     margin-top:30px;
+    text-align:none;
 }
 
 .cast-list-container{
     display:flex;
     gap:1rem;
-    padding-left:20px;
-    padding-right:20px;
-    max-width:50vw;
+    flex:1;
     overflow-x:auto;
 }
 
@@ -34,10 +32,11 @@
 .cast-member-fullname{
     font-weight:bold;
     margin-top:9px;
+    font-size:0.7rem;
 }
 
 .cast-member-characters{
     color:rgb(139, 135, 135);
-    font-size:0.8rem;
+    font-size:0.7rem;
 }
 

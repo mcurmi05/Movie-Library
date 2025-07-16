@@ -1,16 +1,19 @@
-.list-title{
+.container-director-main{
+    max-width:20%;
+}
+
+.list-title-director{
     font-weight:bold;
     font-size:1.5rem;
     margin-top:30px;
-    text-align:center;
+    text-align: center;;
 }
 
 .director-list-container{
     display:flex;
     gap:1rem;
-    overflow-x: auto;
-    padding-left:20px;
-    padding-right:20px;
+    flex:1;
+    overflow-x:auto;
 }
 
 .director-container{
