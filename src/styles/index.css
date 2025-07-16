@@ -13,6 +13,21 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+  padding-right:6px;
+}
+
+:root::-webkit-scrollbar {
+    width: 6px;  
+}
+
+:root::-webkit-scrollbar-thumb {
+    background: #888;    
+    border-radius: 3px;  
+    
+}
+
+:root::-webkit-scrollbar-track {
+    background: transparent; 
 }
 
 * {

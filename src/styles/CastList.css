@@ -1,12 +1,12 @@
 .container-cast-main{
-    max-width:70%;
+    max-width:100%;
 }
 
 .list-title-cast{
     font-weight:bold;
     font-size:1.5rem;
-    margin-top:30px;
     text-align:none;
+    margin-top:-20px;
 }
 
 .cast-list-container{
@@ -14,6 +14,20 @@
     gap:1rem;
     flex:1;
     overflow-x:auto;
+}
+
+.cast-list-container::-webkit-scrollbar {
+    height: 6px;  
+}
+
+.cast-list-container::-webkit-scrollbar-thumb {
+    background: #888;    
+    border-radius: 3px;  
+    
+}
+
+.cast-list-container::-webkit-scrollbar-track {
+    background: transparent; 
 }
 
 .cast-member-container{

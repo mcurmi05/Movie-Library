@@ -7,7 +7,6 @@ import IMDBInfo from "../components/IMDBInfo";
 import MediaGenres from "../components/MediaGenres.jsx";
 import MovieRatingStar from '../components/MovieRatingStar';
 import CastList from "../components/CastList.jsx";
-import DirectorList from "../components/DirectorList.jsx";
 
 function MediaDetails() {
   const { id } = useParams();
@@ -75,6 +74,10 @@ function MediaDetails() {
                 <h2>No trailer found 😔</h2>
               )}
             </div>
+
+            <div className="cast-list">
+              <CastList movie={movie}/>
+            </div>  
             {/*description and genres*/}
             
             <div className="primary-under-part">
@@ -90,10 +93,16 @@ function MediaDetails() {
               <MediaGenres movie={movie}></MediaGenres>
             </div>
 
-            <div className="director-cast-lists">
-              <DirectorList movie={movie}></DirectorList>
-              <CastList movie={movie}/>
-            </div>  
+            {movie.type === "movie" ? (
+              <div className="director-and-writer">
+                <p><span className="bold-span">Directed by</span> {movie.directors.map(director => director.fullName).join(", ")}</p>
+                <p><span className="bold-span">Written by</span> {movie.writers.map(writer => writer.fullName).join(", ")}</p>
+                <p><span className="bold-span">Budget</span> ${movie.budget.toLocaleString("en-US")} USD</p>
+
+              </div>
+            ) : ""}
+
+            
             
             
         </div>
