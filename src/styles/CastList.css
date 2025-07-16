@@ -1,0 +1,43 @@
+.container-cast-main{
+    margin:0;
+    padding:0;
+}
+
+.list-title{
+    font-weight:bold;
+    font-size:1.5rem;
+    margin-top:30px;
+}
+
+.cast-list-container{
+    display:flex;
+    gap:1rem;
+    padding-left:20px;
+    padding-right:20px;
+    max-width:50vw;
+    overflow-x:auto;
+}
+
+.cast-member-container{
+    padding:10px;
+    text-align: center;
+}
+
+.cast-image {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.cast-member-fullname{
+    font-weight:bold;
+    margin-top:9px;
+}
+
+.cast-member-characters{
+    color:rgb(139, 135, 135);
+    font-size:0.8rem;
+}
+

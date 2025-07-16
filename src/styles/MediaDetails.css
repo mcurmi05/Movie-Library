@@ -128,3 +128,11 @@
 .star-container{
     margin-top:33px;
 }
+
+.director-cast-lists {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 2rem; 
+  margin-top: 2rem; 
+}

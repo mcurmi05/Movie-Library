@@ -6,6 +6,8 @@ import ReleaseAndRunTime from "../components/ReleaseAndRunTime";
 import IMDBInfo from "../components/IMDBInfo";
 import MediaGenres from "../components/MediaGenres.jsx";
 import MovieRatingStar from '../components/MovieRatingStar';
+import CastList from "../components/CastList.jsx";
+import DirectorList from "../components/DirectorList.jsx";
 
 function MediaDetails() {
   const { id } = useParams();
@@ -80,7 +82,6 @@ function MediaDetails() {
               <MediaGenres movie={movie}></MediaGenres>
             </div>
             
-
             <div className="secondary-under-part">
               <div className="secondary-poster-and-description">
                 <img className="secondary-poster" src={movie.primaryImage}/>
@@ -88,6 +89,12 @@ function MediaDetails() {
               </div>
               <MediaGenres movie={movie}></MediaGenres>
             </div>
+
+            <div className="director-cast-lists">
+              <DirectorList movie={movie}></DirectorList>
+              <CastList movie={movie}/>
+            </div>  
+            
             
         </div>
     </div>
