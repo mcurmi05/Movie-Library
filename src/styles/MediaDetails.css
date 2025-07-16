@@ -3,6 +3,10 @@
     justify-content:center;
 }
 
+.top-container{
+    margin-top:-20px
+}
+
 .loading{
     margin:0 auto;
 }

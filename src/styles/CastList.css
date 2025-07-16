@@ -4,7 +4,7 @@
 
 .list-title-cast{
     font-weight:bold;
-    font-size:1.5rem;
+    font-size:1.2rem;
     text-align:none;
     margin-top:-20px;
 }
@@ -14,6 +14,7 @@
     gap:1rem;
     flex:1;
     overflow-x:auto;
+    margin-bottom:-20px;
 }
 
 .cast-list-container::-webkit-scrollbar {
@@ -33,6 +34,10 @@
 .cast-member-container{
     padding:10px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
 }
 
 .cast-image {
