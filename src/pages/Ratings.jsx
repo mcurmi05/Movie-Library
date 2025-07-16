@@ -1,19 +1,16 @@
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
-import { useAuth } from "../contexts/AuthContext";
 import Rating from "../components/Rating.jsx";
 
 function Ratings() {
-  const { isAuthenticated } = useAuth();
   const { userRatings, userRatingsLoaded } = useRatings();
 
   console.log("User ratings: " + userRatings);
 
-  if (!isAuthenticated) {
-    return <div>Please sign in to view your ratings</div>;
-  }
-
   if (!userRatingsLoaded) {
-    return <div>Loading ratings...</div>;
+    return (<>
+              <h1 style={{alignSelf:"center", marginTop:"-20px"}}>Your Ratings</h1>
+              <div style={{alignSelf:"center"}}>Loading ratings...</div>
+            </>);
   }
 
   try {
@@ -44,7 +41,7 @@ function Ratings() {
     );
   } catch (error) {
     console.error("Error rendering ratings:", error);
-    return <div>Loading ratings...</div>;
+    return <div style={{alignSelf:"center"}}>Loading ratings...</div>;
   }
 }
 
