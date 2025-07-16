@@ -74,22 +74,24 @@ function MediaDetails() {
                 <h2>No trailer found 😔</h2>
               )}
             </div>
-
-            <div className="cast-list">
-              <CastList movie={movie}/>
-            </div>  
             {/*description and genres*/}
             
-            <div className="primary-under-part">
-              <div className="description-container"><p className="description">{movie.description}</p></div>
-              <MediaGenres movie={movie}></MediaGenres>
-            </div>
+            
             
             <div className="secondary-under-part">
               <div className="secondary-poster-and-description">
                 <img className="secondary-poster" src={movie.primaryImage}/>
                 <div className="description-container"><p className="description">{movie.description}</p></div>
               </div>
+              <MediaGenres movie={movie}></MediaGenres>
+            </div>
+
+            <div className="cast-list">
+              <CastList movie={movie}/>
+            </div>  
+
+            <div className="primary-under-part">
+              <div className="description-container"><p className="description">{movie.description}</p></div>
               <MediaGenres movie={movie}></MediaGenres>
             </div>
 
