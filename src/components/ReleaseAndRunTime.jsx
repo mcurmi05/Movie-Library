@@ -5,15 +5,15 @@ function ReleaseAndRunTime({movie}) {
             {movie.startYear ? (
             movie.endYear ? 
                 `${movie.startYear} - ${movie.endYear}` : 
-                movie.startYear
-            ) : "Unknown year"}  ·  
+                `${movie.startYear} ·`
+            ) : ""}    
             
             {Math.floor(movie.runtimeMinutes / 60)
             ? " " + Math.floor(movie.runtimeMinutes / 60) + "h"
             : null}{" "}
             {movie.runtimeMinutes % 60
             ? (movie.runtimeMinutes % 60) + "m"
-            : " Unknown runtime"}
+            : ""}
         </p>
     );
     

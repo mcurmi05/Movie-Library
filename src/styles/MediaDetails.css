@@ -3,10 +3,6 @@
     justify-content:center;
 }
 
-.top-container{
-    margin-top:-20px
-}
-
 .loading{
     margin:0 auto;
 }
@@ -33,6 +29,7 @@
 .poster{
     border-radius:8px;
     width:30%;
+    object-fit: cover;
 }
 .secondary-poster{
     display:none;
@@ -40,7 +37,6 @@
 
 .poster-and-trailer{
     display:flex;
-    justify-content:space-around;
     gap:2rem;
 }
 
@@ -51,6 +47,7 @@
     font-size:1.2rem;
     width:50%;
     min-width:0;
+    margin-top:10px;
 }
 
 .primary-under-part{
@@ -106,9 +103,7 @@
         gap:1.5rem;
     }
 
-    .title{
-        font-size:2rem;
-    }
+    
 
     .page-container{
         padding: 0; 

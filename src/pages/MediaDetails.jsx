@@ -99,7 +99,7 @@ function MediaDetails() {
               <div className="director-and-writer">
                 <p><span className="bold-span">Directed by</span> {movie.directors.map(director => director.fullName).join(", ")}</p>
                 <p><span className="bold-span">Written by</span> {movie.writers.map(writer => writer.fullName).join(", ")}</p>
-                <p><span className="bold-span">Budget</span> ${movie.budget.toLocaleString("en-US")} USD</p>
+                {movie.budget?<p><span className="bold-span">Budget</span> ${movie.budget.toLocaleString("en-US")} USD</p>:null}
 
               </div>
             ) : ""}
