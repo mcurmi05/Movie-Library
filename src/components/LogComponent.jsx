@@ -18,6 +18,15 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [saving, setSaving] = useState(false);
   const [textEdited, setTextEdited] = useState(false);
 
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+  if (textareaRef.current) {
+    textareaRef.current.style.height = "100px";
+    textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+  }
+  }, [text]);
+
   async function handleDateChange(newDate) {
     const isoDate = newDate.toISOString();
     setSaving(true);
@@ -99,6 +108,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
         </div>
       </div>
       <textarea
+        ref={textareaRef}
         className="log-input"
         value={text}
         onInput={(e) => {
