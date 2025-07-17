@@ -74,7 +74,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
       }
     }, 2000);
     return () => clearTimeout(debounceTimeout.current);
-  }, [text, visible, created_at, movie, textEdited]);
+  }, [text, visible, created_at, movie, textEdited, updateLog]);
 
   if (!visible) return null;
   return (
