@@ -13,7 +13,7 @@ export const getPopularMovies = async () => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log("movies received from api (not cached):")
+    console.log("movies received from api (not cached):");
     console.log(results);
     return results;
   } catch (error) {
@@ -22,7 +22,7 @@ export const getPopularMovies = async () => {
 };
 
 export const searchMovies = async (query) => {
-  const url = `https://imdb236.p.rapidapi.com/api/imdb/search?primaryTitleAutocomplete=${query}&rows=25&sortOrder=DESC&sortField=numVotes`;
+  const url = `https://imdb236.p.rapidapi.com/api/imdb/search?primaryTitleAutocomplete=${query}&rows=100&sortOrder=DESC&sortField=numVotes`;
   const options = {
     method: "GET",
     headers: {
@@ -34,7 +34,7 @@ export const searchMovies = async (query) => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log("movies received from api (not cached):")
+    console.log("movies received from api (not cached):");
     console.log(results.results);
     return results.results;
   } catch (error) {
@@ -75,7 +75,7 @@ export const getMovieById = async (id) => {
   try {
     const response = await fetch(url, options);
     const result = await response.json();
-    console.log("movies received from api (not cached):")
+    console.log("movies received from api (not cached):");
     console.log(result);
     return result;
   } catch (error) {
