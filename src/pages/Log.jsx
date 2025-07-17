@@ -19,7 +19,7 @@ function Log() {
             <div className="logs-container-vertically-down">
                 {userLogs.map(log => (
                     <LogComponent
-                        key={log.created_at}
+                        key={log.id}
                         created_at={log.created_at}
                         movie={log.movie_object}
                         logtext={log.log}
