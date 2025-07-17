@@ -1,8 +1,7 @@
 .container {
-  border: solid grey 2px;
   border-radius: 8px;
   margin-top: 10px;
-  width:70%;
+  width:100%;
   padding-left:20px;
   padding-top:10px;
   padding-bottom:10px;
@@ -78,10 +77,18 @@
   flex-direction:column;
 }
 
+.div-wrapper-rating-testing{
+  border: solid grey 2px;
+  border-radius: 8px;
+  margin-top: 10px;
+  width:70%;
+  padding-left:20px; 
+  padding-top:10px; 
+  padding-bottom:10px;
+}
 
 @media (max-width:1400px){
-  .container {
-    
+  .div-wrapper-rating-testing{
     width:100%;
     
   }
@@ -112,3 +119,5 @@
 .top-stuff{
   display:flex;
 }
+
+

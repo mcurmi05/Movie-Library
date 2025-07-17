@@ -1,5 +1,6 @@
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import Rating from "../components/Rating.jsx";
+import LogComponent from "../components/LogComponent.jsx";
 
 function Ratings() {
   const { userRatings, userRatingsLoaded } = useRatings();
@@ -31,10 +32,12 @@ function Ratings() {
                 alignItems: "center",
               }}
             >
+            <div className="div-wrapper-rating-testing" >
               <Rating
                 movie_object={rating.movie_object}
                 ratingDate={rating.created_at}
               ></Rating>
+            </div>
             </div>
           ))}
       </div>

@@ -27,6 +27,7 @@ function MovieCard({ movie }) {
                 ? `${movie.primaryImage}`
                 : "/placeholderimage.jpg"
             }
+            onError={e => { e.target.onerror = null; e.target.src = "/placeholderimage.jpg"}}
           />
         </div>
 

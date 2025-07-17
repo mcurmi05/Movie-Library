@@ -25,7 +25,8 @@ function Rating({ movie_object, ratingDate }) {
         <div className="top-stuff">
             <div className="poster-wrapper">
                 <img
-                    src={movie_object.primaryImage}
+                    src={movie_object.primaryImage ? `${movie_object.primaryImage}`: "/placeholderimage.jpg"}
+                    onError={e => { e.target.onerror = null; e.target.src = "/placeholderimage.jpg"}}
                     className="rating-poster"
                     onClick={onMovieClick}
                 />
@@ -42,7 +43,7 @@ function Rating({ movie_object, ratingDate }) {
 
                 <div className="rating-page-subtitle">
                     <ReleaseAndRunTime style={{textWrap:"wrap"}} movie={movie_object}></ReleaseAndRunTime>
-                    <p>Rated on: {formattedDate}</p>
+                    {formattedDate!=="Invalid Date"?<p>Rated on: {formattedDate}</p>:null}
                 </div>
 
                 <div className="top">
