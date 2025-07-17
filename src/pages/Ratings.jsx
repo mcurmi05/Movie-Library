@@ -1,6 +1,5 @@
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import Rating from "../components/Rating.jsx";
-import LogComponent from "../components/LogComponent.jsx";
 
 function Ratings() {
   const { userRatings, userRatingsLoaded } = useRatings();

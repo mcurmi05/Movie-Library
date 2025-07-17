@@ -4,12 +4,12 @@ import ReleaseAndRunTime from "./ReleaseAndRunTime.jsx";
 import IMDBInfo from "./IMDBInfo.jsx";
 import MovieRatingStar from "./MovieRatingStar.jsx";
 import "../styles/MovieRatingStar.css"
+import AddLog from "./AddLog.jsx";
 
 
 function MovieCard({ movie }) {
 
   const navigate = useNavigate();
-
 
   function onMovieCardClick() {
     console.log("Navigating to movie details for:", movie.primaryTitle);
@@ -32,15 +32,18 @@ function MovieCard({ movie }) {
         </div>
 
         <div className="movie-info">
-          <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
+          <div className="title-and-addlog">
+            <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
+            <div className="add-log-container-moviecard">
+                <AddLog movie={movie}></AddLog>
+            </div>
+          </div>
           <ReleaseAndRunTime movie={movie} />
           <div className="stars-and-that">
             <IMDBInfo movie={movie}></IMDBInfo>
             <MovieRatingStar movie={movie}></MovieRatingStar>
           </div>
           
-          
-
         </div>
       </div>
 

@@ -3,7 +3,7 @@
     overflow-y:hidden;
     border-radius: 8px;
     background-color: rgb(240, 236, 178);
-    width: 95%;
+    width: 96%;
     height: 100px;
     box-sizing: border-box;
     font-family: inherit;
@@ -24,13 +24,33 @@
     padding-top:10px;
     padding-bottom:10px;
     border: solid grey 2px;
+    width:55%;
     
     display:flex;
     flex-direction:column;
     align-items:center;
+    position:relative;
 }
 
-.white-background-for-text{
-    
+@media(max-width:1200px){
+    .log-rating-wrapper{
+        width:70%;
+    }
 }
 
+@media(max-width:800px){
+    .log-rating-wrapper{
+        width:100%;
+    }
+}
+
+.log-delete-icon{
+    width:20px;
+    position:absolute;
+    right:10px;
+    cursor:pointer;
+}
+
+.log-delete-icon:hover{
+    opacity:0.6;
+}

@@ -13,6 +13,8 @@ import { AuthProvider } from "./contexts/AuthContext.jsx";
 import { UserRatingsProvider } from "./contexts/UserRatingsContext.jsx";
 import Ratings from "./pages/Ratings.jsx"
 import Log from "./pages/Log.jsx"
+import { UserLogsProvider } from "./contexts/UserLogsContext.jsx";
+
 function App() {
 
   const [session, setSession] = useState(null);
@@ -33,6 +35,7 @@ function App() {
       <SearchProvider>
       <PopularMoviesCacheProvider>
       <UserRatingsProvider>
+      <UserLogsProvider>
         <NavBar/>
         <main className="main-content">
           <Routes>
@@ -45,6 +48,7 @@ function App() {
             <Route path="/log" element={<Log></Log>} />
           </Routes>
         </main>
+      </UserLogsProvider>
       </UserRatingsProvider>
       </PopularMoviesCacheProvider>
       </SearchProvider>

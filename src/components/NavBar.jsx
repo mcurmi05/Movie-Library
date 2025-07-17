@@ -36,7 +36,7 @@ function NavBar() {
       navigate(route);
     } else {
       navigate("/signin");
-    }
+      window.location.reload();    }
   };
 
   useEffect(() => {
