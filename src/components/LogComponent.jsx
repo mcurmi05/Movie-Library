@@ -9,7 +9,7 @@ import { useEffect } from "react";
 import {Dialog} from "../components/ReactDayPicker.jsx";
 
 
-export default function LogComponent({movie, logtext, created_at}){
+export default function LogComponent({log_id, movie, logtext, created_at}){
 
     const [visible, setVisible] = useState(true);
     const {removeLog, updateLog} = useLogs();
@@ -28,7 +28,7 @@ export default function LogComponent({movie, logtext, created_at}){
             .delete()
             .eq("created_at", created_at);
 
-        removeLog(created_at);
+        removeLog(log_id);
 
         if (error) {
             console.error("Error deleting log:", error);

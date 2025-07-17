@@ -23,6 +23,7 @@ function Log() {
                         created_at={log.created_at}
                         movie={log.movie_object}
                         logtext={log.log}
+                        log_id={log.id}
                     />
             ))}
             </div>

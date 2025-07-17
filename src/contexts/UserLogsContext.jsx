@@ -42,9 +42,9 @@ export const UserLogsProvider = ({ children }) => {
     );
   };
 
-  const removeLog = (created_at) => {
+  const removeLog = (log_id) => {
     setUserLogs(prev => 
-      prev.filter(log => log.created_at !== created_at)
+      prev.filter(log => log.id !== log_id)
     );
   };
 
