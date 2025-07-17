@@ -18,18 +18,18 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [saving, setSaving] = useState(false);
   const [textEdited, setTextEdited] = useState(false);
 
-  // No need for a separate formattedDate; date display is handled by Dialog
-
   async function handleDateChange(newDate) {
     const isoDate = newDate.toISOString();
-    // Update in DB
+    setSaving(true);
     const { error } = await supabase
       .from("logs")
       .update({ created_at: isoDate })
       .eq("id", log_id);
     if (!error) {
-      // Optionally update local state/context here if needed
-      // For example: updateLog(movie.id, text, movie, isoDate)
+      
+      setTimeout(() => setSaving(false), 1200);
+    } else {
+      setSaving(false);
     }
   }
 
@@ -37,7 +37,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
     const { error } = await supabase
       .from("logs")
       .delete()
-      .eq("created_at", created_at);
+      .eq("id", log_id);
 
     removeLog(log_id);
 
@@ -86,8 +86,8 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width:"100%",
-            paddingLeft:"200px"
+            width: "100%",
+            paddingLeft: "200px",
           }}
         >
           <Dialog
