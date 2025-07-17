@@ -29,14 +29,14 @@ export const UserLogsProvider = ({ children }) => {
       created_at: new Date().toISOString(), 
 
     };
-    setUserLogs(prev => [...prev, newLog]);
+    setUserLogs(prev => [newLog, ...prev]);
   };
 
   const updateLog = (movieId, newLog, movie, created_at) => {
     setUserLogs(prev => 
       prev.map(log => 
         log.created_at === created_at 
-          ? { ...prev, log: newLog}
+          ? { ...log, log: newLog}
           : log
       )
     );

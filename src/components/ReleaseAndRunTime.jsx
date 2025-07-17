@@ -1,22 +1,25 @@
 function ReleaseAndRunTime({movie}) {
-    
-    return(
+    const runtime = Number(movie.runtimeMinutes);
+
+    return (
         <p>
             {movie.startYear ? (
-            movie.endYear ? 
-                `${movie.startYear} - ${movie.endYear}` : 
-                `${movie.startYear} ·`
-            ) : ""}    
-            
-            {Math.floor(movie.runtimeMinutes / 60)
-            ? " " + Math.floor(movie.runtimeMinutes / 60) + "h"
-            : null}{" "}
-            {movie.runtimeMinutes % 60
-            ? (movie.runtimeMinutes % 60) + "m"
-            : "Unknown runtime"}
+                movie.endYear
+                    ? `${movie.startYear} - ${movie.endYear}`
+                    : `${movie.startYear} ·`
+            ) : ""}
+
+            {isNaN(runtime) || runtime <= 0 ? (
+                " Unknown runtime"
+            ) : (
+                <>
+                    {" "}
+                    {Math.floor(runtime / 60) > 0 && `${Math.floor(runtime / 60)}h`}
+                    {runtime % 60 > 0 && ` ${runtime % 60}m`}
+                </>
+            )}
         </p>
     );
-    
 }
 
 export default ReleaseAndRunTime;
