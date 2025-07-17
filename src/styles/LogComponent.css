@@ -54,3 +54,8 @@
 .log-delete-icon:hover{
     opacity:0.6;
 }
+
+.date-picker-log{
+    position:absolute;
+    right:100px;
+}

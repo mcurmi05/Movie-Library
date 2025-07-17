@@ -43,77 +43,70 @@ export function Dialog() {
 
   const handleDayPickerSelect = (date) => {
     if (!date) {
-      setInputValue("");
-      setSelectedDate(undefined);
-    } else {
-      setSelectedDate(date);
-      setInputValue(format(date, "MM/dd/yyyy"));
+      dialogRef.current?.close();
+      return;
     }
+    setSelectedDate(date);
+    setInputValue(format(date, "dd/MM/yyyy"));
     dialogRef.current?.close();
   };
 
-  const handleInputChange = (e) => {
-    setInputValue(e.target.value); // Keep the input value in sync
-
-    const parsedDate = parse(e.target.value, "MM/dd/yyyy", new Date());
-
-    if (isValid(parsedDate)) {
-      setSelectedDate(parsedDate);
-      setMonth(parsedDate);
-    } else {
-      setSelectedDate(undefined);
-    }
-  };
-
   return (
-    <div>
-      <label htmlFor="date-input">
-        <strong>Pick a Date: </strong>
-      </label>
-      <input
-        style={{ fontSize: "inherit" }}
-        id="date-input"
-        type="text"
-        value={inputValue}
-        placeholder="MM/dd/yyyy"
-        onChange={handleInputChange}
-      />{" "}
-      <button
-        style={{ fontSize: "inherit" }}
-        onClick={toggleDialog}
-        aria-controls="dialog"
-        aria-haspopup="dialog"
-        aria-expanded={isDialogOpen}
-        padding="0px"
-      >
-        📆
-      </button>
-      <p aria-live="assertive" aria-atomic="true">
-        {selectedDate !== undefined
-          ? selectedDate.toDateString()
-          : "Please type or pick a date"}
-      </p>
-      <dialog
-        role="dialog"
-        ref={dialogRef}
-        id={dialogId}
-        aria-modal
-        aria-labelledby={headerId}
-        onClose={() => setIsDialogOpen(false)}
-      >
-        <DayPicker
-          month={month}
-          onMonthChange={setMonth}
-          autoFocus
-          mode="single"
-          selected={selectedDate}
-          onSelect={handleDayPickerSelect}
-          footer={
-            selectedDate !== undefined &&
-            `Selected: ${selectedDate.toDateString()}`
-          }
-        />
-      </dialog>
-    </div>
+    
+      <>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+          <p aria-live="assertive" aria-atomic="true" style={{ margin: 0 }}>
+            {selectedDate !== undefined
+              ? selectedDate.toDateString()
+              : "Enter a log date"}
+          </p>
+
+          <img
+            onClick={toggleDialog}
+            aria-controls="dialog"
+            aria-haspopup="dialog"
+            aria-expanded={isDialogOpen}
+            style={{ padding: 0, cursor: "pointer" }} 
+            src="/calendar.png"
+            width="20px"
+          />
+          
+        </div>
+
+        {isDialogOpen && (
+              //Makes background dark
+              <div style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(0,0,0,0.4)",
+                  zIndex: 1000}}/>
+              )}
+
+
+              <div style={{display:"flex", justifyContent:"center"}}>
+                  <dialog
+                    role="dialog"
+                    ref={dialogRef}
+                    id={dialogId}
+                    aria-modal
+                    aria-labelledby={headerId}
+                    onClose={() => setIsDialogOpen(false)}>
+
+                    <DayPicker
+                      month={month}
+                      onMonthChange={setMonth}
+                      autoFocus
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDayPickerSelect}
+                      footer={
+                        selectedDate !== undefined &&
+                        `‎ ‎ ‎ ‎ Selected: ${selectedDate.toDateString()}`
+          }/>
+      
+            </dialog>
+      </div>
+    </>
   );
 }

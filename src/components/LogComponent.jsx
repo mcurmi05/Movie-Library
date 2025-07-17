@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useLogs } from "../contexts/UserLogsContext.jsx";
 import { useRef } from "react";
 import { useEffect } from "react";
+import {Dialog} from "../components/ReactDayPicker.jsx";
+
 
 export default function LogComponent({movie, logtext, created_at}){
 
@@ -61,6 +63,7 @@ export default function LogComponent({movie, logtext, created_at}){
         //i am fully aware of how lazy this is
         <div className="log-rating-wrapper">
             <Rating movie_object={movie} ratingDate="today"></Rating>
+            <div className="date-picker-log"><Dialog></Dialog></div>
             <textarea
                 className="log-input"
                 value={text}
