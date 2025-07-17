@@ -58,23 +58,24 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   }
 
   useEffect(() => {
-    if (!visible || !textEdited) return;
-    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    setSaving(true);
-    debounceTimeout.current = setTimeout(async () => {
-      const { error } = await supabase
-        .from("logs")
-        .update({ log: text })
-        .eq("created_at", created_at);
-      updateLog(movie.id, text, movie, created_at);
-      setSaving(false);
-      console.log("Updated log");
-      if (error) {
-        console.error("Error updating log:", error);
-      }
-    }, 2000);
-    return () => clearTimeout(debounceTimeout.current);
-  }, [text, visible, created_at, movie, textEdited, updateLog]);
+  if (!visible || !textEdited) return;
+  if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+  setSaving(true);
+  debounceTimeout.current = setTimeout(async () => {
+    const { error } = await supabase
+      .from("logs")
+      .update({ log: text })
+      .eq("created_at", created_at);
+    updateLog(movie.id, text, movie, created_at);
+    setSaving(false);
+    setTextEdited(false); // <-- Reset after saving!
+    console.log("Updated log");
+    if (error) {
+      console.error("Error updating log:", error);
+    }
+  }, 2000);
+  return () => clearTimeout(debounceTimeout.current);
+}, [text, visible, created_at, movie, textEdited, updateLog]);
 
   if (!visible) return null;
   return (
