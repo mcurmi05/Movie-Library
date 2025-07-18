@@ -1,5 +1,5 @@
 const VITE_IMDB_API_KEY = import.meta.env.VITE_IMDB_API_KEY;
-//apis
+
 export const getPopularMovies = async () => {
   const url = "https://imdb236.p.rapidapi.com/api/imdb/most-popular-movies";
   const options = {
