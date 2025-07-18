@@ -10,7 +10,7 @@ function ReleaseAndRunTime({movie}) {
             ) : ""}
 
             {movie.type==="movie"?isNaN(runtime) || runtime <= 0 ? (
-                "· Unknown runtime"
+                " · Unknown runtime"
             ) : (
                 <>
                     {" · "}
