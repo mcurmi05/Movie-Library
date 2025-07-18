@@ -18,6 +18,7 @@ export default function AddLog({movie, needMoreDetail}){
             navigate("/signin");
         } else{
             navigate("/log")
+            
             if(needMoreDetail){
                 movie = await getMovieById(movie.id);
             }

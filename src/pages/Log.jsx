@@ -1,9 +1,14 @@
 import LogComponent from "../components/LogComponent.jsx";
 import "../styles/Log.css";
 import { useLogs } from "../contexts/UserLogsContext.jsx";
+import { useEffect } from "react";
 
 function Log() {
   const { userLogs, userLogsLoaded } = useLogs();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0});
+  }, []);
 
   if (!userLogsLoaded) {
     return (
