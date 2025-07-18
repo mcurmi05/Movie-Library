@@ -49,8 +49,11 @@ function MediaDetails() {
             {/*title*/}
             <div className="top-container">
               <h1 className="title">{movie.primaryTitle}</h1>
-              <div className="star-container"><MovieRatingStar movie={movie}></MovieRatingStar></div>
-              <div style={{display:"flex", alignItems:"center"}}><AddWatchlist movie={movie} needMoreDetail={false}></AddWatchlist><AddLog movie={movie} needMoreDetail={false}></AddLog></div>
+              <div style={{display:"flex"}}>
+                <div className="star-container"><MovieRatingStar movie={movie}></MovieRatingStar></div>
+                <div style={{display:"flex", alignItems:"center"}}><AddWatchlist movie={movie} needMoreDetail={false}></AddWatchlist><AddLog movie={movie} needMoreDetail={false}></AddLog></div>
+              </div>
+              
             </div>
             {/*release and runtime*/}
             <div className="subtitle">
