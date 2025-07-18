@@ -14,6 +14,7 @@ import { UserRatingsProvider } from "./contexts/UserRatingsContext.jsx";
 import Ratings from "./pages/Ratings.jsx"
 import Log from "./pages/Log.jsx"
 import { UserLogsProvider } from "./contexts/UserLogsContext.jsx";
+import Home from "./pages/Home.jsx";
 
 function App() {
 
@@ -39,7 +40,7 @@ function App() {
         <NavBar/>
         <main className="main-content">
           <Routes>
-            <Route path="/" element={null}></Route>
+            <Route path="/" element={<Home></Home>}></Route>
             <Route path="/trending" element={<Trending></Trending>}></Route>
             <Route path="/search" element={<Search></Search>}></Route>
             <Route path="/mediadetails/:id" element={<MediaDetails></MediaDetails>} />
