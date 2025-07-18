@@ -69,10 +69,20 @@ function NavBar() {
 
   return (
     <nav className="navbar">
-      <Link to="/" className="nav-link home-button" onClick={clearSearch}>
-        <img className="nav-icon" src="/home.png" alt="Home"></img>
-      </Link>
-
+      <div className="home-and-gh">
+        <Link to="/" className="nav-link home-button" onClick={clearSearch}>
+          <img className="nav-icon" src="/home.png" alt="Home"></img>
+        </Link>
+        <a
+          href="https://github.com/mcurmi05/Movie-Library"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="nav-link home-button github"
+        >
+          <img src="/github.png" className="nav-icon" />
+        </a>
+        
+      </div>
       <SearchBar></SearchBar>
 
       <div
@@ -141,6 +151,19 @@ function NavBar() {
                 </div>
               </Link>
             )}
+
+            <a
+              href="https://github.com/mcurmi05/Movie-Library"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dropdown-nav-item "
+            >
+              <div className="navbar-icon-div">
+                <img src="/github.png" className="nav-icon github-icon" />
+                <p className="names-to-links">Source repo</p>
+              </div>
+              
+            </a>
           </div>
         )}
       </div>
