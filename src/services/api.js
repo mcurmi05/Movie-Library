@@ -67,7 +67,7 @@ export const getMovieById = async (id) => {
   const options = {
     method: "GET",
     headers: {
-      "x-rapidapi-key": "46b22bd385mshe768d6b11d1a286p1ce852jsn385e4fb1e9e3",
+      "x-rapidapi-key": VITE_IMDB_API_KEY,
       "x-rapidapi-host": "imdb236.p.rapidapi.com",
     },
   };
