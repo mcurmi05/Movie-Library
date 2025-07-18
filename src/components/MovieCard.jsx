@@ -5,7 +5,7 @@ import IMDBInfo from "./IMDBInfo.jsx";
 import MovieRatingStar from "./MovieRatingStar.jsx";
 import "../styles/MovieRatingStar.css"
 import AddLog from "./AddLog.jsx";
-import AddWatchlist from "./AddWatchList.jsx";
+import AddWatchlist from "./AddWatchlist.jsx";
 
 
 function MovieCard({ movie }) {

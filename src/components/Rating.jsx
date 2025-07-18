@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import MovieRatingStar from "./MovieRatingStar";
 import ReleaseAndRunTime from "./ReleaseAndRunTime";
 import AddLog from "./AddLog.jsx"
-import AddWatchlist from "./AddWatchList.jsx";
+import AddWatchlist from "./AddWatchlist.jsx";
 
 function Rating({ movie_object, ratingDate }) {
   const navigate = useNavigate();
