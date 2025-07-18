@@ -2,6 +2,8 @@ import "../styles/Rating.css";
 import { useNavigate } from "react-router-dom";
 import MovieRatingStar from "./MovieRatingStar";
 import ReleaseAndRunTime from "./ReleaseAndRunTime";
+import AddLog from "./AddLog.jsx"
+import AddWatchlist from "./AddWatchList.jsx";
 
 function Rating({ movie_object, ratingDate }) {
   const navigate = useNavigate();
@@ -39,6 +41,8 @@ function Rating({ movie_object, ratingDate }) {
                     <div className="rating-star-div">
                         <MovieRatingStar movie={movie_object}></MovieRatingStar>
                     </div>
+                    <AddLog movie={movie_object}></AddLog>
+                    <AddWatchlist movie={movie_object}></AddWatchlist>
                 </div>
 
                 <div className="rating-page-subtitle">

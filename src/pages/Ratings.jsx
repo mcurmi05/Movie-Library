@@ -19,6 +19,8 @@ function Ratings() {
         style={{justifyContent:"center", display:"flex", flexDirection:"column"}}
       >
         <h1 style={{textAlign:"center", marginTop:"-20px"}}>Your Ratings</h1>
+        {userRatings.length === 0 ? <h3 style={{ textAlign: "center", marginTop:"50px" , fontWeight:"normal"}}>You haven't rated any movies or shows! Click the star icon to rate one.</h3>:null}
+
         {userRatings
           .slice()
           .reverse()

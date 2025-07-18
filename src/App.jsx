@@ -15,6 +15,9 @@ import Ratings from "./pages/Ratings.jsx"
 import Log from "./pages/Log.jsx"
 import { UserLogsProvider } from "./contexts/UserLogsContext.jsx";
 import Home from "./pages/Home.jsx";
+import { UserWatchlistProvider } from "./contexts/UserWatchlistContext.jsx";
+import Watchlist from "./pages/Watchlist.jsx";
+
 
 function App() {
 
@@ -37,6 +40,7 @@ function App() {
       <PopularMoviesCacheProvider>
       <UserRatingsProvider>
       <UserLogsProvider>
+      <UserWatchlistProvider>
         <NavBar/>
         <main className="main-content">
           <Routes>
@@ -47,8 +51,10 @@ function App() {
             <Route path="/signin" element={<SignIn></SignIn>} />
             <Route path="/ratings" element={<Ratings></Ratings>} />
             <Route path="/log" element={<Log></Log>} />
+            <Route path="/watchlist" element={<Watchlist></Watchlist>} />
           </Routes>
         </main>
+      </UserWatchlistProvider>
       </UserLogsProvider>
       </UserRatingsProvider>
       </PopularMoviesCacheProvider>

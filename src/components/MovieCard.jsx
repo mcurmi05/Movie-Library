@@ -5,6 +5,7 @@ import IMDBInfo from "./IMDBInfo.jsx";
 import MovieRatingStar from "./MovieRatingStar.jsx";
 import "../styles/MovieRatingStar.css"
 import AddLog from "./AddLog.jsx";
+import AddWatchlist from "./AddWatchList.jsx";
 
 
 function MovieCard({ movie }) {
@@ -36,7 +37,11 @@ function MovieCard({ movie }) {
             <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
             <div className="add-log-container-moviecard">
                 <AddLog movie={movie} needMoreDetail={true}></AddLog>
+                <AddWatchlist movie={movie} needMoreDetail={true}></AddWatchlist>
             </div>
+
+
+            
           </div>
           <ReleaseAndRunTime movie={movie} />
           <div className="stars-and-that">

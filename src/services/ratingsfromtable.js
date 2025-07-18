@@ -55,3 +55,31 @@ export const getUserLogs = async () => {
     throw error;
   }
 };
+
+export const getUserWatchlist = async () => {
+  try {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error("User must be authenticated to view watchlist");
+    }
+
+    const { data, error } = await supabase
+      .from("watchlist")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .eq("user_id", user.id);
+
+    if (error) throw error;
+
+    return data || [];
+  } catch (error) {
+    console.error("Error getting user watchlist:", error);
+    throw error;
+  }
+};
+
+

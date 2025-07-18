@@ -107,7 +107,7 @@
 
 
 .add-log-container-moviecard{
-  display:inline-block;
+  display:flex;
 }
 
 .title-and-addlog{

@@ -121,6 +121,17 @@ function NavBar() {
             </a>
 
             <a
+              to="/watchlist"
+              className="dropdown-nav-item"
+              onClick={() => handleAuthOnlyRouteClick("/watchlist")}
+            >
+              <div className="navbar-icon-div">
+                <img className="nav-icon" src="/watchlist-navbar.png"></img>
+                <p className="names-to-links">Watchlist</p>
+              </div>
+            </a>
+
+            <a
               to="/log"
               className="dropdown-nav-item"
               onClick={() => handleAuthOnlyRouteClick("/log")}
@@ -129,6 +140,19 @@ function NavBar() {
                 <img className="nav-icon" src="/log.png"></img>
                 <p className="names-to-links">Log</p>
               </div>
+            </a>
+
+            <a
+              href="https://github.com/mcurmi05/Movie-Library"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dropdown-nav-item "
+            >
+              <div className="navbar-icon-div">
+                <img src="/github.png" className="nav-icon github-icon" />
+                <p className="names-to-links">Source repo</p>
+              </div>
+              
             </a>
 
             {isAuthenticated ? (
@@ -152,18 +176,7 @@ function NavBar() {
               </Link>
             )}
 
-            <a
-              href="https://github.com/mcurmi05/Movie-Library"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="dropdown-nav-item "
-            >
-              <div className="navbar-icon-div">
-                <img src="/github.png" className="nav-icon github-icon" />
-                <p className="names-to-links">Source repo</p>
-              </div>
-              
-            </a>
+            
           </div>
         )}
       </div>
@@ -184,6 +197,17 @@ function NavBar() {
           <div className="navbar-icon-div">
             <img className="nav-icon" src="/ratings.png"></img>
             <p className="names-to-links">Ratings</p>
+          </div>
+        </a>
+
+        <a
+          to="/watchlist"
+          className="nav-link"
+          onClick={() => handleAuthOnlyRouteClick("/watchlist")}
+        >
+          <div className="navbar-icon-div">
+            <img className="nav-icon" src="/watchlist-navbar.png"></img>
+            <p className="names-to-links">Watchlist</p>
           </div>
         </a>
 

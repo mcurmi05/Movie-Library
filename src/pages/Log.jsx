@@ -22,6 +22,8 @@ function Log() {
   return (
     <>
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Log</h1>
+      {userLogs.length === 0 ? <h3 style={{ textAlign: "center", marginTop:"50px" , fontWeight:"normal"}}>You haven't logged any movies or shows! Click the log icon next to a movie or show after you've watched it, and come back here to fill out your thoughts!</h3>:null}
+
       {console.log(userLogs)}
       <div className="logs-container-vertically-down">
         {userLogs.map((log) => (

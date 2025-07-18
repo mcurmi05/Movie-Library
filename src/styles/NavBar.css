@@ -120,7 +120,7 @@
   color: #fff;
 }
 
-@media (max-width: 1310px) {
+@media (max-width: 1500px) {
 
   .navbar-links{
     gap:0.5rem;
@@ -132,7 +132,7 @@
 
 }
 
-@media (max-width:750px){
+@media (max-width:850px){
   .burger-menu-container {
     display: block;
   }
@@ -150,7 +150,9 @@
   padding-bottom:0;
   padding-top:7px;
   cursor:pointer;
-  margin-left:20px;
+  display:flex;
+  justify-content: center;
+  margin-bottom:10px;
 }
 
 .user-avatar{
@@ -159,7 +161,7 @@
   border-radius:5px;
 }
 
-@media (max-width:750px){
+@media (max-width:400px){
   .home-and-gh{
     gap:0px;
   }
