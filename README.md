@@ -10,4 +10,6 @@ Heres a preview of the UI design I worked on:
 <img src="./readme_imgs/trending.png" />
 <img src="./readme_imgs/ratings.png" />
 <img src="./readme_imgs/log.png" />
+<img src="./readme_imgs/mediadetails.png" />
 <img src="./readme_imgs/searchbar.png" />
+
