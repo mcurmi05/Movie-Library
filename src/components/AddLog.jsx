@@ -14,11 +14,11 @@ export default function AddLog({movie}){
 
     async function onClick(){
 
-        const more_details_movie = await getMovieById(movie.id);
-
         if (!isAuthenticated) {
             navigate("/signin");
         } else{
+            navigate("/log")
+            const more_details_movie = await getMovieById(movie.id);
             const { data, error } = await supabase
             .from("logs")
             .insert(
@@ -28,9 +28,11 @@ export default function AddLog({movie}){
                     movie_object: more_details_movie
                 })
                 .select();
+            
+            console.log(data)
             const newLog = data[0];
             addLog(movie.id, "", more_details_movie, newLog.id)
-
+            
             if (error) {
                 console.error(error);
             }
