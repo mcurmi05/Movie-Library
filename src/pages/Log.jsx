@@ -21,7 +21,7 @@ function Log() {
 
   return (
     <>
-      <h1 style={{ alignSelf: "center", marginTop: "-20px" }}>Your Log</h1>
+      <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Log</h1>
       {console.log(userLogs)}
       <div className="logs-container-vertically-down">
         {userLogs.map((log) => (

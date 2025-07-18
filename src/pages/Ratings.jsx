@@ -18,7 +18,7 @@ function Ratings() {
       <div
         style={{justifyContent:"center", display:"flex", flexDirection:"column"}}
       >
-        <h1 style={{alignSelf:"center", marginTop:"-20px"}}>Your Ratings</h1>
+        <h1 style={{textAlign:"center", marginTop:"-20px"}}>Your Ratings</h1>
         {userRatings
           .slice()
           .reverse()
