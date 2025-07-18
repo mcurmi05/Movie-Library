@@ -32,15 +32,25 @@ export const UserLogsProvider = ({ children }) => {
     setUserLogs(prev => [newLog, ...prev]);
   };
 
-  const updateLog = (movieId, newLog, movie, created_at) => {
+  const updateLog = (log_id, newLog) => {
     setUserLogs(prev => 
       prev.map(log => 
-        log.created_at === created_at 
+        log.id === log_id 
           ? { ...log, log: newLog}
           : log
       )
     );
   };
+
+  const updateDate = (log_id, newCreated_at) => {
+    setUserLogs(prev => 
+      prev.map(log => 
+        log.id === log_id 
+          ? { ...log, created_at: newCreated_at}
+          : log
+      )
+    );
+  }
 
   const removeLog = (log_id) => {
     setUserLogs(prev => 
@@ -76,7 +86,8 @@ export const UserLogsProvider = ({ children }) => {
       setUserLogs,
       addLog,
       removeLog,
-      updateLog
+      updateLog,
+      updateDate
     }}>
       {children}
     </UserLogsContext.Provider>

@@ -10,7 +10,7 @@ import { Dialog } from "../components/ReactDayPicker.jsx";
 
 export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [visible, setVisible] = useState(true);
-  const { removeLog, updateLog } = useLogs();
+  const { removeLog, updateLog , updateDate} = useLogs();
 
   const [text, setText] = useState(logtext);
   const debounceTimeout = useRef(null);
@@ -34,6 +34,9 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
       .from("logs")
       .update({ created_at: isoDate })
       .eq("id", log_id);
+
+      updateDate(log_id, isoDate)
+      setSaving(false);
     if (!error) {
       
       setTimeout(() => setSaving(false), 1200);
@@ -66,16 +69,16 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
       .from("logs")
       .update({ log: text })
       .eq("created_at", created_at);
-    updateLog(movie.id, text, movie, created_at);
+    updateLog(log_id, text);
     setSaving(false);
-    setTextEdited(false); // <-- Reset after saving!
+    setTextEdited(false); 
     console.log("Updated log");
     if (error) {
       console.error("Error updating log:", error);
     }
   }, 2000);
   return () => clearTimeout(debounceTimeout.current);
-}, [text, visible, created_at, movie, textEdited, updateLog]);
+}, [text, visible, created_at, movie, textEdited, updateLog, log_id]);
 
   if (!visible) return null;
   return (
