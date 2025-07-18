@@ -48,7 +48,7 @@ function Trending() {
 
   return (
     <div className="trending">
-      <h1 style={{alignSelf:"center", marginTop:"-20px"}}>Top 100 Trending</h1>
+      <h1 style={{alignSelf:"center", marginTop:"-20px"}}>Top 100 Trending Movies</h1>
       {error && <div className="error-message">{error}</div>}
 
       {loading ? (
