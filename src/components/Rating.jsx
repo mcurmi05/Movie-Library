@@ -41,8 +41,10 @@ function Rating({ movie_object, ratingDate }) {
                     <div className="rating-star-div">
                         <MovieRatingStar movie={movie_object}></MovieRatingStar>
                     </div>
-                    <AddLog movie={movie_object}></AddLog>
-                    <AddWatchlist movie={movie_object} need></AddWatchlist>
+                    <div style={{ display:"flex", alignItems:"center"}}>
+                        <AddWatchlist movie={movie_object}></AddWatchlist>
+                        <AddLog movie={movie_object}></AddLog>
+                    </div>
                 </div>
 
                 <div className="rating-page-subtitle">

@@ -36,8 +36,8 @@ function MovieCard({ movie }) {
           <div className="title-and-addlog">
             <h3 onClick={onMovieCardClick}>{movie.primaryTitle}</h3>
             <div className="add-log-container-moviecard">
-                <AddLog movie={movie} needMoreDetail={true}></AddLog>
                 <AddWatchlist movie={movie} needMoreDetail={true}></AddWatchlist>
+                <AddLog movie={movie} needMoreDetail={true}></AddLog>
             </div>
 
 
