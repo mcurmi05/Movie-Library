@@ -10,7 +10,7 @@ import { Dialog } from "../components/ReactDayPicker.jsx";
 
 export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [visible, setVisible] = useState(true);
-  const { removeLog, updateLog , updateDate} = useLogs();
+  const { removeLog, updateLog, updateDate } = useLogs();
 
   const [text, setText] = useState(logtext);
   const debounceTimeout = useRef(null);
@@ -21,10 +21,11 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-  if (textareaRef.current) {
-    textareaRef.current.style.height = "100px";
-    textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
-  }
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "100px";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
   }, [text]);
 
   async function handleDateChange(newDate) {
@@ -35,21 +36,18 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
       .update({ created_at: isoDate })
       .eq("id", log_id);
 
-      updateDate(log_id, isoDate)
-      setSaving(false);
     if (!error) {
-      
+      updateDate(log_id, isoDate);
       setTimeout(() => setSaving(false), 1200);
     } else {
       setSaving(false);
+      alert("Failed to save date. Please try again.");
+      console.error("Error updating date:", error);
     }
   }
 
   async function deleteLogClick() {
-    const { error } = await supabase
-      .from("logs")
-      .delete()
-      .eq("id", log_id);
+    const { error } = await supabase.from("logs").delete().eq("id", log_id);
 
     removeLog(log_id);
 
@@ -61,30 +59,32 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   }
 
   useEffect(() => {
-  if (!visible || !textEdited) return;
-  if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-  setSaving(true);
-  debounceTimeout.current = setTimeout(async () => {
-    const { error } = await supabase
-      .from("logs")
-      .update({ log: text })
-      .eq("created_at", created_at);
-    updateLog(log_id, text);
-    setSaving(false);
-    setTextEdited(false); 
-    console.log("Updated log");
-    if (error) {
-      console.error("Error updating log:", error);
-    }
-  }, 2000);
-  return () => clearTimeout(debounceTimeout.current);
-}, [text, visible, created_at, movie, textEdited, updateLog, log_id]);
+    if (!visible || !textEdited) return;
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    setSaving(true);
+    debounceTimeout.current = setTimeout(async () => {
+      const { error } = await supabase
+        .from("logs")
+        .update({ log: text })
+        .eq("id", log_id);
+      if (!error) {
+        updateLog(log_id, text);
+        setSaving(false);
+        setTextEdited(false);
+        console.log("Updated log");
+      } else {
+        setSaving(false);
+        console.error("Error updating log:", error);
+      }
+    }, 2000);
+    return () => clearTimeout(debounceTimeout.current);
+  }, [text, visible, created_at, movie, textEdited, updateLog, log_id]);
 
   if (!visible) return null;
   return (
     //i am fully aware of how lazy this is
     <div className="log-rating-wrapper">
-      <Rating movie_object={movie} ratingDate="today"></Rating>
+      <Rating key={log_id} movie_object={movie} ratingDate="today"></Rating>
       <div
         style={{
           display: "flex",

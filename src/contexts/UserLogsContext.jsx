@@ -20,8 +20,9 @@ export const UserLogsProvider = ({ children }) => {
   const [userLogsLoaded, setUserLogsLoaded] = useState(false);
   const { isAuthenticated, user } = useAuth();
 
-  const addLog = (movieId, log, movie) => {
+  const addLog = (movieId, log, movie, log_id) => {
     const newLog = {
+      id:log_id,
       imdb_movie_id: movieId,
       user_id: user.id,
       log: log,

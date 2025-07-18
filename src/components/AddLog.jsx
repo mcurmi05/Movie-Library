@@ -19,16 +19,17 @@ export default function AddLog({movie}){
         if (!isAuthenticated) {
             navigate("/signin");
         } else{
-            const { error } = await supabase
+            const { data, error } = await supabase
             .from("logs")
             .insert(
                 {
                     imdb_movie_id: movie.id,
                     user_id: user.id,
                     movie_object: more_details_movie
-                }
-            );
-            addLog(movie.id, "", more_details_movie)
+                })
+                .select();
+            const newLog = data[0];
+            addLog(movie.id, "", more_details_movie, newLog.id)
 
             if (error) {
                 console.error(error);
