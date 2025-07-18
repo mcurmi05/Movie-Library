@@ -14,11 +14,11 @@ export default function AddWatchlist({movie, needMoreDetail}){
     const [onWatchlist, setOnWatchlist] = useState(false);
 
     useEffect(() => {
-        if (isAuthenticated && userWatchlist) {
+        if (userWatchlist) {
             const found = userWatchlist.some(item => item.movie_object.id === movie.id && item.user_id === user.id);
             setOnWatchlist(found);
         }
-    }, [userWatchlist, movie, isAuthenticated, user.id]);
+    }, [userWatchlist, movie, isAuthenticated, user]);
 
     async function onClick(){
 
