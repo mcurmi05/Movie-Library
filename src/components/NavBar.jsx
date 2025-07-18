@@ -23,6 +23,7 @@ function NavBar() {
   };
 
   const handleSignOut = async () => {
+    navigate("/")
     await signOut();
     clearSearch();
     setIsMenuOpen(false);
