@@ -3,7 +3,7 @@ import { supabase } from "../services/supabase-client";
 import { useAuth } from "../contexts/AuthContext";  
 import { useNavigate } from "react-router-dom";
 import { getMovieById } from "../services/api";
-import { useWatchlist } from "../contexts/UserWatchListContext";
+import { useWatchlist } from "../contexts/UserWatchlistContext";
 import { useState, useEffect } from "react";
 
 export default function AddWatchlist({movie, needMoreDetail}){

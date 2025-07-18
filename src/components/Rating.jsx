@@ -42,7 +42,7 @@ function Rating({ movie_object, ratingDate }) {
                         <MovieRatingStar movie={movie_object}></MovieRatingStar>
                     </div>
                     <AddLog movie={movie_object}></AddLog>
-                    <AddWatchlist movie={movie_object}></AddWatchlist>
+                    <AddWatchlist movie={movie_object} need></AddWatchlist>
                 </div>
 
                 <div className="rating-page-subtitle">
