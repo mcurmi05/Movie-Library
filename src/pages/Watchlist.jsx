@@ -23,7 +23,7 @@ function Watchlist() {
     <>
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Watchlist</h1>
       {userWatchlist.length === 0 ? <h3 style={{ textAlign: "center", marginTop:"50px" , fontWeight:"normal"}}>You don't have any movies or shows in your watchlist! Click the bookmark icon to add one.</h3>:null}
-      {console.log(userWatchlist)}
+      {console.log("User watchlist:",userWatchlist)}
       <div className="logs-container-vertically-down">
         {userWatchlist.map((watchlist_entry) => (
             watchlist_entry.id ? (

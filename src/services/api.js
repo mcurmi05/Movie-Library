@@ -13,8 +13,7 @@ export const getPopularMovies = async () => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log("movies received from api (not cached):");
-    console.log(results);
+    console.log("Top 100 Popular Movies (received directly from api):", results);
     return results;
   } catch (error) {
     console.error(error);
@@ -34,8 +33,7 @@ export const getPopularTV = async () => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log("movies received from api (not cached):");
-    console.log(results);
+    console.log("Top 100 TV Shows (received directly from api):", results);
     return results;
   } catch (error) {
     console.error(error);
@@ -55,8 +53,7 @@ export const searchMovies = async (query) => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log("movies received from api (not cached):");
-    console.log(results.results);
+    console.log("Searched movie received from api:", results.results);
     return results.results;
   } catch (error) {
     console.error(error);
@@ -76,7 +73,7 @@ export const searchMoviesFIRSTFIVEONLY = async (query) => {
   try {
     const response = await fetch(url, options);
     const results = await response.json();
-    console.log(results.results);
+    console.log("5 dropdown movies (received directly from API:)",results.results);
     return results.results;
   } catch (error) {
     console.error(error);
@@ -96,7 +93,7 @@ export const getMovieById = async (id) => {
   try {
     const response = await fetch(url, options);
     const result = await response.json();
-    console.log("movies received from api (not cached):");
+    console.log("Movie with extra detail, received by ID (directly from API)", result);
     console.log(result);
     return result;
   } catch (error) {

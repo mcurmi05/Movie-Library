@@ -12,29 +12,29 @@ export const useCache = () => {
 };
 
 export const PopularMoviesCacheProvider = ({ children }) => {
-  const [popularMedia, setPopularMedia] = useState(null);
-  const [popularMediaType, setPopularMediaType] = useState(null);
-  const [popularMediaLoaded, setPopularMediaLoaded] = useState(false);
+  const [popularMovies, setPopularMovies] = useState(null);
+  const [popularMoviesLoaded, setPopularMoviesLoaded] = useState(false);
+  const [popularTV, setPopularTV] = useState(null);
+  const [popularTVLoaded, setPopularTVLoaded] = useState(false);
 
-  const cachePopularMedia = (media, type) => {
-    setPopularMedia(media);
-    setPopularMediaType(type);
-    setPopularMediaLoaded(true);
+  const cachePopularMovies = (movies) => {
+    setPopularMovies(movies);
+    setPopularMoviesLoaded(true);
   };
 
-  const clearCache = () => {
-    setPopularMedia(null);
-    setPopularMediaType(null);
-    setPopularMediaLoaded(false);
+  const cachePopularTV = (tv) => {
+    setPopularTV(tv);
+    setPopularTVLoaded(true);
   };
 
   return (
     <PopularMoviesCacheContext.Provider value={{
-      popularMedia,
-      popularMediaType,
-      popularMediaLoaded,
-      cachePopularMedia,
-      clearCache
+      popularMovies,
+      popularMoviesLoaded,
+      cachePopularMovies,
+      popularTV,
+      popularTVLoaded,
+      cachePopularTV,
     }}>
       {children}
     </PopularMoviesCacheContext.Provider>

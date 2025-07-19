@@ -17,7 +17,7 @@ export const getUserRatings = async () => {
       .eq("user_id", user.id);
 
     if (error) throw error;
-
+    console.log("User ratings retrieved from database: ", data)
     return data || [];
   } catch (error) {
     console.error("Error getting user ratings:", error);
@@ -48,6 +48,8 @@ export const getUserLogs = async () => {
       .eq("user_id", user.id);
 
     if (error) throw error;
+    console.log("User logs retrieved from database: ", data)
+
 
     return data || [];
   } catch (error) {
@@ -74,6 +76,8 @@ export const getUserWatchlist = async () => {
       .eq("user_id", user.id);
 
     if (error) throw error;
+    console.log("User watchlist retrieved from database: ", data)
+
 
     return data || [];
   } catch (error) {

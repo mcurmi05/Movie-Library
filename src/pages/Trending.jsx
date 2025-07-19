@@ -6,11 +6,12 @@ import MovieCard from "../components/MovieCard.jsx";
 
 function Trending() {
   const { 
-    popularMedia, 
-    popularMediaType, 
-    popularMediaLoaded, 
-    cachePopularMedia,
-    clearCache 
+    popularMovies, 
+    popularMoviesLoaded, 
+    cachePopularMovies,
+    popularTV,
+    popularTVLoaded,
+    cachePopularTV
   } = useCache();
 
   const getInitialMediaType = () => {
@@ -23,45 +24,66 @@ function Trending() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch and cache both movies and TV on mount
   useEffect(() => {
-    localStorage.setItem("trendingMediaType", mediaType);
-  }, [mediaType]);
-
-
-  useEffect(() => {
-    const loadPopular = async () => {
+    let isMounted = true;
+    const fetchAll = async () => {
       setLoading(true);
       setError(null);
 
-      if (popularMediaType !== mediaType) {
-        clearCache();
-      }
-
-      if (popularMediaLoaded && popularMedia && popularMediaType === mediaType) {
-        setMovies(popularMedia);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        if (mediaType === "movies") {
+      // Fetch movies if not cached
+      if (!popularMoviesLoaded) {
+        try {
           const fetchedMovies = await getPopularMovies();
-          setMovies(fetchedMovies);
-          cachePopularMedia(fetchedMovies, "movies");
-        } else {
-          const fetchedTV = await getPopularTV();
-          setMovies(fetchedTV);
-          cachePopularMedia(fetchedTV, "tv");
+          if (isMounted) cachePopularMovies(fetchedMovies);
+        } catch (err) {
+          if (isMounted) setError("Failed to load movies..." + err);
         }
-      } catch (err) {
-        setError("Failed to load " + mediaType + "..." + err);
-      } finally {
-        setLoading(false);
       }
+
+      // Fetch TV if not cached
+      if (!popularTVLoaded) {
+        try {
+          const fetchedTV = await getPopularTV();
+          if (isMounted) cachePopularTV(fetchedTV);
+        } catch (err) {
+          if (isMounted) setError("Failed to load TV shows..." + err);
+        }
+      }
+
+      if (isMounted) setLoading(false);
     };
 
-    loadPopular();
-  }, [mediaType, popularMedia, popularMediaType, popularMediaLoaded, cachePopularMedia, clearCache]);
+    fetchAll();
+    return () => { isMounted = false; };
+    // Only run on mount
+    // eslint-disable-next-line
+  }, []);
+
+  // Set movies to display based on mediaType and cache
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    if (mediaType === "movies") {
+      if (popularMoviesLoaded && popularMovies) {
+        setMovies(popularMovies);
+        setLoading(false);
+      } else {
+        setMovies([]);
+        setLoading(true);
+      }
+    } else {
+      if (popularTVLoaded && popularTV) {
+        setMovies(popularTV);
+        setLoading(false);
+      } else {
+        setMovies([]);
+        setLoading(true);
+      }
+    }
+    localStorage.setItem("trendingMediaType", mediaType);
+  }, [mediaType, popularMovies, popularMoviesLoaded, popularTV, popularTVLoaded]);
 
   return (
     <div className="trending">

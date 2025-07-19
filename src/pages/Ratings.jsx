@@ -4,7 +4,7 @@ import Rating from "../components/Rating.jsx";
 function Ratings() {
   const { userRatings, userRatingsLoaded } = useRatings();
 
-  console.log("User ratings: " + userRatings);
+  console.log("User ratings: ", userRatings);
 
   if (!userRatingsLoaded) {
     return (<>

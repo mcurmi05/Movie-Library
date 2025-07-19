@@ -61,23 +61,23 @@ export const UserLogsProvider = ({ children }) => {
 
 
   useEffect(() => {
-  const loadLogs = async () => {
-    if (isAuthenticated && user) {
-      try {
+    const loadLogs = async () => {
+      if (isAuthenticated && user) {
+        try {
+          setUserLogsLoaded(false);
+          const logs = await getUserLogs();
+          setUserLogs(logs);
+          setUserLogsLoaded(true); 
+        } catch (err) {
+          setUserLogsLoaded(false);
+          console.log(err)
+        }
+      } else {
+        setUserLogs([]);
         setUserLogsLoaded(false);
-        const logs = await getUserLogs();
-        setUserLogs(logs);
-        setUserLogsLoaded(true); 
-      } catch (err) {
-        setUserLogsLoaded(false);
-        console.log(err)
       }
-    } else {
-      setUserLogs([]);
-      setUserLogsLoaded(false);
-    }
-  };
-  loadLogs();
+    };
+    loadLogs();
 }, [isAuthenticated, user]);
 
   return (
