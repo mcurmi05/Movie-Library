@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { searchMovies, searchMoviesFIRSTFIVEONLY } from "../services/api.js";
+import { searchMoviesFIRSTFIVEONLY } from "../services/api.js";
 import { useSearch } from "../contexts/SearchContext";
 import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
@@ -8,8 +8,6 @@ export default function SearchBar() {
   const { 
     searchQuery, 
     setSearchQuery, 
-    setSearchResults, 
-    setSearchError,
     searchLoading,
     setSearchLoading 
   } = useSearch();
@@ -63,27 +61,15 @@ export default function SearchBar() {
   }, []);
 
   const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  e.preventDefault();
+  if (!searchQuery.trim()) return;
 
-    setShowDropdown(false);
-    setSearchSubmitted(true);
-    setSearchLoading(true);
-    navigate("/search");
-    try {
-      const searchResults = await searchMovies(searchQuery);
-      setSearchResults(searchResults);
-      setSearchError(null);
-      setShowDropdown(false);
-    } catch (err) {
-      console.log(err);
-      setSearchError("Failed to search movies");
-      setSearchResults(null);
-    } finally {
-      setSearchLoading(false);
-    }
-    
-  };
+  setShowDropdown(false);
+  setSearchSubmitted(true);
+  setSearchLoading(true);
+
+  navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+};
 
   const handleDropdownClick = (movie) => {
     setShowDropdown(false);
