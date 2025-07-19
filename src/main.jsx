@@ -7,11 +7,13 @@ import { Analytics } from "@vercel/analytics/react"
 
 
 createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+      <SpeedInsights />
+      <Analytics/>
+    </BrowserRouter>
+  </React.StrictMode>
   
-  <BrowserRouter>
-    <App />
-    <SpeedInsights />
-    <Analytics/>
-  </BrowserRouter>
   
 );
