@@ -21,6 +21,27 @@ export const getPopularMovies = async () => {
   }
 };
 
+export const getPopularTV = async () => {
+  const url = "https://imdb236.p.rapidapi.com/api/imdb/most-popular-tv";
+  const options = {
+    method: "GET",
+    headers: {
+      "x-rapidapi-key": VITE_IMDB_API_KEY,
+      "x-rapidapi-host": "imdb236.p.rapidapi.com",
+    },
+  };
+
+  try {
+    const response = await fetch(url, options);
+    const results = await response.json();
+    console.log("movies received from api (not cached):");
+    console.log(results);
+    return results;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 export const searchMovies = async (query) => {
   const url = `https://imdb236.p.rapidapi.com/api/imdb/search?primaryTitleAutocomplete=${query}&rows=100&sortOrder=DESC&sortField=numVotes`;
   const options = {

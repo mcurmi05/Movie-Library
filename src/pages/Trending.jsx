@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getPopularMovies } from "../services/api.js";
+import { getPopularTV } from "../services/api.js";
 import { useCache } from "../contexts/PopularMoviesCacheContext";
 import "../styles/Trending.css";
 import MovieCard from "../components/MovieCard.jsx";
@@ -48,7 +49,7 @@ function Trending() {
 
   return (
     <div className="trending">
-      <h1 style={{textAlign:"center", marginTop:"-20px"}}>Top 100 Trending Movies</h1>
+      <h1 style={{textAlign:"center", marginTop:"-20px"}}>Top 100 Trending</h1>
       {error && <div className="error-message">{error}</div>}
 
       {loading ? (
