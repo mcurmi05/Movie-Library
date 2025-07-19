@@ -24,33 +24,50 @@ function Trending() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch and cache both movies and TV on mount
   useEffect(() => {
     let isMounted = true;
     const fetchAll = async () => {
       setLoading(true);
       setError(null);
 
-      // Fetch movies if not cached
-      if (!popularMoviesLoaded) {
-        try {
-          const fetchedMovies = await getPopularMovies();
-          if (isMounted) cachePopularMovies(fetchedMovies);
-        } catch (err) {
-          if (isMounted) setError("Failed to load movies..." + err);
-        }
-      }
+      if (mediaType === "movies"){
+        //should load the one they are looking at first
+          if (!popularMoviesLoaded) {
+            try {
+              const fetchedMovies = await getPopularMovies();
+              if (isMounted) cachePopularMovies(fetchedMovies);
+            } catch (err) {
+              if (isMounted) setError("Failed to load movies..." + err);
+            }
+          }
+          if (!popularTVLoaded) {
+            try {
+              const fetchedTV = await getPopularTV();
+              if (isMounted) cachePopularTV(fetchedTV);
+            } catch (err) {
+              if (isMounted) setError("Failed to load TV shows..." + err);
+            }
+          }
+      } else if (mediaType==="tv"){
+        
+          if (!popularTVLoaded) {
+              try {
+                const fetchedTV = await getPopularTV();
+                if (isMounted) cachePopularTV(fetchedTV);
+              } catch (err) {
+                if (isMounted) setError("Failed to load TV shows..." + err);
+              }
+          }
 
-      // Fetch TV if not cached
-      if (!popularTVLoaded) {
-        try {
-          const fetchedTV = await getPopularTV();
-          if (isMounted) cachePopularTV(fetchedTV);
-        } catch (err) {
-          if (isMounted) setError("Failed to load TV shows..." + err);
-        }
+          if (!popularMoviesLoaded) {
+            try {
+              const fetchedMovies = await getPopularMovies();
+              if (isMounted) cachePopularMovies(fetchedMovies);
+            } catch (err) {
+              if (isMounted) setError("Failed to load movies..." + err);
+            }
+          }
       }
-
       if (isMounted) setLoading(false);
     };
 
