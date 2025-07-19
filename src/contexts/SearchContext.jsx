@@ -13,8 +13,10 @@ export const useSearch = () => {
 
 export const SearchProvider = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [searchError, setSearchError] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+
 
   const clearSearch = () => {
     setSearchQuery("");
@@ -30,6 +32,8 @@ export const SearchProvider = ({ children }) => {
       setSearchResults,
       searchError,
       setSearchError,
+      searchLoading,
+      setSearchLoading,
       clearSearch
     }}>
       {children}

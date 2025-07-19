@@ -4,33 +4,30 @@ import { useSearch } from "../contexts/SearchContext";
 import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
 
-function SearchBar() {
-
+export default function SearchBar() {
   const { 
     searchQuery, 
     setSearchQuery, 
     setSearchResults, 
-    setSearchError 
+    setSearchError,
+    searchLoading,
+    setSearchLoading 
   } = useSearch();
   
   const [dropdownResults, setDropdownResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const navigate = useNavigate();
+  const [searchSubmitted, setSearchSubmitted] = useState(false);
 
+  const navigate = useNavigate();
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-
-    if (searchQuery.trim().length > 1) {
-      
+    if (searchQuery.trim().length > 1 && !searchSubmitted) {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
-
       searchTimeoutRef.current = setTimeout(async () => {
-        setSearchLoading(true);
         try {
           const results = await searchMoviesFIRSTFIVEONLY(searchQuery);
           setDropdownResults(results);
@@ -38,9 +35,7 @@ function SearchBar() {
         } catch (err) {
           console.log("Search error:", err);
           setDropdownResults([]);
-        } finally {
-          setSearchLoading(false);
-        }
+        } 
       }, 1000);
     } else {
       setShowDropdown(false);
@@ -52,7 +47,7 @@ function SearchBar() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, searchSubmitted, setSearchLoading]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -72,7 +67,9 @@ function SearchBar() {
     if (!searchQuery.trim()) return;
 
     setShowDropdown(false);
-    navigate("/search")
+    setSearchSubmitted(true);
+    setSearchLoading(true);
+    navigate("/search");
     try {
       const searchResults = await searchMovies(searchQuery);
       setSearchResults(searchResults);
@@ -82,7 +79,10 @@ function SearchBar() {
       console.log(err);
       setSearchError("Failed to search movies");
       setSearchResults(null);
+    } finally {
+      setSearchLoading(false);
     }
+    
   };
 
   const handleDropdownClick = (movie) => {
@@ -95,6 +95,7 @@ function SearchBar() {
     if (e.target.value.trim() === "") {
       setShowDropdown(false);
     }
+    setSearchSubmitted(false);
   };
 
   return (
@@ -142,5 +143,3 @@ function SearchBar() {
     </div>
   );
 }
-
-export default SearchBar;
