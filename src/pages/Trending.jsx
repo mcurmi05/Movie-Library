@@ -65,10 +65,10 @@ function Trending() {
 
   return (
     <div className="trending">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "-20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "-20px", flexWrap:"wrap" }}>
         <h1 style={{ textAlign: "center", margin: 0 }}>Top 100 Trending</h1>
         <select
-          style={{ marginLeft: "1rem", padding: "0.3rem", borderRadius: "4px" }}
+          className="mediatype-selector"
           value={mediaType}
           onChange={e => setMediaType(e.target.value)}
         >
