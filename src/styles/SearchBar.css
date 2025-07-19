@@ -32,6 +32,10 @@
   align-self:center;
 }
 
+.search-button:focus {
+  outline: 1px solid #ffffff; 
+}
+
 .search-button-img{
   width:20px;
   height:20px;
