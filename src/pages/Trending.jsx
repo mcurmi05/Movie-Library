@@ -1,64 +1,90 @@
 import { useState, useEffect } from "react";
-import { getPopularMovies } from "../services/api.js";
-import { getPopularTV } from "../services/api.js";
+import { getPopularMovies, getPopularTV } from "../services/api.js";
 import { useCache } from "../contexts/PopularMoviesCacheContext";
 import "../styles/Trending.css";
 import MovieCard from "../components/MovieCard.jsx";
 
 function Trending() {
-
   const { 
-    popularMovies, 
-    popularMoviesLoaded, 
-    cachePopularMovies 
+    popularMedia, 
+    popularMediaType, 
+    popularMediaLoaded, 
+    cachePopularMedia,
+    clearCache 
   } = useCache();
+
+  const getInitialMediaType = () => {
+    const saved = localStorage.getItem("trendingMediaType");
+    return saved === "tv" ? "tv" : "movies";
+  };
+  const [mediaType, setMediaType] = useState(getInitialMediaType);
 
   const [movies, setMovies] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPopularMovies = async () => {
-      //check if we already have cached popular movies
-      if (popularMoviesLoaded && popularMovies) {
-        console.log("using cached popular movies:");
-        console.log(popularMovies)
-        setMovies(popularMovies);
-        setError(null);
+    localStorage.setItem("trendingMediaType", mediaType);
+  }, [mediaType]);
+
+
+  useEffect(() => {
+    const loadPopular = async () => {
+      setLoading(true);
+      setError(null);
+
+      if (popularMediaType !== mediaType) {
+        clearCache();
+      }
+
+      if (popularMediaLoaded && popularMedia && popularMediaType === mediaType) {
+        setMovies(popularMedia);
         setLoading(false);
         return;
       }
 
-      //if no cached data, fetch from API
-      console.log("Fetching popular movies from API");
       try {
-        const fetchedMovies = await getPopularMovies();
-        setMovies(fetchedMovies);
-        cachePopularMovies(fetchedMovies); //cache the results
-        setError(null);
+        if (mediaType === "movies") {
+          const fetchedMovies = await getPopularMovies();
+          setMovies(fetchedMovies);
+          cachePopularMedia(fetchedMovies, "movies");
+        } else {
+          const fetchedTV = await getPopularTV();
+          setMovies(fetchedTV);
+          cachePopularMedia(fetchedTV, "tv");
+        }
       } catch (err) {
-        setError("Failed to load movies...");
-        console.log(err);
+        setError("Failed to load " + mediaType + "..." + err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadPopularMovies();
-  }, [popularMovies, popularMoviesLoaded, cachePopularMovies]);
+    loadPopular();
+  }, [mediaType, popularMedia, popularMediaType, popularMediaLoaded, cachePopularMedia, clearCache]);
 
   return (
     <div className="trending">
-      <h1 style={{textAlign:"center", marginTop:"-20px"}}>Top 100 Trending</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "-20px" }}>
+        <h1 style={{ textAlign: "center", margin: 0 }}>Top 100 Trending</h1>
+        <select
+          style={{ marginLeft: "1rem", padding: "0.3rem", borderRadius: "4px" }}
+          value={mediaType}
+          onChange={e => setMediaType(e.target.value)}
+        >
+          <option value="movies">Movies</option>
+          <option value="tv">TV</option>
+        </select>
+      </div>
       {error && <div className="error-message">{error}</div>}
 
       {loading ? (
         <div className="loading">Loading...</div>
       ) : (
         <div className="movies-grid">
-          {movies.map((movie) => {
-            return <MovieCard movie={movie} key={movie.id} />;
-          })}
+          {movies.map((movie) => (
+            <MovieCard movie={movie} key={movie.id} />
+          ))}
         </div>
       )}
     </div>
