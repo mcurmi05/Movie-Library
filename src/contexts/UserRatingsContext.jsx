@@ -18,7 +18,7 @@ export const useRatings = () => {
 export const UserRatingsProvider = ({ children }) => {
   const [userRatings, setUserRatings] = useState([]);
   const [userRatingsLoaded, setUserRatingsLoaded] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   const addRating = (movieId, rating, movie) => {
     const newRating = {
@@ -51,7 +51,7 @@ export const UserRatingsProvider = ({ children }) => {
 
   useEffect(() => {
   const loadRatings = async () => {
-    if (isAuthenticated && user) {
+    if (user) {
       try {
         setUserRatingsLoaded(false);
         const ratings = await getUserRatings();
@@ -67,7 +67,7 @@ export const UserRatingsProvider = ({ children }) => {
     }
   };
   loadRatings();
-}, [isAuthenticated, user]);
+}, [user]);
 
   return (
     <UserRatingsContext.Provider value={{

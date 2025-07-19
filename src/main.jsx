@@ -16,6 +16,5 @@ createRoot(document.getElementById("root")).render(
       <Analytics/>
     </BrowserRouter>
   </React.StrictMode>
-  
-  
+
 );

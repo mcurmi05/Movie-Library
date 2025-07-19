@@ -18,7 +18,7 @@ export const useWatchlist = () => {
 export const UserWatchlistProvider = ({ children }) => {
   const [userWatchlist, setUserWatchlist] = useState([]);
   const [userWatchlistLoaded, setUserWatchlistLoaded] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   const addWatchlist = (watchlist_id, movie) => {
     const newWatchlistEntry = {
@@ -39,7 +39,7 @@ export const UserWatchlistProvider = ({ children }) => {
 
   useEffect(() => {
   const loadWatchlist = async () => {
-    if (isAuthenticated && user) {
+    if (user) {
       try {
         setUserWatchlistLoaded(false);
         const watchlist = await getUserWatchlist();
@@ -55,7 +55,7 @@ export const UserWatchlistProvider = ({ children }) => {
     }
   };
   loadWatchlist();
-}, [isAuthenticated, user]);
+}, [user]);
 
   return (
     <UserWatchlistContext.Provider value={{

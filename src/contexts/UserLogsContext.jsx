@@ -18,7 +18,7 @@ export const useLogs = () => {
 export const UserLogsProvider = ({ children }) => {
   const [userLogs, setUserLogs] = useState([]);
   const [userLogsLoaded, setUserLogsLoaded] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   const addLog = (movieId, log, movie, log_id) => {
     const newLog = {
@@ -62,7 +62,7 @@ export const UserLogsProvider = ({ children }) => {
 
   useEffect(() => {
     const loadLogs = async () => {
-      if (isAuthenticated && user) {
+      if (user) {
         try {
           setUserLogsLoaded(false);
           const logs = await getUserLogs();
@@ -78,7 +78,7 @@ export const UserLogsProvider = ({ children }) => {
       }
     };
     loadLogs();
-}, [isAuthenticated, user]);
+}, [user]);
 
   return (
     <UserLogsContext.Provider value={{
