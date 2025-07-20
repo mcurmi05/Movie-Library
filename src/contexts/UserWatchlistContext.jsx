@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import { getUserWatchlist } from "../services/ratingsfromtable.js"
 import { useAuth } from './AuthContext.jsx';
-import { useEffect } from 'react';  
+import { useEffect, useRef } from 'react';  
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -19,6 +19,7 @@ export const UserWatchlistProvider = ({ children }) => {
   const [userWatchlist, setUserWatchlist] = useState([]);
   const [userWatchlistLoaded, setUserWatchlistLoaded] = useState(false);
   const { user } = useAuth();
+  const hasFetched = useRef(false);
 
   const addWatchlist = (watchlist_id, movie) => {
     const newWatchlistEntry = {
@@ -38,24 +39,23 @@ export const UserWatchlistProvider = ({ children }) => {
   };
 
   useEffect(() => {
-  const loadWatchlist = async () => {
-    if (user) {
-      try {
-        setUserWatchlistLoaded(false);
-        const watchlist = await getUserWatchlist();
-        setUserWatchlist(watchlist);
-        setUserWatchlistLoaded(true); 
-      } catch (err) {
-        setUserWatchlistLoaded(false);
-        console.log(err)
+    const loadWatchlist = async () => {
+      if (user && !hasFetched.current) {
+        hasFetched.current = true;
+        try {
+          setUserWatchlistLoaded(false);
+          const watchlist = await getUserWatchlist(user);
+          console.log(watchlist);
+          setUserWatchlist(watchlist);
+          setUserWatchlistLoaded(true); 
+        } catch (err) {
+          setUserWatchlistLoaded(false);
+          console.log(err)
+        }
       }
-    } else {
-      setUserWatchlist([]);
-      setUserWatchlistLoaded(false);
-    }
-  };
-  loadWatchlist();
-}, [user]);
+    };
+    loadWatchlist();
+  }, [user]);
 
   return (
     <UserWatchlistContext.Provider value={{

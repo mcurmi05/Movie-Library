@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import {getUserLogs} from "../services/ratingsfromtable.js"
 import { useAuth } from './AuthContext.jsx';
-import { useEffect } from 'react';  
+import { useEffect, useRef } from 'react';  
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -19,6 +19,7 @@ export const UserLogsProvider = ({ children }) => {
   const [userLogs, setUserLogs] = useState([]);
   const [userLogsLoaded, setUserLogsLoaded] = useState(false);
   const { user } = useAuth();
+  const hasFetched = useRef(false);
 
   const addLog = (movieId, log, movie, log_id) => {
     const newLog = {
@@ -59,26 +60,24 @@ export const UserLogsProvider = ({ children }) => {
     );
   };
 
-
   useEffect(() => {
     const loadLogs = async () => {
-      if (user) {
+      if (user && !hasFetched.current) {
+        hasFetched.current = true;
         try {
           setUserLogsLoaded(false);
-          const logs = await getUserLogs();
+          const logs = await getUserLogs(user);
+          console.log(logs);
           setUserLogs(logs);
           setUserLogsLoaded(true); 
         } catch (err) {
           setUserLogsLoaded(false);
           console.log(err)
         }
-      } else {
-        setUserLogs([]);
-        setUserLogsLoaded(false);
       }
     };
     loadLogs();
-}, [user]);
+  }, [user]);
 
   return (
     <UserLogsContext.Provider value={{

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import {getUserRatings} from "../services/ratingsfromtable.js"
 import { useAuth } from './AuthContext.jsx';
-import { useEffect } from 'react';  
+import { useEffect, useRef } from 'react';  
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -19,6 +19,7 @@ export const UserRatingsProvider = ({ children }) => {
   const [userRatings, setUserRatings] = useState([]);
   const [userRatingsLoaded, setUserRatingsLoaded] = useState(false);
   const { user } = useAuth();
+  const hasFetched = useRef(false);
 
   const addRating = (movieId, rating, movie) => {
     const newRating = {
@@ -48,26 +49,23 @@ export const UserRatingsProvider = ({ children }) => {
     );
   };
 
-
   useEffect(() => {
-  const loadRatings = async () => {
-    if (user) {
-      try {
-        setUserRatingsLoaded(false);
-        const ratings = await getUserRatings();
-        setUserRatings(ratings);
-        setUserRatingsLoaded(true); 
-      } catch (err) {
-        setUserRatingsLoaded(false);
-        console.log(err)
-      }
-    } else {
-      setUserRatings([]);
-      setUserRatingsLoaded(false);
-    }
-  };
-  loadRatings();
-}, [user]);
+    const loadRatings = async () => {
+      if (user && !hasFetched.current) {
+        hasFetched.current = true;
+        try {
+          const ratings = await getUserRatings(user); 
+          console.log(ratings)  
+          setUserRatings(ratings);
+          setUserRatingsLoaded(true); 
+        } catch (err) {
+          setUserRatingsLoaded(false);
+          console.log(err)
+        }
+      } 
+    };
+    loadRatings();
+  }, [user]);
 
   return (
     <UserRatingsContext.Provider value={{
