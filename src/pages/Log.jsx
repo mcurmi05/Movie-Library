@@ -20,7 +20,7 @@ function Log() {
     );
   }
 
-  const filteredLogs = userLogs.filter(log => {
+  const filteredLogs = userLogs.filter((log) => {
     if (!searchTerm.trim()) return true;
     const title = log.movie_object?.primaryTitle || "";
     return title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -33,12 +33,23 @@ function Log() {
         type="text"
         placeholder="Search your logged movies/shows..."
         value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
-        style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc", width: "300px", margin: "20px 0", textAlign: "center" }}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          padding: "8px",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+          width: "300px",
+          margin: "20px 0",
+          textAlign: "center",
+        }}
       />
-      {filteredLogs.length === 0 && <div style={{ textAlign: "center" }}>No logs found for "{searchTerm}"!</div>}
+      {filteredLogs.length === 0 && (
+        <div style={{ textAlign: "center" }}>
+          No logs found for "{searchTerm}"!
+        </div>
+      )}
       <div className="logs-container-vertically-down">
-        {filteredLogs.map((log) => (
+        {filteredLogs.map((log) =>
           log.id ? (
             <LogComponent
               key={log.id}
@@ -48,7 +59,7 @@ function Log() {
               logtext={log.log}
             />
           ) : null
-        ))}
+        )}
       </div>
     </>
   );
