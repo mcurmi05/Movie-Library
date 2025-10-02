@@ -53,17 +53,32 @@ function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
             </div>
           </div>
 
-          <div className="rating-page-subtitle" style={{ display: 'flex', alignItems: 'baseline', gap: '24px' }}>
+          <div
+            className="rating-page-subtitle"
+            style={{ display: "flex", alignItems: "baseline", gap: "24px" }}
+          >
             <ReleaseAndRunTime
               style={{ textWrap: "wrap" }}
               movie={movie_object}
             ></ReleaseAndRunTime>
             {addedToWatchlistDate ? (
-              <span style={{ color: '#888', fontSize: '0.93em', whiteSpace: 'nowrap' }}>
+              <span
+                style={{
+                  color: "#888",
+                  fontSize: "0.93em",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 Added to watchlist on: {addedToWatchlistDate}
               </span>
             ) : formattedDate !== "Invalid Date" && ratingDate !== null ? (
-              <span style={{ color: '#888', fontSize: '0.93em', whiteSpace: 'nowrap' }}>
+              <span
+                style={{
+                  color: "#888",
+                  fontSize: "0.93em",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 Rated on: {formattedDate}
               </span>
             ) : null}
