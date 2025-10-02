@@ -1,13 +1,14 @@
 import LogComponent from "../components/LogComponent.jsx";
 import "../styles/Log.css";
 import { useLogs } from "../contexts/UserLogsContext.jsx";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 //
 function Log() {
   const { userLogs, userLogsLoaded } = useLogs();
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    window.scrollTo({ top: 0});
+    window.scrollTo({ top: 0 });
   }, []);
 
   if (!userLogsLoaded) {
@@ -19,24 +20,35 @@ function Log() {
     );
   }
 
+  const filteredLogs = userLogs.filter(log => {
+    if (!searchTerm.trim()) return true;
+    const title = log.movie_object?.primaryTitle || "";
+    return title.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   return (
     <>
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Log</h1>
-      {userLogs.length === 0 ? <h3 style={{ textAlign: "center", marginTop:"50px" , fontWeight:"normal"}}>You haven't logged any movies or shows! Click the log icon next to a movie or show after you've watched it, then come back here to fill out your thoughts!</h3>:null}
-
-      {console.log("User logs:",userLogs)}
+      <input
+        type="text"
+        placeholder="Search your logged movies/shows..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        style={{ padding: "8px", borderRadius: "6px", border: "1px solid #ccc", width: "300px", margin: "20px 0", textAlign: "center" }}
+      />
+      {filteredLogs.length === 0 && <div style={{ textAlign: "center" }}>No logs found for "{searchTerm}"!</div>}
       <div className="logs-container-vertically-down">
-        {userLogs.map((log) => (
-            log.id ? (
-                <LogComponent
-                    key={log.id}
-                    log_id={log.id}
-                    created_at={log.created_at}
-                    movie={log.movie_object}
-                    logtext={log.log}
-                />
-            ) : null
-            ))}
+        {filteredLogs.map((log) => (
+          log.id ? (
+            <LogComponent
+              key={log.id}
+              log_id={log.id}
+              created_at={log.created_at}
+              movie={log.movie_object}
+              logtext={log.log}
+            />
+          ) : null
+        ))}
       </div>
     </>
   );
