@@ -1,52 +1,68 @@
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import Rating from "../components/Rating.jsx";
+import { useState } from "react";
 
 function Ratings() {
   const { userRatings, userRatingsLoaded } = useRatings();
-
-  console.log("User ratings: ", userRatings);
+  const [searchTerm, setSearchTerm] = useState("");
 
   if (!userRatingsLoaded) {
-    return (<>
-              <h1 style={{alignSelf:"center", marginTop:"-20px"}}>Your Ratings</h1>
-              <div style={{alignSelf:"center"}}>Loading ratings...</div>
-            </>);
+    return (
+      <>
+        <h1 style={{ alignSelf: "center", marginTop: "-20px" }}>
+          Your Ratings
+        </h1>
+        <div style={{ alignSelf: "center" }}>Loading ratings...</div>
+      </>
+    );
   }
 
-  try {
-    return (
-      <div
-        style={{justifyContent:"center", display:"flex", flexDirection:"column"}}
-      >
-        <h1 style={{textAlign:"center", marginTop:"-20px"}}>Your Ratings</h1>
-        {userRatings.length === 0 ? <h3 style={{ textAlign: "center", marginTop:"50px" , fontWeight:"normal"}}>You haven't rated any movies or shows! Click the star icon to rate one.</h3>:null}
+  const filteredRatings = userRatings.filter((rating) => {
+    if (!searchTerm.trim()) return true;
+    const title = rating.movie_object?.primaryTitle || "";
+    return title.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
-        {userRatings
+  return (
+    <div>
+      <h1>Your Ratings</h1>
+      <input
+        type="text"
+        placeholder="Search your rated movies/shows..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          padding: "8px",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+          width: "300px",
+          margin: "20px 0",
+        }}
+      />
+      {filteredRatings.length === 0 && (
+        <div>No ratings found for "{searchTerm}"!</div>
+      )}
+      <div>
+        {filteredRatings
           .slice()
           .reverse()
           .map((rating) => (
             <div
-              key={rating.imdb_movie_id}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
+              key={rating.id || rating.imdb_movie_id}
+              style={{ marginBottom: "1rem" }}
             >
-            <div className="div-wrapper-rating-testing" >
-              <Rating
-                movie_object={rating.movie_object}
-                ratingDate={rating.created_at}
-              ></Rating>
-            </div>
+              <div className="div-wrapper-rating-testing">
+                <Rating
+                  movie_object={rating.movie_object}
+                  ratingDate={rating.created_at}
+                />
+              </div>
+              
             </div>
           ))}
       </div>
-    );
-  } catch (error) {
-    console.error("Error rendering ratings:", error);
-    return <div style={{alignSelf:"center"}}>Loading ratings...</div>;
-  }
+    </div>
+  );
 }
 
 export default Ratings;
