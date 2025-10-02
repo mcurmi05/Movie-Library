@@ -27,7 +27,15 @@ function Log() {
   });
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Log</h1>
       <input
         type="text"
@@ -48,20 +56,37 @@ function Log() {
           No logs found for "{searchTerm}"!
         </div>
       )}
-      <div className="logs-container-vertically-down">
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         {filteredLogs.map((log) =>
           log.id ? (
-            <LogComponent
-              key={log.id}
-              log_id={log.id}
-              created_at={log.created_at}
-              movie={log.movie_object}
-              logtext={log.log}
-            />
+            <div
+              style={{
+                marginBottom: "1rem",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <LogComponent
+                key={log.id}
+                log_id={log.id}
+                created_at={log.created_at}
+                movie={log.movie_object}
+                logtext={log.log}
+              />
+            </div>
           ) : null
         )}
       </div>
-    </>
+    </div>
   );
 }
 

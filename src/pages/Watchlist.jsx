@@ -29,7 +29,15 @@ function Watchlist() {
   });
 
   return (
-    <div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>
         Your Watchlist
       </h1>
@@ -44,22 +52,42 @@ function Watchlist() {
           border: "1px solid #ccc",
           width: "300px",
           margin: "20px 0",
+          textAlign: "center",
         }}
       />
       {filteredWatchlist.length === 0 && (
-        <div>No watchlist items found for "{searchTerm}"!</div>
+        <div style={{ textAlign: "center" }}>
+          No watchlist items found for "{searchTerm}"!
+        </div>
       )}
-      <div className="logs-container-vertically-down">
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         {filteredWatchlist
           .slice()
           .reverse()
           .map((watchlist_entry) =>
             watchlist_entry.id ? (
-              <WatchlistComponent
-                key={watchlist_entry.id}
-                watchlist_id={watchlist_entry.id}
-                movie={watchlist_entry.movie_object}
-              />
+              <div
+                style={{
+                  marginBottom: "1rem",
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <WatchlistComponent
+                  key={watchlist_entry.id}
+                  watchlist_id={watchlist_entry.id}
+                  movie={watchlist_entry.movie_object}
+                />
+              </div>
             ) : null
           )}
       </div>

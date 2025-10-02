@@ -24,8 +24,16 @@ function Ratings() {
   });
 
   return (
-    <div>
-      <h1>Your Ratings</h1>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
+      <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Ratings</h1>
       <input
         type="text"
         placeholder="Search your rated movies/shows..."
@@ -37,19 +45,35 @@ function Ratings() {
           border: "1px solid #ccc",
           width: "300px",
           margin: "20px 0",
+          textAlign: "center",
         }}
       />
       {filteredRatings.length === 0 && (
-        <div>No ratings found for "{searchTerm}"!</div>
+        <div style={{ textAlign: "center" }}>
+          No ratings found for "{searchTerm}"!
+        </div>
       )}
-      <div>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         {filteredRatings
           .slice()
           .reverse()
           .map((rating) => (
             <div
               key={rating.id || rating.imdb_movie_id}
-              style={{ marginBottom: "1rem" }}
+              style={{
+                marginBottom: "1rem",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
             >
               <div className="div-wrapper-rating-testing">
                 <Rating
@@ -57,7 +81,6 @@ function Ratings() {
                   ratingDate={rating.created_at}
                 />
               </div>
-              
             </div>
           ))}
       </div>
