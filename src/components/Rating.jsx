@@ -69,7 +69,7 @@ function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                      Added: {addedToWatchlistDate}
+                Added: {addedToWatchlistDate}
               </span>
             ) : formattedDate !== "Invalid Date" && ratingDate !== null ? (
               <span
@@ -79,7 +79,7 @@ function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                      Rated: {formattedDate}
+                Rated: {formattedDate}
               </span>
             ) : null}
           </div>
