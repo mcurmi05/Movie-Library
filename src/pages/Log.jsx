@@ -37,20 +37,46 @@ function Log() {
       }}
     >
       <h1 style={{ textAlign: "center", marginTop: "-20px" }}>Your Log</h1>
-      <input
-        type="text"
-        placeholder="Search your logged movies/shows..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+      <div style={{ height: "18px" }} />
+      <div
         style={{
-          padding: "8px",
-          borderRadius: "6px",
-          border: "1px solid #ccc",
-          width: "300px",
-          margin: "20px 0",
-          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "20px",
+          gap: "10px",
         }}
-      />
+      >
+        <input
+          type="text"
+          placeholder="Search your logged movies/shows..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: "8px",
+            borderRadius: "6px",
+            border: "1px solid #ccc",
+            width: "300px",
+            textAlign: "center",
+          }}
+        />
+        <span
+          style={{
+            fontWeight: "bold",
+            background: "#ff0000",
+            color: "white",
+            borderRadius: "12px",
+            padding: "2px 7px",
+            fontSize: "0.95em",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+            letterSpacing: "0.5px",
+            verticalAlign: "middle",
+            display: "inline-block",
+          }}
+        >
+          {filteredLogs.length}
+        </span>
+      </div>
       {filteredLogs.length === 0 && (
         <div style={{ textAlign: "center" }}>
           No logs found for "{searchTerm}"!
