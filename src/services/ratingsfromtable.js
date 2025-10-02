@@ -1,3 +1,13 @@
+// Update a user's rating in Supabase
+export const updateUserRating = async (userId, imdbMovieId, newRating) => {
+  const { data, error } = await supabase
+    .from("ratings")
+    .update({ rating: newRating, created_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("imdb_movie_id", imdbMovieId);
+  if (error) throw error;
+  return data;
+};
 import { supabase } from "./supabase-client.js";
 
 export const getUserRatings = async (user) => {
@@ -36,5 +46,3 @@ export const getUserWatchlist = async (user) => {
   if (error) throw error;
   return data || [];
 };
-
-
