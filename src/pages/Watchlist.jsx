@@ -94,28 +94,26 @@ function Watchlist() {
           alignItems: "center",
         }}
       >
-        {filteredWatchlist
-          .slice()
-          .reverse()
-          .map((watchlist_entry) =>
-            watchlist_entry.id ? (
-              <div
-                style={{
-                  marginBottom: "1rem",
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <WatchlistComponent
-                  key={watchlist_entry.id}
-                  watchlist_id={watchlist_entry.id}
-                  movie={watchlist_entry.movie_object}
-                />
-              </div>
-            ) : null
-          )}
+        {filteredWatchlist.map((watchlist_entry) =>
+          watchlist_entry.id ? (
+            <div
+              style={{
+                marginBottom: "1rem",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <WatchlistComponent
+                key={watchlist_entry.id}
+                watchlist_id={watchlist_entry.id}
+                movie={watchlist_entry.movie_object}
+                addedDate={watchlist_entry.created_at}
+              />
+            </div>
+          ) : null
+        )}
       </div>
     </div>
   );

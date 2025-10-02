@@ -5,13 +5,15 @@ import { supabase } from "../services/supabase-client";
 import { useState } from "react";
 import { useWatchlist } from "../contexts/UserWatchlistContext.jsx";
 
-export default function WatchlistComponent({ watchlist_id, movie }) {
+export default function WatchlistComponent({ watchlist_id, movie, addedDate }) {
   const [visible, setVisible] = useState(true);
   const { removeWatchlist } = useWatchlist();
 
-
   async function deleteWatchlistClick() {
-    const { error } = await supabase.from("watchlist").delete().eq("id", watchlist_id);
+    const { error } = await supabase
+      .from("watchlist")
+      .delete()
+      .eq("id", watchlist_id);
 
     removeWatchlist(watchlist_id);
 
@@ -23,10 +25,32 @@ export default function WatchlistComponent({ watchlist_id, movie }) {
   }
 
   if (!visible) return null;
+  const formattedDate = addedDate
+    ? new Date(addedDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
   return (
-    //i am fully aware of how lazy this is
     <div className="log-rating-wrapper">
-      <Rating key={watchlist_id} movie_object={movie} ratingDate="today"></Rating>
+      <Rating
+        key={watchlist_id}
+        movie_object={movie}
+        ratingDate={null}
+      ></Rating>
+      {formattedDate !== "Invalid Date" && (
+        <p
+          style={{
+            fontWeight: "bold",
+            marginTop: "8px",
+            color: "#444",
+            fontSize: "0.95em",
+          }}
+        >
+          Added to watchlist on: {formattedDate}
+        </p>
+      )}
       <img
         src="/logdelete.png"
         className="log-delete-icon"
