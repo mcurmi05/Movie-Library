@@ -38,19 +38,10 @@ export default function WatchlistComponent({ watchlist_id, movie, addedDate }) {
         key={watchlist_id}
         movie_object={movie}
         ratingDate={null}
-      ></Rating>
-      {formattedDate !== "Invalid Date" && (
-        <p
-          style={{
-            fontWeight: "bold",
-            marginTop: "8px",
-            color: "#444",
-            fontSize: "0.95em",
-          }}
-        >
-          Added to watchlist on: {formattedDate}
-        </p>
-      )}
+        addedToWatchlistDate={
+          formattedDate !== "Invalid Date" ? formattedDate : null
+        }
+      />
       <img
         src="/logdelete.png"
         className="log-delete-icon"
