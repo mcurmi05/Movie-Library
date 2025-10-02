@@ -71,7 +71,7 @@ function Ratings() {
             display: "inline-block",
           }}
         >
-          {filteredRatings.length}
+          {userRatings.length}
         </span>
       </div>
       {filteredRatings.length === 0 && (

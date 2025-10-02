@@ -74,7 +74,7 @@ function Log() {
             display: "inline-block",
           }}
         >
-          {filteredLogs.length}
+          {userLogs.length}
         </span>
       </div>
       {filteredLogs.length === 0 && (

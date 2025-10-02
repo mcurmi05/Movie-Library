@@ -78,7 +78,7 @@ function Watchlist() {
             display: "inline-block",
           }}
         >
-          {filteredWatchlist.length}
+          {userWatchlist.length}
         </span>
       </div>
       {filteredWatchlist.length === 0 && (
