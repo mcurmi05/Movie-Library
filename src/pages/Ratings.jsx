@@ -23,6 +23,13 @@ function Ratings() {
     return title.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  // Sort ratings by created_at descending (newest first)
+  const sortedRatings = filteredRatings.slice().sort((a, b) => {
+    const dateA = new Date(a.created_at);
+    const dateB = new Date(b.created_at);
+    return dateB - dateA;
+  });
+
   return (
     <div
       style={{
@@ -74,7 +81,7 @@ function Ratings() {
           {userRatings.length}
         </span>
       </div>
-      {filteredRatings.length === 0 && (
+      {sortedRatings.length === 0 && (
         <div style={{ textAlign: "center" }}>
           No ratings found for "{searchTerm}"!
         </div>
@@ -87,28 +94,25 @@ function Ratings() {
           alignItems: "center",
         }}
       >
-        {filteredRatings
-          .slice()
-          .reverse()
-          .map((rating) => (
-            <div
-              key={rating.id || rating.imdb_movie_id}
-              style={{
-                marginBottom: "1rem",
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <div className="div-wrapper-rating-testing">
-                <Rating
-                  movie_object={rating.movie_object}
-                  ratingDate={rating.created_at}
-                />
-              </div>
+        {sortedRatings.map((rating) => (
+          <div
+            key={rating.id || rating.imdb_movie_id}
+            style={{
+              marginBottom: "1rem",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <div className="div-wrapper-rating-testing">
+              <Rating
+                movie_object={rating.movie_object}
+                ratingDate={rating.created_at}
+              />
             </div>
-          ))}
+          </div>
+        ))}
       </div>
     </div>
   );
