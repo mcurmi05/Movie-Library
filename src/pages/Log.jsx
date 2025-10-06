@@ -1,11 +1,14 @@
 import LogComponent from "../components/LogComponent.jsx";
+import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import "../styles/Log.css";
 import { useLogs } from "../contexts/UserLogsContext.jsx";
 import { useEffect, useState } from "react";
 //
 function Log() {
   const { userLogs, userLogsLoaded } = useLogs();
+  const { userRatings } = useRatings();
   const [searchTerm, setSearchTerm] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("all");
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -21,9 +24,25 @@ function Log() {
   }
 
   const filteredLogs = userLogs.filter((log) => {
-    if (!searchTerm.trim()) return true;
-    const title = log.movie_object?.primaryTitle || "";
-    return title.toLowerCase().includes(searchTerm.toLowerCase());
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const title = log.movie_object?.primaryTitle || "";
+      if (!title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    }
+    // Filter by rating value (if present)
+    if (ratingFilter !== "all") {
+      // Find rating from userRatings context
+      let ratingValue = null;
+      if (log.movie_object && log.movie_object.id) {
+        const found = userRatings.find(
+          (r) => r.imdb_movie_id === log.movie_object.id
+        );
+        if (found) ratingValue = found.rating;
+      }
+      if (ratingValue === null) return false;
+      if (Number(ratingValue) !== Number(ratingFilter)) return false;
+    }
+    return true;
   });
 
   return (
@@ -60,6 +79,30 @@ function Log() {
             textAlign: "center",
           }}
         />
+        <select
+          value={ratingFilter}
+          onChange={(e) => setRatingFilter(e.target.value)}
+          style={{
+            height: "32px",
+            padding: "0 10px",
+            border: "1px solid #fff",
+            borderRadius: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#898888ff",
+            fontSize: "0.8rem",
+            fontweight: "bold",
+            outline: "none",
+          }}
+        >
+          <option value="all" style={{ whiteSpace: "nowrap" }}>
+            All Ratings
+          </option>
+          {[...Array(10)].map((_, i) => (
+            <option key={10 - i} value={10 - i}>
+              {10 - i}
+            </option>
+          ))}
+        </select>
         <span
           style={{
             fontWeight: "bold",
@@ -74,7 +117,7 @@ function Log() {
             display: "inline-block",
           }}
         >
-          {userLogs.length}
+          {filteredLogs.length}
         </span>
       </div>
       {filteredLogs.length === 0 && (
