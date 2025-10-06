@@ -61,14 +61,14 @@ function Ratings() {
       >
         <input
           type="text"
-          placeholder="Search your rated movies/shows..."
+          placeholder="Search..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
             padding: "8px",
             borderRadius: "6px",
             border: "1px solid #ccc",
-            width: "300px",
+            width: "180px",
             textAlign: "center",
           }}
         />
