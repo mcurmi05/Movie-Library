@@ -44,13 +44,19 @@ function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
             <p className="movie-title" onClick={onMovieClick}>
               {movie_object.primaryTitle}{" "}
             </p>
-            <div className="rating-star-div">
-              <MovieRatingStar movie={movie_object}></MovieRatingStar>
+            <div style = {{display:"flex"}}>
+                <div className="rating-star-div">
+                  <MovieRatingStar movie={movie_object}></MovieRatingStar>
+                </div>
+                <div style={{margin:"5px"}}>
+                  
+                </div>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <AddWatchlist movie={movie_object}></AddWatchlist>
+                  <AddLog movie={movie_object}></AddLog>
+                </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <AddWatchlist movie={movie_object}></AddWatchlist>
-              <AddLog movie={movie_object}></AddLog>
-            </div>
+            
           </div>
 
           <div
