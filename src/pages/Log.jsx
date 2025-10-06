@@ -92,6 +92,7 @@ function Log() {
             fontSize: "0.8rem",
             fontweight: "bold",
             outline: "none",
+            textAlign: "center",
           }}
         >
           <option value="all" style={{ whiteSpace: "nowrap" }}>
@@ -122,7 +123,7 @@ function Log() {
       </div>
       {filteredLogs.length === 0 && (
         <div style={{ textAlign: "center" }}>
-          No logs found for "{searchTerm}"!
+          No logs match your applied filters
         </div>
       )}
       <div
