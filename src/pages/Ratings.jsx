@@ -77,7 +77,7 @@ function Ratings() {
           onChange={(e) => setRatingFilter(e.target.value)}
           style={{
             height: "32px",
-            padding: "0 10px" ,
+            padding: "0 10px",
             border: "1px solid #fff",
             borderRadius: "6px",
             backgroundColor: "#3b3b3b",
