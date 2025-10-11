@@ -254,6 +254,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                               alignItems: "center",
                               gap: "6px",
                               whiteSpace: "nowrap",
+                              marginLeft: "15px",
                             }}
                           >
                             <div style={{ fontSize: "0.9rem", color: "#ccc" }}>

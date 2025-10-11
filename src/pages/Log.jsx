@@ -9,6 +9,7 @@ function Log() {
   const { userRatings } = useRatings();
   const [searchTerm, setSearchTerm] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -24,6 +25,14 @@ function Log() {
   }
 
   const filteredLogs = userLogs.filter((log) => {
+    // Filter by media type
+    if (mediaTypeFilter !== "all") {
+      const type = (log.movie_object?.type || "").toLowerCase();
+      const titleType = (log.movie_object?.titleType || "").toLowerCase();
+      const isTV = type.includes("tv") || titleType.includes("tv") || log.movie_object?.episodes;
+      if (mediaTypeFilter === "movies" && isTV) return false;
+      if (mediaTypeFilter === "tv" && !isTV) return false;
+    }
     // Filter by search term
     if (searchTerm.trim()) {
       const title = log.movie_object?.primaryTitle || "";
@@ -80,12 +89,31 @@ function Log() {
           }}
         />
         <select
+          value={mediaTypeFilter}
+          onChange={(e) => setMediaTypeFilter(e.target.value)}
+          style={{
+            height: "32px",
+            padding: "0 10px",
+            border: "1px solid #cccccc",
+            borderRadius: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#898888ff",
+            fontSize: "0.8rem",
+            outline: "none",
+            textAlign: "center",
+          }}
+        >
+          <option value="all">Movies & TV</option>
+          <option value="movies">Movies</option>
+          <option value="tv">TV</option>
+        </select>
+        <select
           value={ratingFilter}
           onChange={(e) => setRatingFilter(e.target.value)}
           style={{
             height: "32px",
             padding: "0 10px",
-            border: "1px solid #fff",
+            border: "1px solid #cccccc",
             borderRadius: "6px",
             backgroundColor: "#3b3b3b",
             color: "#898888ff",

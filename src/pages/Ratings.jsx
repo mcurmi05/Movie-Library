@@ -6,6 +6,7 @@ function Ratings() {
   const { userRatings, userRatingsLoaded } = useRatings();
   const [searchTerm, setSearchTerm] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
 
   if (!userRatingsLoaded) {
     return (
@@ -19,6 +20,14 @@ function Ratings() {
   }
 
   const filteredRatings = userRatings.filter((rating) => {
+    // Filter by media type (movie/tv)
+    if (mediaTypeFilter !== "all") {
+      const type = (rating.movie_object?.type || "").toLowerCase();
+      const titleType = (rating.movie_object?.titleType || "").toLowerCase();
+      const isTV = type.includes("tv") || titleType.includes("tv") || rating.movie_object?.episodes;
+      if (mediaTypeFilter === "movies" && isTV) return false;
+      if (mediaTypeFilter === "tv" && !isTV) return false;
+    }
     // Filter by search term
     if (searchTerm.trim()) {
       const title = rating.movie_object?.primaryTitle || "";
@@ -73,12 +82,31 @@ function Ratings() {
           }}
         />
         <select
+          value={mediaTypeFilter}
+          onChange={(e) => setMediaTypeFilter(e.target.value)}
+          style={{
+            height: "32px",
+            padding: "0 10px",
+            border: "1px solid #cccccc",
+            borderRadius: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#898888ff",
+            fontSize: "0.8rem",
+            outline: "none",
+            textAlign: "center",
+          }}
+        >
+          <option value="all">Movies & TV</option>
+          <option value="movies">Movies</option>
+          <option value="tv">TV</option>
+        </select>
+        <select
           value={ratingFilter}
           onChange={(e) => setRatingFilter(e.target.value)}
           style={{
             height: "32px",
             padding: "0 10px",
-            border: "1px solid #fff",
+            border: "1px solid #cccccc",
             borderRadius: "6px",
             backgroundColor: "#3b3b3b",
             color: "#898888ff",

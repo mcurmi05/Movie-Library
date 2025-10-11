@@ -6,6 +6,7 @@ import { useWatchlist } from "../contexts/UserWatchlistContext.jsx";
 function Watchlist() {
   const { userWatchlist, userWatchlistLoaded } = useWatchlist();
   const [searchTerm, setSearchTerm] = useState("");
+  const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -23,6 +24,14 @@ function Watchlist() {
   }
 
   const filteredWatchlist = userWatchlist.filter((item) => {
+    // Filter by media type
+    if (mediaTypeFilter !== "all") {
+      const type = (item.movie_object?.type || "").toLowerCase();
+      const titleType = (item.movie_object?.titleType || "").toLowerCase();
+      const isTV = type.includes("tv") || titleType.includes("tv") || item.movie_object?.episodes;
+      if (mediaTypeFilter === "movies" && isTV) return false;
+      if (mediaTypeFilter === "tv" && !isTV) return false;
+    }
     if (!searchTerm.trim()) return true;
     const title = item.movie_object?.primaryTitle || "";
     return title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -64,6 +73,25 @@ function Watchlist() {
             textAlign: "center",
           }}
         />
+        <select
+          value={mediaTypeFilter}
+          onChange={(e) => setMediaTypeFilter(e.target.value)}
+          style={{
+            height: "32px",
+            padding: "0 10px",
+            border: "1px solid #cccccc",
+            borderRadius: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#898888ff",
+            fontSize: "0.8rem",
+            outline: "none",
+            textAlign: "center",
+          }}
+        >
+          <option value="all">Movies & TV</option>
+          <option value="movies">Movies</option>
+          <option value="tv">TV</option>
+        </select>
         <span
           style={{
             fontWeight: "bold",
