@@ -29,7 +29,10 @@ function Log() {
     if (mediaTypeFilter !== "all") {
       const type = (log.movie_object?.type || "").toLowerCase();
       const titleType = (log.movie_object?.titleType || "").toLowerCase();
-      const isTV = type.includes("tv") || titleType.includes("tv") || log.movie_object?.episodes;
+      const isTV =
+        type.includes("tv") ||
+        titleType.includes("tv") ||
+        log.movie_object?.episodes;
       if (mediaTypeFilter === "movies" && isTV) return false;
       if (mediaTypeFilter === "tv" && !isTV) return false;
     }

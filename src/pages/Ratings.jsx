@@ -24,7 +24,10 @@ function Ratings() {
     if (mediaTypeFilter !== "all") {
       const type = (rating.movie_object?.type || "").toLowerCase();
       const titleType = (rating.movie_object?.titleType || "").toLowerCase();
-      const isTV = type.includes("tv") || titleType.includes("tv") || rating.movie_object?.episodes;
+      const isTV =
+        type.includes("tv") ||
+        titleType.includes("tv") ||
+        rating.movie_object?.episodes;
       if (mediaTypeFilter === "movies" && isTV) return false;
       if (mediaTypeFilter === "tv" && !isTV) return false;
     }
