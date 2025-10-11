@@ -203,40 +203,94 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                       alignItems: "center",
                       gap: "12px",
                       flexWrap: "wrap",
+                      justifyContent: "space-between",
+                      
                     }}
                   >
-                    <div style={{ minWidth: 80 }}>
-                      Season {s.season || idx + 1}
-                    </div>
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "12px",
                       }}
                     >
-                      <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                        Started:
+                      <div style={{ minWidth: 80 }}>
+                        Season {s.season || idx + 1}
                       </div>
-                      <Dialog
-                        initialDate={
-                          s.start_date ? new Date(s.start_date) : new Date()
-                        }
-                        onDateChange={(d) =>
-                          updateSeasonDate(
-                            log_id,
-                            idx,
-                            "start_date",
-                            d.toISOString()
-                          )
-                        }
-                        showWeekday={false}
-                        dateColor="#fff"
-                        iconGap="10px"
-                        minWidth="120px"
-                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+                          Started:
+                        </div>
+                        <Dialog
+                          initialDate={
+                            s.start_date ? new Date(s.start_date) : new Date()
+                          }
+                          onDateChange={(d) =>
+                            updateSeasonDate(
+                              log_id,
+                              idx,
+                              "start_date",
+                              d.toISOString()
+                            )
+                          }
+                          showWeekday={false}
+                          dateColor="#fff"
+                          iconGap="10px"
+                          minWidth="120px"
+                        />
 
-                      {/* finished toggle - when not finished allow marking finished */}
+                        {/* finished toggle - when not finished allow marking finished */}
+                        {!s.finished ? (
+                          <div />
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+                              Finished:
+                            </div>
+                            <Dialog
+                              initialDate={
+                                s.end_date ? new Date(s.end_date) : new Date()
+                              }
+                              onDateChange={(d) =>
+                                updateSeasonDate(
+                                  log_id,
+                                  idx,
+                                  "end_date",
+                                  d.toISOString()
+                                )
+                              }
+                              showWeekday={false}
+                              dateColor="#fff"
+                              iconGap="6px"
+                              minWidth="140px"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* actions: undo/mark-finished and delete - right aligned and closer together */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        marginLeft: 8,
+                      }}
+                    >
                       {!s.finished ? (
                         <button
                           onClick={() => setSeasonFinished(log_id, idx, true)}
@@ -249,7 +303,6 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             border: "none",
                             borderRadius: 6,
                             padding: "4px",
-                            marginLeft: 8,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -262,82 +315,46 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                           />
                         </button>
                       ) : (
-                        <div
+                        <button
+                          onClick={() => {
+                            setUndoSeasonIndex(idx);
+                            setShowUndoSeasonModal(true);
+                          }}
+                          aria-label="Undo finished"
+                          title="Undo finished"
+                          className="season-button"
                           style={{
+                            background: "transparent",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "6px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "6px",
-                            marginLeft: 8,
-                            flexWrap: "nowrap",
-                            whiteSpace: "nowrap",
                           }}
                         >
-                          {/* removed green checkmark per request */}
-                          <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                            Finished:
-                          </div>
-                          <Dialog
-                            initialDate={
-                              s.end_date ? new Date(s.end_date) : new Date()
-                            }
-                            onDateChange={(d) =>
-                              updateSeasonDate(
-                                log_id,
-                                idx,
-                                "end_date",
-                                d.toISOString()
-                              )
-                            }
-                            showWeekday={false}
-                            dateColor="#fff"
-                            iconGap="6px"
-                            minWidth="140px"
+                          <img
+                            src="/undo.png"
+                            alt="Undo finished"
+                            style={{ width: 16, height: 16 }}
                           />
-                          <button
-                            onClick={() => {
-                              setUndoSeasonIndex(idx);
-                              setShowUndoSeasonModal(true);
-                            }}
-                            aria-label="Undo finished"
-                            title="Undo finished"
-                            className="season-button"
-                            style={{
-                              background: "transparent",
-                              color: "white",
-                              border: "none",
-                              borderRadius: 6,
-                              padding: "6px",
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            <img
-                              src="/undo.png"
-                              alt="Undo finished"
-                              style={{ width: 16, height: 16 }}
-                            />
-                          </button>
-                        </div>
+                        </button>
+                      )}
+
+                      {/* show remove button only for the last season */}
+                      {idx === arr.length - 1 && (
+                        <img
+                          src="/logdelete.png"
+                          alt="Remove newest season"
+                          title="Remove newest season"
+                          onClick={() => {
+                            setSeasonToRemoveIndex(idx);
+                            setShowRemoveSeasonModal(true);
+                          }}
+                          style={{ width: 16, height: 16, cursor: "pointer" }}
+                        />
                       )}
                     </div>
-                    {/* show remove button only for the last season */}
-                    {idx === arr.length - 1 && (
-                      <img
-                        src="/logdelete.png"
-                        alt="Remove newest season"
-                        title="Remove newest season"
-                        onClick={() => {
-                          setSeasonToRemoveIndex(idx);
-                          setShowRemoveSeasonModal(true);
-                        }}
-                        style={{
-                          width: 14,
-                          height: 14,
-                          cursor: "pointer",
-                          marginLeft: 8,
-                        }}
-                      />
-                    )}
                   </div>
                 )
               )}
