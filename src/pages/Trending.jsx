@@ -110,6 +110,19 @@ function Trending() {
           className="mediatype-selector"
           value={mediaType}
           onChange={e => setMediaType(e.target.value)}
+          style={{
+            height: "32px",
+            width:"100px",
+            padding: "0 10px",
+            border: "1px solid #cccccc",
+            borderRadius: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#898888ff",
+            fontSize: "0.8rem",
+            outline: "none",
+            textAlign: "center",
+            fontWeight:"normal"
+          }}
         >
           <option value="movies">Movies</option>
           <option value="tv">TV</option>
