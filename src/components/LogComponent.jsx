@@ -27,7 +27,16 @@ const modalStyle = {
 
 export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [visible, setVisible] = useState(true);
-  const { removeLog, updateLog, updateDate } = useLogs();
+  const {
+    removeLog,
+    updateLog,
+    updateDate,
+    userLogs,
+    addSeason,
+    updateSeasonDate,
+    removeSeason,
+    setSeasonFinished,
+  } = useLogs();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [text, setText] = useState(logtext);
@@ -37,6 +46,13 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
   const [textEdited, setTextEdited] = useState(false);
 
   const textareaRef = useRef(null);
+
+  const isTV =
+    movie &&
+    (movie.type?.toLowerCase?.().includes("tv") ||
+      (movie.titleType &&
+        String(movie.titleType).toLowerCase().includes("tv")) ||
+      movie.episodes);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -102,32 +118,255 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
     //i am fully aware of how lazy this is
     <div className="log-rating-wrapper">
       <Rating key={log_id} movie_object={movie} ratingDate="today"></Rating>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          marginBottom: "18px",
-        }}
-      >
+      {!isTV && (
         <div
-          className="date-picker-log"
           style={{
             display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            width: "100%",
-            paddingLeft: "200px",
+            alignItems: "center",
+            marginBottom: "18px",
           }}
         >
-          <Dialog
-            initialDate={created_at ? new Date(created_at) : new Date()}
-            onDateChange={handleDateChange}
-            showWeekday={true}
-            dateColor="#fff"
-          />
+          <div
+            className="date-picker-log"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              paddingLeft: "200px",
+            }}
+          >
+            <Dialog
+              initialDate={created_at ? new Date(created_at) : new Date()}
+              onDateChange={handleDateChange}
+              showWeekday={true}
+              dateColor="#fff"
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Seasons UI for TV/mini-series entries */}
+      {movie &&
+        (movie.type?.toLowerCase?.().includes("tv") ||
+          (movie.titleType &&
+            String(movie.titleType).toLowerCase().includes("tv")) ||
+          movie.episodes) && (
+          <div style={{ width: "100%", marginBottom: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "8px",
+              }}
+            >
+              <strong>Seasons</strong>
+              <button
+                onClick={() => addSeason(log_id)}
+                style={{
+                  background: "#222",
+                  color: "white",
+                  border: "1px solid #444",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                }}
+              >
+                +
+              </button>
+            </div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              {(userLogs.find((l) => l.id === log_id)?.season_info || []).map(
+                (s, idx, arr) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div style={{ minWidth: 80 }}>
+                      Season {s.season || idx + 1}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+                        Start:
+                      </div>
+                      <Dialog
+                        initialDate={
+                          s.start_date ? new Date(s.start_date) : new Date()
+                        }
+                        onDateChange={(d) =>
+                          updateSeasonDate(
+                            log_id,
+                            idx,
+                            "start_date",
+                            d.toISOString()
+                          )
+                        }
+                        showWeekday={false}
+                        dateColor="#fff"
+                      />
+
+                      {/* finished toggle - when not finished allow marking finished */}
+                      {!s.finished ? (
+                        <button
+                          onClick={() => setSeasonFinished(log_id, idx, true)}
+                          aria-label="Mark season finished"
+                          title="Mark season finished"
+                          style={{
+                            background: "#444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "6px",
+                            marginLeft: 8,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {/* check icon */}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden
+                          >
+                            <path
+                              d="M20 6L9 17L4 12"
+                              stroke="white"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      ) : (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            marginLeft: 8,
+                          }}
+                        >
+                          {/* green check circle */}
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden
+                          >
+                            <circle cx="12" cy="12" r="10" fill="#2ecc71" />
+                            <path
+                              d="M9 12.5L11 14.5L15 10.5"
+                              stroke="white"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+                            End:
+                          </div>
+                          <Dialog
+                            initialDate={
+                              s.end_date ? new Date(s.end_date) : new Date()
+                            }
+                            onDateChange={(d) =>
+                              updateSeasonDate(
+                                log_id,
+                                idx,
+                                "end_date",
+                                d.toISOString()
+                              )
+                            }
+                            showWeekday={false}
+                            dateColor="#fff"
+                          />
+                          <button
+                            onClick={() =>
+                              setSeasonFinished(log_id, idx, false)
+                            }
+                            aria-label="Undo finished"
+                            title="Undo finished"
+                            style={{
+                              background: "transparent",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px",
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            {/* circular arrow */}
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              aria-hidden
+                            >
+                              <path
+                                d="M21 12A9 9 0 1 0 12 21"
+                                stroke="#ccc"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M21 3v6h-6"
+                                stroke="#ccc"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* show remove button only for the last season */}
+                    {idx === arr.length - 1 && (
+                      <button
+                        onClick={() => removeSeason(log_id)}
+                        style={{
+                          background: "#ff4d4f",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "4px 6px",
+                          marginLeft: 8,
+                        }}
+                        title="Remove newest season"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
       <textarea
         ref={textareaRef}
         className="log-input"
