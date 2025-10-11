@@ -187,7 +187,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                 <img
                   src="/plus.png"
                   alt="Add"
-                  style={{ width: 20, height: 20 }}
+                  style={{ width: 16, height: 16 }}
                 />
               </button>
             </div>
@@ -204,7 +204,6 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                       gap: "12px",
                       flexWrap: "wrap",
                       justifyContent: "space-between",
-                      
                     }}
                   >
                     <div

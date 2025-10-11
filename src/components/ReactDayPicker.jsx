@@ -34,6 +34,20 @@ export function Dialog({
     };
   }, [isDialogOpen]);
 
+  // Close the dialog when clicking on the backdrop (native dialog area)
+  useEffect(() => {
+    const dialogEl = dialogRef.current;
+    if (!dialogEl) return;
+    const onBackdropClick = (e) => {
+      // If the click target is the dialog itself (i.e., the backdrop), close without changing date
+      if (e.target === dialogEl) {
+        setIsDialogOpen(false);
+      }
+    };
+    dialogEl.addEventListener("click", onBackdropClick);
+    return () => dialogEl.removeEventListener("click", onBackdropClick);
+  }, [dialogRef]);
+
   // When a date is picked
   const handleDayPickerSelect = (date) => {
     if (!date) {
@@ -92,11 +106,14 @@ export function Dialog({
       </div>
       {isDialogOpen && (
         <div
+          role="presentation"
+          onClick={() => setIsDialogOpen(false)}
           style={{
             position: "fixed",
             inset: 0,
             background: "rgba(0,0,0,0.4)",
             zIndex: 1000,
+            cursor: "pointer",
           }}
         />
       )}
@@ -109,18 +126,42 @@ export function Dialog({
           aria-labelledby={headerId}
           onClose={() => setIsDialogOpen(false)}
         >
-          <DayPicker
-            month={month}
-            onMonthChange={setMonth}
-            autoFocus
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDayPickerSelect}
-            footer={
-              selectedDate !== undefined &&
-              `Selected: ${selectedDate.toDateString()}`
-            }
-          />
+          <div style={{ position: "relative" }}>
+            <button
+              aria-label="Close date picker"
+              onClick={() => setIsDialogOpen(false)}
+              onMouseDown={(e) => e.preventDefault()}
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                background: "transparent",
+                border: "none",
+                color: "white",
+                fontSize: 18,
+                cursor: "pointer",
+                padding: 4,
+                outline: "none",
+                boxShadow: "none",
+              }}
+            >
+              ×
+            </button>
+            <div style={{ padding: 12, boxSizing: "border-box" }}>
+              <DayPicker
+                month={month}
+                onMonthChange={setMonth}
+                autoFocus
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDayPickerSelect}
+                footer={
+                  selectedDate !== undefined &&
+                  `Selected: ${selectedDate.toDateString()}`
+                }
+              />
+            </div>
+          </div>
         </dialog>
       </div>
     </>
