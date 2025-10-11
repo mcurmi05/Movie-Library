@@ -2,7 +2,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import { format } from "date-fns";
 import { DayPicker } from "react-day-picker";
 
-export function Dialog({ initialDate, onDateChange, showWeekday, dateColor }) {
+export function Dialog({
+  initialDate,
+  onDateChange,
+  showWeekday,
+  dateColor,
+  iconGap = "10px",
+  minWidth = "150px",
+}) {
   const dialogRef = useRef(null);
   const dialogId = useId();
   const headerId = useId();
@@ -45,7 +52,7 @@ export function Dialog({ initialDate, onDateChange, showWeekday, dateColor }) {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
+          gap: iconGap,
           justifyContent: "center",
           width: "100%",
         }}
@@ -56,7 +63,7 @@ export function Dialog({ initialDate, onDateChange, showWeekday, dateColor }) {
             fontSize: "1.08rem",
             color: typeof dateColor === "string" ? dateColor : "#fff",
             textAlign: "center",
-            minWidth: "150px",
+            minWidth: minWidth,
             fontWeight: 500,
             letterSpacing: "0.01em",
             textShadow: "0 1px 4px rgba(0,0,0,0.25)",

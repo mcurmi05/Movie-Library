@@ -179,6 +179,36 @@ export const UserLogsProvider = ({ children }) => {
     }
   };
 
+  // Remove a season at a specific index for a log
+  const removeSeasonAt = async (log_id, seasonIndex) => {
+    setUserLogs((prev) => {
+      return prev.map((l) => {
+        if (l.id !== log_id) return l;
+        const current = Array.isArray(l.season_info) ? [...l.season_info] : [];
+        if (seasonIndex < 0 || seasonIndex >= current.length) return l;
+        current.splice(seasonIndex, 1);
+        // re-number seasons to keep season property consistent
+        const renumbered = current.map((s, idx) => ({ ...s, season: idx + 1 }));
+        return { ...l, season_info: renumbered };
+      });
+    });
+
+    try {
+      const logRow = userLogs.find((x) => x.id === log_id);
+      const current = logRow?.season_info ? [...logRow.season_info] : [];
+      if (seasonIndex < 0 || seasonIndex >= current.length) return;
+      current.splice(seasonIndex, 1);
+      const renumbered = current.map((s, idx) => ({ ...s, season: idx + 1 }));
+      const { error } = await supabase
+        .from("logs")
+        .update({ season_info: renumbered })
+        .eq("id", log_id);
+      if (error) console.error("Failed to persist removeSeasonAt:", error);
+    } catch (err) {
+      console.error("removeSeasonAt error:", err);
+    }
+  };
+
   const updateLog = (log_id, newLog) => {
     setUserLogs((prev) =>
       prev.map((log) => (log.id === log_id ? { ...log, log: newLog } : log))
@@ -226,6 +256,7 @@ export const UserLogsProvider = ({ children }) => {
         addSeason,
         updateSeasonDate,
         removeSeason,
+        removeSeasonAt,
         setSeasonFinished,
         removeLog,
         updateLog,

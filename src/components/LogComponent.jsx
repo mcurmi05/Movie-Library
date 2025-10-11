@@ -34,9 +34,13 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
     userLogs,
     addSeason,
     updateSeasonDate,
-    removeSeason,
+    removeSeasonAt,
     setSeasonFinished,
   } = useLogs();
+  const [showRemoveSeasonModal, setShowRemoveSeasonModal] = useState(false);
+  const [seasonToRemoveIndex, setSeasonToRemoveIndex] = useState(null);
+  const [showUndoSeasonModal, setShowUndoSeasonModal] = useState(false);
+  const [undoSeasonIndex, setUndoSeasonIndex] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [text, setText] = useState(logtext);
@@ -153,7 +157,10 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
           (movie.titleType &&
             String(movie.titleType).toLowerCase().includes("tv")) ||
           movie.episodes) && (
-          <div style={{ width: "100%", marginBottom: "12px" }}>
+          <div
+            className="seasons-container"
+            style={{ width: "100%", marginBottom: "12px", paddingLeft: "20px" }}
+          >
             <div
               style={{
                 display: "flex",
@@ -165,15 +172,22 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
               <strong>Seasons</strong>
               <button
                 onClick={() => addSeason(log_id)}
+                aria-label="Add season"
+                title="Add season"
                 style={{
-                  background: "#222",
-                  color: "white",
-                  border: "1px solid #444",
-                  padding: "4px 8px",
-                  borderRadius: 6,
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                +
+                <img
+                  src="/plus.png"
+                  alt="Add"
+                  style={{ width: 20, height: 20 }}
+                />
               </button>
             </div>
             <div
@@ -201,7 +215,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                       }}
                     >
                       <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                        Start:
+                        Started:
                       </div>
                       <Dialog
                         initialDate={
@@ -217,6 +231,8 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                         }
                         showWeekday={false}
                         dateColor="#fff"
+                        iconGap="10px"
+                        minWidth="90px"
                       />
 
                       {/* finished toggle - when not finished allow marking finished */}
@@ -226,64 +242,36 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                           aria-label="Mark season finished"
                           title="Mark season finished"
                           style={{
-                            background: "#444",
+                            background: "transparent",
                             color: "white",
                             border: "none",
                             borderRadius: 6,
-                            padding: "6px",
+                            padding: "4px",
                             marginLeft: 8,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                           }}
                         >
-                          {/* check icon */}
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden
-                          >
-                            <path
-                              d="M20 6L9 17L4 12"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          <img
+                            src="/watched.png"
+                            alt="Watched"
+                            style={{ width: 24, height: 24 }}
+                          />
                         </button>
                       ) : (
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "8px",
+                            gap: "6px",
                             marginLeft: 8,
+                            flexWrap: "nowrap",
                           }}
                         >
-                          {/* green check circle */}
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-hidden
-                          >
-                            <circle cx="12" cy="12" r="10" fill="#2ecc71" />
-                            <path
-                              d="M9 12.5L11 14.5L15 10.5"
-                              stroke="white"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          {/* removed green checkmark per request */}
                           <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                            End:
+                            Finished:
                           </div>
                           <Dialog
                             initialDate={
@@ -299,11 +287,14 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             }
                             showWeekday={false}
                             dateColor="#fff"
+                            iconGap="6px"
+                            minWidth="100px"
                           />
                           <button
-                            onClick={() =>
-                              setSeasonFinished(log_id, idx, false)
-                            }
+                            onClick={() => {
+                              setUndoSeasonIndex(idx);
+                              setShowUndoSeasonModal(true);
+                            }}
                             aria-label="Undo finished"
                             title="Undo finished"
                             style={{
@@ -316,50 +307,32 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                               alignItems: "center",
                             }}
                           >
-                            {/* circular arrow */}
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              aria-hidden
-                            >
-                              <path
-                                d="M21 12A9 9 0 1 0 12 21"
-                                stroke="#ccc"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M21 3v6h-6"
-                                stroke="#ccc"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            <img
+                              src="/undo.png"
+                              alt="Undo finished"
+                              style={{ width: 16, height: 16 }}
+                            />
                           </button>
                         </div>
                       )}
                     </div>
                     {/* show remove button only for the last season */}
                     {idx === arr.length - 1 && (
-                      <button
-                        onClick={() => removeSeason(log_id)}
+                      <img
+                        src="/logdelete.png"
+                        alt="Remove newest season"
+                        title="Remove newest season"
+                        onClick={() => {
+                          setSeasonToRemoveIndex(idx);
+                          setShowRemoveSeasonModal(true);
+                        }}
                         style={{
-                          background: "#ff4d4f",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 4,
-                          padding: "4px 6px",
+                          width: 14,
+                          height: 14,
+                          cursor: "pointer",
                           marginLeft: 8,
                         }}
-                        title="Remove newest season"
-                      >
-                        ×
-                      </button>
+                      />
                     )}
                   </div>
                 )
@@ -441,6 +414,116 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
               }}
             >
               Delete
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+      <Modal
+        open={showRemoveSeasonModal}
+        onClose={() => setShowRemoveSeasonModal(false)}
+        aria-labelledby="delete-season-modal-title"
+      >
+        <Box sx={modalStyle}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "18px",
+              fontWeight: "bold",
+            }}
+          >
+            Are you sure you want to remove Season{" "}
+            {seasonToRemoveIndex !== null ? seasonToRemoveIndex + 1 : ""}?
+          </div>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => setShowRemoveSeasonModal(false)}
+              sx={{
+                color: "white",
+                borderColor: "#666",
+                fontWeight: "bold",
+                textTransform: "none",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (seasonToRemoveIndex !== null)
+                  removeSeasonAt(log_id, seasonToRemoveIndex);
+                setShowRemoveSeasonModal(false);
+                setSeasonToRemoveIndex(null);
+              }}
+              sx={{
+                backgroundColor: "#ff0000ff",
+                fontWeight: "bold",
+                textTransform: "none",
+              }}
+            >
+              Remove
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+      <Modal
+        open={showUndoSeasonModal}
+        onClose={() => setShowUndoSeasonModal(false)}
+        aria-labelledby="undo-season-modal-title"
+      >
+        <Box sx={modalStyle}>
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: "18px",
+              fontWeight: "bold",
+            }}
+          >
+            Are you sure you want to unwatch Season{" "}
+            {undoSeasonIndex !== null ? undoSeasonIndex + 1 : ""}?
+          </div>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => setShowUndoSeasonModal(false)}
+              sx={{
+                color: "white",
+                borderColor: "#666",
+                fontWeight: "bold",
+                textTransform: "none",
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (undoSeasonIndex !== null)
+                  setSeasonFinished(log_id, undoSeasonIndex, false);
+                setShowUndoSeasonModal(false);
+                setUndoSeasonIndex(null);
+              }}
+              sx={{
+                backgroundColor: "#ff0000ff",
+                fontWeight: "bold",
+                textTransform: "none",
+              }}
+            >
+              Unwatch
             </Button>
           </Box>
         </Box>
