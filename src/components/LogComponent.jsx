@@ -174,6 +174,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                 onClick={() => addSeason(log_id)}
                 aria-label="Add season"
                 title="Add season"
+                className="season-button"
                 style={{
                   background: "transparent",
                   border: "none",
@@ -232,7 +233,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                         showWeekday={false}
                         dateColor="#fff"
                         iconGap="10px"
-                        minWidth="90px"
+                        minWidth="120px"
                       />
 
                       {/* finished toggle - when not finished allow marking finished */}
@@ -241,6 +242,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                           onClick={() => setSeasonFinished(log_id, idx, true)}
                           aria-label="Mark season finished"
                           title="Mark season finished"
+                          className="season-button"
                           style={{
                             background: "transparent",
                             color: "white",
@@ -267,6 +269,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             gap: "6px",
                             marginLeft: 8,
                             flexWrap: "nowrap",
+                            whiteSpace: "nowrap",
                           }}
                         >
                           {/* removed green checkmark per request */}
@@ -288,7 +291,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             showWeekday={false}
                             dateColor="#fff"
                             iconGap="6px"
-                            minWidth="100px"
+                            minWidth="140px"
                           />
                           <button
                             onClick={() => {
@@ -297,6 +300,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             }}
                             aria-label="Undo finished"
                             title="Undo finished"
+                            className="season-button"
                             style={{
                               background: "transparent",
                               color: "white",

@@ -67,6 +67,10 @@ export function Dialog({
             fontWeight: 500,
             letterSpacing: "0.01em",
             textShadow: "0 1px 4px rgba(0,0,0,0.25)",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            flexShrink: 0,
           }}
         >
           {selectedDate
