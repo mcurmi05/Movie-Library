@@ -74,7 +74,7 @@ export function Dialog({
         <p
           style={{
             margin: 0,
-            fontSize: "1.08rem",
+            fontSize: "0.95rem",
             color: typeof dateColor === "string" ? dateColor : "#fff",
             textAlign: "center",
             minWidth: minWidth,

@@ -166,7 +166,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
-                marginBottom: "8px",
+                marginBottom: "12px",
               }}
             >
               <strong>Seasons</strong>
@@ -196,68 +196,118 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
             >
               {(userLogs.find((l) => l.id === log_id)?.season_info || []).map(
                 (s, idx, arr) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      flexWrap: "wrap",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div style={{ minWidth: 80 }}>
-                        Season {s.season || idx + 1}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                          Started:
+                  <div key={idx} className="season-row">
+                    <div className="season-left">
+                      <div className="season-title">
+                        <div className="season-label">
+                          Season {s.season || idx + 1}
                         </div>
-                        <Dialog
-                          initialDate={
-                            s.start_date ? new Date(s.start_date) : new Date()
-                          }
-                          onDateChange={(d) =>
-                            updateSeasonDate(
-                              log_id,
-                              idx,
-                              "start_date",
-                              d.toISOString()
-                            )
-                          }
-                          showWeekday={false}
-                          dateColor="#fff"
-                          iconGap="10px"
-                          minWidth="120px"
-                        />
+                        {/* actions: undo/mark-finished and delete - sit to the right of label */}
+                        <div className="season-actions">
+                          {!s.finished ? (
+                            <button
+                              onClick={() =>
+                                setSeasonFinished(log_id, idx, true)
+                              }
+                              aria-label="Mark season finished"
+                              title="Mark season finished"
+                              className="season-button"
+                              style={{
+                                background: "transparent",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 6,
+                                padding: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <img
+                                src="/watched.png"
+                                alt="Watched"
+                                style={{ width: 24, height: 24 }}
+                              />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setUndoSeasonIndex(idx);
+                                setShowUndoSeasonModal(true);
+                              }}
+                              aria-label="Undo finished"
+                              title="Undo finished"
+                              className="season-button"
+                              style={{
+                                background: "transparent",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 6,
+                                padding: "6px",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <img
+                                src="/undo.png"
+                                alt="Undo finished"
+                                style={{ width: 16, height: 16 }}
+                              />
+                            </button>
+                          )}
 
-                        {/* finished toggle - when not finished allow marking finished */}
-                        {!s.finished ? (
-                          <div />
-                        ) : (
+                          {/* show remove button only for the last season */}
+                          {idx === arr.length - 1 && (
+                            <img
+                              src="/logdelete.png"
+                              alt="Remove newest season"
+                              title="Remove newest season"
+                              onClick={() => {
+                                setSeasonToRemoveIndex(idx);
+                                setShowRemoveSeasonModal(true);
+                              }}
+                              style={{
+                                width: 16,
+                                height: 16,
+                                cursor: "pointer",
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                      <div className="season-dates-wrap">
+                        <div className="season-chunk">
                           <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              whiteSpace: "nowrap",
-                              marginLeft: "15px",
-                            }}
+                            className="season-started-label"
+                            style={{ fontSize: "0.9rem", color: "#ccc" }}
                           >
-                            <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+                            Started:
+                          </div>
+                          <Dialog
+                            initialDate={
+                              s.start_date ? new Date(s.start_date) : new Date()
+                            }
+                            onDateChange={(d) =>
+                              updateSeasonDate(
+                                log_id,
+                                idx,
+                                "start_date",
+                                d.toISOString()
+                              )
+                            }
+                            showWeekday={false}
+                            dateColor="#fff"
+                            iconGap="8px"
+                            minWidth="110px"
+                          />
+                        </div>
+
+                        {s.finished && (
+                          <div className="season-chunk">
+                            <div
+                              className="season-finished-label"
+                              style={{ fontSize: "0.9rem", color: "#ccc" }}
+                            >
                               Finished:
                             </div>
                             <Dialog
@@ -275,85 +325,11 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                               showWeekday={false}
                               dateColor="#fff"
                               iconGap="6px"
-                              minWidth="140px"
+                              minWidth="120px"
                             />
                           </div>
                         )}
                       </div>
-                    </div>
-
-                    {/* actions: undo/mark-finished and delete - right aligned and closer together */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        marginLeft: 8,
-                      }}
-                    >
-                      {!s.finished ? (
-                        <button
-                          onClick={() => setSeasonFinished(log_id, idx, true)}
-                          aria-label="Mark season finished"
-                          title="Mark season finished"
-                          className="season-button"
-                          style={{
-                            background: "transparent",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "4px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <img
-                            src="/watched.png"
-                            alt="Watched"
-                            style={{ width: 24, height: 24 }}
-                          />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setUndoSeasonIndex(idx);
-                            setShowUndoSeasonModal(true);
-                          }}
-                          aria-label="Undo finished"
-                          title="Undo finished"
-                          className="season-button"
-                          style={{
-                            background: "transparent",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "6px",
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <img
-                            src="/undo.png"
-                            alt="Undo finished"
-                            style={{ width: 16, height: 16 }}
-                          />
-                        </button>
-                      )}
-
-                      {/* show remove button only for the last season */}
-                      {idx === arr.length - 1 && (
-                        <img
-                          src="/logdelete.png"
-                          alt="Remove newest season"
-                          title="Remove newest season"
-                          onClick={() => {
-                            setSeasonToRemoveIndex(idx);
-                            setShowRemoveSeasonModal(true);
-                          }}
-                          style={{ width: 16, height: 16, cursor: "pointer" }}
-                        />
-                      )}
                     </div>
                   </div>
                 )

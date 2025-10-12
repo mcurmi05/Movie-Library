@@ -68,6 +68,89 @@
   padding-right: 19px;
 }
 
+/* Season row layout */
+.season-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Left side (Season N + Started/Finished) should grow and wrap */
+.season-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0; /* allow children to shrink without overflow */
+  flex-wrap: wrap;
+}
+
+.season-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap; /* keep label and actions together */
+  min-width: 0;
+}
+
+.season-label {
+  min-width: 80px;
+  margin-bottom: -10px;
+  margin-right: -20px;
+}
+
+/* Container for started + finished chunks; allows finished to wrap below */
+.season-dates-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex-basis: 100%; /* force onto the next line under the title */
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Keep each label+date together on a line */
+.season-chunk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Action buttons on the right */
+.season-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px; /* slight separation from label */
+  margin-bottom: -10px; /* align with season label baseline */
+}
+
+/* Slight indent for the Finished label */
+.season-finished-label {
+  margin-left: 25px;
+  margin-right: -10px; /* reduce space to its date */
+}
+
+/* Reduce space to the date after Started: */
+.season-started-label {
+  margin-right: -10px;
+}
+
+@media (max-width: 480px) {
+  .season-left {
+    gap: 8px;
+  }
+  .season-dates-wrap {
+    gap: 8px;
+    margin-top: 3px;
+  }
+}
+
 /* remove default focus outline/blue highlight for season buttons */
 .season-button {
   outline: none;
