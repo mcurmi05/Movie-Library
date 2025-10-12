@@ -69,6 +69,7 @@ function Ratings() {
           justifyContent: "center",
           marginBottom: "20px",
           gap: "10px",
+          flexWrap: "wrap",
         }}
       >
         <input
@@ -82,6 +83,7 @@ function Ratings() {
             border: "1px solid #ccc",
             width: "180px",
             textAlign: "center",
+            margin: "6px",
           }}
         />
         <select
@@ -97,6 +99,7 @@ function Ratings() {
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
+            margin: "6px",
           }}
         >
           <option value="all">Movies & TV</option>
@@ -116,6 +119,7 @@ function Ratings() {
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
+            margin: "6px",
           }}
         >
           <option value="all" style={{ whiteSpace: "nowrap" }}>
@@ -139,6 +143,7 @@ function Ratings() {
             letterSpacing: "0.5px",
             verticalAlign: "middle",
             display: "inline-block",
+            margin: "6px",
           }}
         >
           {sortedRatings.length}

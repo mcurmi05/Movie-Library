@@ -5,13 +5,13 @@ import "../styles/Trending.css";
 import MovieCard from "../components/MovieCard.jsx";
 
 function Trending() {
-  const { 
-    popularMovies, 
-    popularMoviesLoaded, 
+  const {
+    popularMovies,
+    popularMoviesLoaded,
     cachePopularMovies,
     popularTV,
     popularTVLoaded,
-    cachePopularTV
+    cachePopularTV,
   } = useCache();
 
   const getInitialMediaType = () => {
@@ -30,49 +30,50 @@ function Trending() {
       setLoading(true);
       setError(null);
 
-      if (mediaType === "movies"){
+      if (mediaType === "movies") {
         //should load the one they are looking at first
-          if (!popularMoviesLoaded) {
-            try {
-              const fetchedMovies = await getPopularMovies();
-              if (isMounted) cachePopularMovies(fetchedMovies);
-            } catch (err) {
-              if (isMounted) setError("Failed to load movies..." + err);
-            }
+        if (!popularMoviesLoaded) {
+          try {
+            const fetchedMovies = await getPopularMovies();
+            if (isMounted) cachePopularMovies(fetchedMovies);
+          } catch (err) {
+            if (isMounted) setError("Failed to load movies..." + err);
           }
-          if (!popularTVLoaded) {
-            try {
-              const fetchedTV = await getPopularTV();
-              if (isMounted) cachePopularTV(fetchedTV);
-            } catch (err) {
-              if (isMounted) setError("Failed to load TV shows..." + err);
-            }
+        }
+        if (!popularTVLoaded) {
+          try {
+            const fetchedTV = await getPopularTV();
+            if (isMounted) cachePopularTV(fetchedTV);
+          } catch (err) {
+            if (isMounted) setError("Failed to load TV shows..." + err);
           }
-      } else if (mediaType==="tv"){
-        
-          if (!popularTVLoaded) {
-              try {
-                const fetchedTV = await getPopularTV();
-                if (isMounted) cachePopularTV(fetchedTV);
-              } catch (err) {
-                if (isMounted) setError("Failed to load TV shows..." + err);
-              }
+        }
+      } else if (mediaType === "tv") {
+        if (!popularTVLoaded) {
+          try {
+            const fetchedTV = await getPopularTV();
+            if (isMounted) cachePopularTV(fetchedTV);
+          } catch (err) {
+            if (isMounted) setError("Failed to load TV shows..." + err);
           }
+        }
 
-          if (!popularMoviesLoaded) {
-            try {
-              const fetchedMovies = await getPopularMovies();
-              if (isMounted) cachePopularMovies(fetchedMovies);
-            } catch (err) {
-              if (isMounted) setError("Failed to load movies..." + err);
-            }
+        if (!popularMoviesLoaded) {
+          try {
+            const fetchedMovies = await getPopularMovies();
+            if (isMounted) cachePopularMovies(fetchedMovies);
+          } catch (err) {
+            if (isMounted) setError("Failed to load movies..." + err);
           }
+        }
       }
       if (isMounted) setLoading(false);
     };
 
     fetchAll();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
     // Only run on mount
     // eslint-disable-next-line
   }, []);
@@ -100,19 +101,33 @@ function Trending() {
       }
     }
     localStorage.setItem("trendingMediaType", mediaType);
-  }, [mediaType, popularMovies, popularMoviesLoaded, popularTV, popularTVLoaded]);
+  }, [
+    mediaType,
+    popularMovies,
+    popularMoviesLoaded,
+    popularTV,
+    popularTVLoaded,
+  ]);
 
   return (
     <div className="trending">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "-20px", flexWrap:"wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: "-20px",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}
+      >
         <h1 style={{ textAlign: "center", margin: 0 }}>Top 100 Trending</h1>
         <select
           className="mediatype-selector"
           value={mediaType}
-          onChange={e => setMediaType(e.target.value)}
+          onChange={(e) => setMediaType(e.target.value)}
           style={{
             height: "32px",
-            width:"100px",
             padding: "0 10px",
             border: "1px solid #cccccc",
             borderRadius: "6px",
@@ -121,7 +136,8 @@ function Trending() {
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
-            fontWeight:"normal"
+            minWidth: "140px",
+            margin: "6px",
           }}
         >
           <option value="movies">Movies</option>

@@ -61,6 +61,7 @@ function Watchlist() {
           justifyContent: "center",
           marginBottom: "20px",
           gap: "10px",
+          flexWrap: "wrap",
         }}
       >
         <input
@@ -74,6 +75,7 @@ function Watchlist() {
             border: "1px solid #ccc",
             width: "180px",
             textAlign: "center",
+            margin: "6px",
           }}
         />
         <select
@@ -89,6 +91,7 @@ function Watchlist() {
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
+            margin: "6px",
           }}
         >
           <option value="all">Movies & TV</option>
@@ -107,6 +110,7 @@ function Watchlist() {
             letterSpacing: "0.5px",
             verticalAlign: "middle",
             display: "inline-block",
+            margin: "6px",
           }}
         >
           {userWatchlist.length}

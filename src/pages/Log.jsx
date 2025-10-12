@@ -76,6 +76,7 @@ function Log() {
           justifyContent: "center",
           marginBottom: "20px",
           gap: "10px",
+          flexWrap: "wrap",
         }}
       >
         <input
@@ -89,6 +90,7 @@ function Log() {
             border: "1px solid #ccc",
             width: "180px",
             textAlign: "center",
+            margin: "6px",
           }}
         />
         <select
@@ -104,6 +106,7 @@ function Log() {
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
+            margin: "6px",
           }}
         >
           <option value="all">Movies & TV</option>
@@ -124,6 +127,7 @@ function Log() {
             fontweight: "bold",
             outline: "none",
             textAlign: "center",
+            margin: "6px",
           }}
         >
           <option value="all" style={{ whiteSpace: "nowrap" }}>
@@ -147,6 +151,7 @@ function Log() {
             letterSpacing: "0.5px",
             verticalAlign: "middle",
             display: "inline-block",
+            margin: "6px",
           }}
         >
           {filteredLogs.length}
