@@ -1,6 +1,6 @@
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import Rating from "../components/Rating.jsx";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 
 function Ratings() {
   const { userRatings, userRatingsLoaded, updateRanking } = useRatings();
@@ -22,6 +22,17 @@ function Ratings() {
   }, [rankModeType]);
 
   // Avoid early return before hooks; we'll render a loading state in JSX
+
+  // Helper to determine if an item is a TV show
+  const isTVItem = (item) => {
+    const type = (item.movie_object?.type || "").toLowerCase();
+    const titleType = (item.movie_object?.titleType || "").toLowerCase();
+    return (
+      type.includes("tv") ||
+      titleType.includes("tv") ||
+      item.movie_object?.episodes
+    );
+  };
 
   const filteredRatings = userRatings.filter((rating) => {
     // Filter by media type (movie/tv)
@@ -53,14 +64,18 @@ function Ratings() {
   }, [filteredRatings]);
 
   // Sort helper for rankings: rank asc (1..n), then created_at desc
-  const rankSort = (a, b) => {
+  const rankSort = useCallback((a, b) => {
     const ra = a.ranking ?? Number.MAX_SAFE_INTEGER;
     const rb = b.ranking ?? Number.MAX_SAFE_INTEGER;
     if (ra !== rb) return ra - rb;
+    // Same rank: show TV first, then movies
+    const aIsTV = isTVItem(a);
+    const bIsTV = isTVItem(b);
+    if (aIsTV !== bIsTV) return aIsTV ? -1 : 1;
     const dateA = new Date(a.created_at);
     const dateB = new Date(b.created_at);
     return dateB - dateA;
-  };
+  }, []);
 
   // Display list respects rank when filtering 10s, otherwise default date sort
   const sortedRatings = useMemo(() => {
@@ -72,7 +87,7 @@ function Ratings() {
       const dateB = new Date(b.created_at);
       return dateB - dateA;
     });
-  }, [filteredRatings, allTens, ratingFilter]);
+  }, [filteredRatings, allTens, ratingFilter, rankSort]);
 
   // Move rank up/down among 10s by swapping ranking values and normalizing
   // Note: normalization handled implicitly by applyRankOrder indices
