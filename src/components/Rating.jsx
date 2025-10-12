@@ -86,7 +86,7 @@ function Rating({
                   {rankNumber ? `#${rankNumber}` : "Unranked"}
                 </span>
                 {showRankControls && (
-                  <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ display: "flex", gap: 3 }}>
                     <button
                       onClick={onSendTop}
                       title="Send to top"
@@ -94,11 +94,11 @@ function Rating({
                         border: "1px solid #cccccc",
                         background: "#2a2a2a",
                         color: "#fff",
-                        borderRadius: 6,
+                        borderRadius: 4,
                         padding: 0,
                         cursor: "pointer",
-                        width: 32,
-                        height: 32,
+                        width: 22,
+                        height: 22,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -110,7 +110,7 @@ function Rating({
                       <img
                         src="/doublepromote.png"
                         alt="Top"
-                        style={{ width: 20, height: 20 }}
+                        style={{ width: 12, height: 12 }}
                       />
                     </button>
                     <button
@@ -120,11 +120,11 @@ function Rating({
                         border: "1px solid #cccccc",
                         background: "#2a2a2a",
                         color: "#fff",
-                        borderRadius: 6,
+                        borderRadius: 4,
                         padding: 0,
                         cursor: "pointer",
-                        width: 32,
-                        height: 32,
+                        width: 22,
+                        height: 22,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -136,7 +136,7 @@ function Rating({
                       <img
                         src="/promote.png"
                         alt="Up"
-                        style={{ width: 18, height: 18 }}
+                        style={{ width: 10, height: 10 }}
                       />
                     </button>
                     <button
@@ -146,11 +146,11 @@ function Rating({
                         border: "1px solid #cccccc",
                         background: "#2a2a2a",
                         color: "#fff",
-                        borderRadius: 6,
+                        borderRadius: 4,
                         padding: 0,
                         cursor: "pointer",
-                        width: 32,
-                        height: 32,
+                        width: 22,
+                        height: 22,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -162,7 +162,7 @@ function Rating({
                       <img
                         src="/doubledemote.png"
                         alt="Bottom"
-                        style={{ width: 20, height: 20 }}
+                        style={{ width: 12, height: 12 }}
                       />
                     </button>
                     <button
@@ -172,11 +172,11 @@ function Rating({
                         border: "1px solid #cccccc",
                         background: "#2a2a2a",
                         color: "#fff",
-                        borderRadius: 6,
+                        borderRadius: 4,
                         padding: 0,
                         cursor: "pointer",
-                        width: 32,
-                        height: 32,
+                        width: 22,
+                        height: 22,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -188,7 +188,7 @@ function Rating({
                       <img
                         src="/demote.png"
                         alt="Down"
-                        style={{ width: 18, height: 18 }}
+                        style={{ width: 10, height: 10 }}
                       />
                     </button>
                   </div>

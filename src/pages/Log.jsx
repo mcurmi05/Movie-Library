@@ -80,6 +80,7 @@ function Log() {
         }}
       >
         <input
+          className="filter-input"
           type="text"
           placeholder="Search..."
           value={searchTerm}
@@ -91,6 +92,8 @@ function Log() {
             width: "180px",
             textAlign: "center",
             margin: "6px",
+            backgroundColor: "#3b3b3b",
+            color: "#ffffff",
           }}
         />
         <select
@@ -102,7 +105,7 @@ function Log() {
             border: "1px solid #cccccc",
             borderRadius: "6px",
             backgroundColor: "#3b3b3b",
-            color: "#898888ff",
+            color: "#ffffff",
             fontSize: "0.8rem",
             outline: "none",
             textAlign: "center",
@@ -122,7 +125,7 @@ function Log() {
             border: "1px solid #cccccc",
             borderRadius: "6px",
             backgroundColor: "#3b3b3b",
-            color: "#898888ff",
+            color: "#ffffff",
             fontSize: "0.8rem",
             fontweight: "bold",
             outline: "none",

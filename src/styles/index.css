@@ -13,21 +13,20 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
-  padding-right:6px;
+  padding-right: 6px;
 }
 
 :root::-webkit-scrollbar {
-    width: 6px;  
+  width: 6px;
 }
 
 :root::-webkit-scrollbar-thumb {
-    background: #888;    
-    border-radius: 3px;  
-    
+  background: #888;
+  border-radius: 3px;
 }
 
 :root::-webkit-scrollbar-track {
-    background: transparent; 
+  background: transparent;
 }
 
 * {
@@ -36,7 +35,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
@@ -107,6 +107,22 @@ dialog[open] {
   transform: translate(-50%, -50%) !important;
   margin: 0 !important;
   border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   z-index: 1001;
+}
+
+/* Filter inputs placeholder color to grey, used on Ratings/Watchlist/Log */
+.filter-input::placeholder {
+  color: #898888; /* grey */
+  opacity: 1; /* Firefox */
+}
+
+/* For older Edge/IE fallbacks (harmless in modern browsers) */
+.filter-input:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #898888;
+}
+.filter-input::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: #898888;
 }

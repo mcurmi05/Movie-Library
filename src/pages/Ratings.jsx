@@ -139,6 +139,7 @@ function Ratings() {
         }}
       >
         <input
+          className="filter-input"
           type="text"
           placeholder="Search..."
           value={searchTerm}
@@ -293,10 +294,7 @@ function Ratings() {
               alignItems: "center",
             }}
           >
-            <div
-              className="div-wrapper-rating-testing"
-              style={{ width: "100%" }}
-            >
+            <div className="div-wrapper-rating-testing">
               <Rating
                 movie_object={rating.movie_object}
                 ratingDate={rating.created_at}
