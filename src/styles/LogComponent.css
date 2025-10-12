@@ -132,7 +132,7 @@
 
 /* Slight indent for the Finished label */
 .season-finished-label {
-  margin-left: 25px;
+  margin-left: 0;
   margin-right: -10px; /* reduce space to its date */
 }
 
