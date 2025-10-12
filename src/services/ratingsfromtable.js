@@ -10,6 +10,17 @@ export const updateUserRating = async (userId, imdbMovieId, newRating) => {
 };
 import { supabase } from "./supabase-client.js";
 
+// Update a user's ranking (nullable) in Supabase
+export const updateUserRanking = async (userId, imdbMovieId, ranking) => {
+  const { data, error } = await supabase
+    .from("ratings")
+    .update({ ranking })
+    .eq("user_id", userId)
+    .eq("imdb_movie_id", imdbMovieId);
+  if (error) throw error;
+  return data;
+};
+
 export const getUserRatings = async (user) => {
   if (!user) throw new Error("User must be authenticated to view ratings");
   const { data, error } = await supabase

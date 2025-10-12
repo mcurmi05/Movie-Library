@@ -5,7 +5,17 @@ import ReleaseAndRunTime from "./ReleaseAndRunTime";
 import AddLog from "./AddLog.jsx";
 import AddWatchlist from "./AddWatchlist.jsx";
 
-function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
+function Rating({
+  movie_object,
+  ratingDate,
+  addedToWatchlistDate,
+  rankNumber = null,
+  showRankControls = false,
+  onMoveUp,
+  onMoveDown,
+  onSendTop,
+  onSendBottom,
+}) {
   const navigate = useNavigate();
 
   function onMovieClick() {
@@ -44,19 +54,157 @@ function Rating({ movie_object, ratingDate, addedToWatchlistDate }) {
             <p className="movie-title" onClick={onMovieClick}>
               {movie_object.primaryTitle}{" "}
             </p>
-            <div style = {{display:"flex"}}>
-                <div className="rating-star-div">
-                  <MovieRatingStar movie={movie_object}></MovieRatingStar>
-                </div>
-                <div style={{margin:"5px"}}>
-                  
-                </div>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <AddWatchlist movie={movie_object}></AddWatchlist>
-                  <AddLog movie={movie_object}></AddLog>
-                </div>
+            {/* Rank badge and optional controls */}
+            {(rankNumber || showRankControls) && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginLeft: 8,
+                }}
+              >
+                <span
+                  title={rankNumber ? `#${rankNumber}` : "Unranked"}
+                  style={{
+                    background:
+                      rankNumber === 1
+                        ? "linear-gradient(135deg,#FFD700,#E6C200)"
+                        : rankNumber === 2
+                        ? "linear-gradient(135deg,#C0C0C0,#A9A9A9)"
+                        : rankNumber === 3
+                        ? "linear-gradient(135deg,#CD7F32,#B87333)"
+                        : "#444",
+                    color: rankNumber ? "#000" : "#fff",
+                    borderRadius: 10,
+                    padding: "2px 8px",
+                    fontSize: "0.85rem",
+                    minWidth: 42,
+                    textAlign: "center",
+                  }}
+                >
+                  {rankNumber ? `#${rankNumber}` : "Unranked"}
+                </span>
+                {showRankControls && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      onClick={onSendTop}
+                      title="Send to top"
+                      style={{
+                        border: "1px solid #cccccc",
+                        background: "#2a2a2a",
+                        color: "#fff",
+                        borderRadius: 6,
+                        padding: 0,
+                        cursor: "pointer",
+                        width: 32,
+                        height: 32,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        outline: "none",
+                        boxShadow: "none",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <img
+                        src="/doublepromote.png"
+                        alt="Top"
+                        style={{ width: 20, height: 20 }}
+                      />
+                    </button>
+                    <button
+                      onClick={onMoveUp}
+                      title="Move up"
+                      style={{
+                        border: "1px solid #cccccc",
+                        background: "#2a2a2a",
+                        color: "#fff",
+                        borderRadius: 6,
+                        padding: 0,
+                        cursor: "pointer",
+                        width: 32,
+                        height: 32,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        outline: "none",
+                        boxShadow: "none",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <img
+                        src="/promote.png"
+                        alt="Up"
+                        style={{ width: 18, height: 18 }}
+                      />
+                    </button>
+                    <button
+                      onClick={onSendBottom}
+                      title="Send to bottom"
+                      style={{
+                        border: "1px solid #cccccc",
+                        background: "#2a2a2a",
+                        color: "#fff",
+                        borderRadius: 6,
+                        padding: 0,
+                        cursor: "pointer",
+                        width: 32,
+                        height: 32,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        outline: "none",
+                        boxShadow: "none",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <img
+                        src="/doubledemote.png"
+                        alt="Bottom"
+                        style={{ width: 20, height: 20 }}
+                      />
+                    </button>
+                    <button
+                      onClick={onMoveDown}
+                      title="Move down"
+                      style={{
+                        border: "1px solid #cccccc",
+                        background: "#2a2a2a",
+                        color: "#fff",
+                        borderRadius: 6,
+                        padding: 0,
+                        cursor: "pointer",
+                        width: 32,
+                        height: 32,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        outline: "none",
+                        boxShadow: "none",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <img
+                        src="/demote.png"
+                        alt="Down"
+                        style={{ width: 18, height: 18 }}
+                      />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{ display: "flex" }}>
+              <div className="rating-star-div">
+                <MovieRatingStar movie={movie_object}></MovieRatingStar>
+              </div>
+              <div style={{ margin: "5px" }}></div>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <AddWatchlist movie={movie_object}></AddWatchlist>
+                <AddLog movie={movie_object}></AddLog>
+              </div>
             </div>
-            
           </div>
 
           <div
