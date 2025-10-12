@@ -75,6 +75,9 @@
   gap: 10px;
   flex-wrap: wrap;
   width: 100%;
+  background: #2a2a2a; /* darker grey, still lighter than the main background */
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 
 /* Left side (Season N + Started/Finished) should grow and wrap */
@@ -105,7 +108,7 @@
 .season-dates-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 40px;
   flex-wrap: wrap;
   min-width: 0;
   flex-basis: 100%; /* force onto the next line under the title */
