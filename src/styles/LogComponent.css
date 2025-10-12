@@ -108,7 +108,9 @@
 .season-dates-wrap {
   display: flex;
   align-items: center;
-  gap: 40px;
+  /* Keep wide horizontal spacing, but tighten vertical spacing when wrapping */
+  column-gap: 40px;
+  row-gap: 6px;
   flex-wrap: wrap;
   min-width: 0;
   flex-basis: 100%; /* force onto the next line under the title */
@@ -149,7 +151,9 @@
     gap: 8px;
   }
   .season-dates-wrap {
-    gap: 8px;
+    /* On small screens keep both gaps compact */
+    column-gap: 8px;
+    row-gap: 4px;
     margin-top: 3px;
   }
 }
