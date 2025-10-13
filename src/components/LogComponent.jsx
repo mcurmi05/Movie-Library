@@ -216,8 +216,8 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                                 background: "transparent",
                                 color: "white",
                                 border: "none",
-                                borderRadius: 6,
-                                padding: "4px",
+                                borderRadius: 4,
+                                padding: "5px",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -226,7 +226,11 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                               <img
                                 src="/watched.png"
                                 alt="Watched"
-                                style={{ width: 24, height: 24 }}
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  transform: "translateY(-2px)",
+                                }}
                               />
                             </button>
                           ) : (
@@ -267,8 +271,8 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                                 setShowRemoveSeasonModal(true);
                               }}
                               style={{
-                                width: 16,
-                                height: 16,
+                                width: 12,
+                                height: 12,
                                 cursor: "pointer",
                               }}
                             />

@@ -75,7 +75,7 @@
   gap: 10px;
   flex-wrap: wrap;
   width: 100%;
-  background: #2a2a2a; /* darker grey, still lighter than the main background */
+  background: #303030; /* slightly lighter for a touch more contrast */
   border-radius: 6px;
   padding: 8px 10px;
 }
