@@ -16,7 +16,7 @@ const modalStyle = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 400,
+  width: 520,
   bgcolor: "#1a1a1a",
   color: "white",
   boxShadow: 24,
@@ -432,8 +432,12 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
               fontWeight: "bold",
             }}
           >
-            Are you sure you want to remove Season{" "}
-            {seasonToRemoveIndex !== null ? seasonToRemoveIndex + 1 : ""}?
+            Are you sure you want to remove{" "}
+            <span style={{ whiteSpace: "nowrap" }}>
+              Season{" "}
+              {seasonToRemoveIndex !== null ? seasonToRemoveIndex + 1 : ""}
+            </span>
+            ?
           </div>
           <Box
             sx={{
@@ -487,8 +491,11 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
               fontWeight: "bold",
             }}
           >
-            Are you sure you want to unwatch Season{" "}
-            {undoSeasonIndex !== null ? undoSeasonIndex + 1 : ""}?
+            Are you sure you want to unwatch{" "}
+            <span style={{ whiteSpace: "nowrap" }}>
+              Season {undoSeasonIndex !== null ? undoSeasonIndex + 1 : ""}
+            </span>
+            ?
           </div>
           <Box
             sx={{
