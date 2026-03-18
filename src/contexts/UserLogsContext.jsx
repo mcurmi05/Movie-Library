@@ -36,6 +36,7 @@ export const UserLogsProvider = ({ children }) => {
 
   // Add a new season to a log's season_info JSONB column
   const addSeason = async (log_id) => {
+    const currentDate = new Date().toISOString();
     setUserLogs((prev) => {
       const updated = prev.map((l) => {
         if (l.id !== log_id) return l;
@@ -43,7 +44,7 @@ export const UserLogsProvider = ({ children }) => {
         const nextSeasonNumber = current.length + 1;
         const newSeason = {
           season: nextSeasonNumber,
-          start_date: null,
+          start_date: currentDate,
           end_date: null,
           finished: false,
           finished_at: null,
@@ -62,7 +63,7 @@ export const UserLogsProvider = ({ children }) => {
       const nextSeasonNumber = current.length + 1;
       const newSeason = {
         season: nextSeasonNumber,
-        start_date: null,
+        start_date: currentDate,
         end_date: null,
         finished: false,
         finished_at: null,
@@ -211,15 +212,15 @@ export const UserLogsProvider = ({ children }) => {
 
   const updateLog = (log_id, newLog) => {
     setUserLogs((prev) =>
-      prev.map((log) => (log.id === log_id ? { ...log, log: newLog } : log))
+      prev.map((log) => (log.id === log_id ? { ...log, log: newLog } : log)),
     );
   };
 
   const updateDate = (log_id, newCreated_at) => {
     setUserLogs((prev) =>
       prev.map((log) =>
-        log.id === log_id ? { ...log, created_at: newCreated_at } : log
-      )
+        log.id === log_id ? { ...log, created_at: newCreated_at } : log,
+      ),
     );
   };
 
