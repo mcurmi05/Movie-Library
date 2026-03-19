@@ -24,38 +24,71 @@ function Log() {
     );
   }
 
-  const filteredLogs = userLogs.filter((log) => {
-    // Filter by media type
-    if (mediaTypeFilter !== "all") {
-      const type = (log.movie_object?.type || "").toLowerCase();
-      const titleType = (log.movie_object?.titleType || "").toLowerCase();
-      const isTV =
-        type.includes("tv") ||
-        titleType.includes("tv") ||
-        log.movie_object?.episodes;
-      if (mediaTypeFilter === "movies" && isTV) return false;
-      if (mediaTypeFilter === "tv" && !isTV) return false;
-    }
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const title = log.movie_object?.primaryTitle || "";
-      if (!title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    }
-    // Filter by rating value (if present)
-    if (ratingFilter !== "all") {
-      // Find rating from userRatings context
-      let ratingValue = null;
-      if (log.movie_object && log.movie_object.id) {
-        const found = userRatings.find(
-          (r) => r.imdb_movie_id === log.movie_object.id
-        );
-        if (found) ratingValue = found.rating;
+  // Helper function to get the most recent activity date for a log
+  const getMostRecentDate = (log) => {
+    let mostRecentDate = new Date(log.created_at);
+
+    if (log.season_info && Array.isArray(log.season_info)) {
+      for (const season of log.season_info) {
+        if (season.start_date) {
+          const startDate = new Date(season.start_date);
+          if (startDate > mostRecentDate) {
+            mostRecentDate = startDate;
+          }
+        }
+        if (season.end_date) {
+          const endDate = new Date(season.end_date);
+          if (endDate > mostRecentDate) {
+            mostRecentDate = endDate;
+          }
+        }
+        if (season.finished_at) {
+          const finishedDate = new Date(season.finished_at);
+          if (finishedDate > mostRecentDate) {
+            mostRecentDate = finishedDate;
+          }
+        }
       }
-      if (ratingValue === null) return false;
-      if (Number(ratingValue) !== Number(ratingFilter)) return false;
     }
-    return true;
-  });
+
+    return mostRecentDate;
+  };
+
+  const filteredLogs = userLogs
+    .filter((log) => {
+      // Filter by media type
+      if (mediaTypeFilter !== "all") {
+        const type = (log.movie_object?.type || "").toLowerCase();
+        const titleType = (log.movie_object?.titleType || "").toLowerCase();
+        const isTV =
+          type.includes("tv") ||
+          titleType.includes("tv") ||
+          log.movie_object?.episodes;
+        if (mediaTypeFilter === "movies" && isTV) return false;
+        if (mediaTypeFilter === "tv" && !isTV) return false;
+      }
+      // Filter by search term
+      if (searchTerm.trim()) {
+        const title = log.movie_object?.primaryTitle || "";
+        if (!title.toLowerCase().includes(searchTerm.toLowerCase()))
+          return false;
+      }
+      // Filter by rating value (if present)
+      if (ratingFilter !== "all") {
+        // Find rating from userRatings context
+        let ratingValue = null;
+        if (log.movie_object && log.movie_object.id) {
+          const found = userRatings.find(
+            (r) => r.imdb_movie_id === log.movie_object.id,
+          );
+          if (found) ratingValue = found.rating;
+        }
+        if (ratingValue === null) return false;
+        if (Number(ratingValue) !== Number(ratingFilter)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => getMostRecentDate(b) - getMostRecentDate(a)); // Sort by most recent date (newest first)
 
   return (
     <div
@@ -192,7 +225,7 @@ function Log() {
                 logtext={log.log}
               />
             </div>
-          ) : null
+          ) : null,
         )}
       </div>
     </div>
