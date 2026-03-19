@@ -26,32 +26,26 @@ function Log() {
 
   // Helper function to get the most recent activity date for a log
   const getMostRecentDate = (log) => {
-    let mostRecentDate = new Date(log.created_at);
+    if (
+      log.season_info &&
+      Array.isArray(log.season_info) &&
+      log.season_info.length > 0
+    ) {
+      const lastSeason = log.season_info[log.season_info.length - 1];
 
-    if (log.season_info && Array.isArray(log.season_info)) {
-      for (const season of log.season_info) {
-        if (season.start_date) {
-          const startDate = new Date(season.start_date);
-          if (startDate > mostRecentDate) {
-            mostRecentDate = startDate;
-          }
-        }
-        if (season.end_date) {
-          const endDate = new Date(season.end_date);
-          if (endDate > mostRecentDate) {
-            mostRecentDate = endDate;
-          }
-        }
-        if (season.finished_at) {
-          const finishedDate = new Date(season.finished_at);
-          if (finishedDate > mostRecentDate) {
-            mostRecentDate = finishedDate;
-          }
-        }
+      // If the last season has an end_date AND is marked as finished, use that
+      if (lastSeason.end_date && lastSeason.finished) {
+        return new Date(lastSeason.end_date);
+      }
+
+      // Otherwise, use the start_date of the last season (currently watching or unwatched)
+      if (lastSeason.start_date) {
+        return new Date(lastSeason.start_date);
       }
     }
 
-    return mostRecentDate;
+    // Fallback to log creation date for movies or shows without seasons
+    return new Date(log.created_at);
   };
 
   const filteredLogs = userLogs
