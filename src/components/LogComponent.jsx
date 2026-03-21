@@ -289,14 +289,14 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                           </div>
                           <Dialog
                             initialDate={
-                              s.start_date ? new Date(s.start_date) : new Date()
+                              s.start_date ? new Date(s.start_date) : null
                             }
                             onDateChange={(d) =>
                               updateSeasonDate(
                                 log_id,
                                 idx,
                                 "start_date",
-                                d.toISOString()
+                                d.toISOString(),
                               )
                             }
                             showWeekday={false}
@@ -323,7 +323,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                                   log_id,
                                   idx,
                                   "end_date",
-                                  d.toISOString()
+                                  d.toISOString(),
                                 )
                               }
                               showWeekday={false}
@@ -336,7 +336,7 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                       </div>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </div>

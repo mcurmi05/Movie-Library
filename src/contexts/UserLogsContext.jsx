@@ -36,19 +36,25 @@ export const UserLogsProvider = ({ children }) => {
 
   // Add a new season to a log's season_info JSONB column
   const addSeason = async (log_id) => {
-    const currentDate = new Date().toISOString();
+    // Capture the exact creation timestamp once and preserve it
+    const creationTimestamp = new Date().toISOString();
+
+    // Create the season object with the permanent creation date
+    const createNewSeasonObject = (seasonNumber) => ({
+      season: seasonNumber,
+      start_date: creationTimestamp, // This date is set once and never auto-updated
+      end_date: null,
+      finished: false,
+      finished_at: null,
+      created_at: creationTimestamp, // Track when this season was originally created
+    });
+
     setUserLogs((prev) => {
       const updated = prev.map((l) => {
         if (l.id !== log_id) return l;
         const current = l.season_info || [];
         const nextSeasonNumber = current.length + 1;
-        const newSeason = {
-          season: nextSeasonNumber,
-          start_date: currentDate,
-          end_date: null,
-          finished: false,
-          finished_at: null,
-        };
+        const newSeason = createNewSeasonObject(nextSeasonNumber);
         const newSeasonInfo = [...current, newSeason];
         // optimistic local update
         return { ...l, season_info: newSeasonInfo };
@@ -61,13 +67,7 @@ export const UserLogsProvider = ({ children }) => {
       const logRow = userLogs.find((x) => x.id === log_id);
       const current = logRow?.season_info || [];
       const nextSeasonNumber = current.length + 1;
-      const newSeason = {
-        season: nextSeasonNumber,
-        start_date: currentDate,
-        end_date: null,
-        finished: false,
-        finished_at: null,
-      };
+      const newSeason = createNewSeasonObject(nextSeasonNumber);
       const newSeasonInfo = [...current, newSeason];
       const { error } = await supabase
         .from("logs")
