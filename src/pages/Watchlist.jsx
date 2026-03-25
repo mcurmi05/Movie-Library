@@ -116,7 +116,7 @@ function Watchlist() {
             margin: "6px",
           }}
         >
-          {userWatchlist.length}
+          {filteredWatchlist.length}
         </span>
       </div>
       {filteredWatchlist.length === 0 && (
@@ -150,7 +150,7 @@ function Watchlist() {
                 addedDate={watchlist_entry.created_at}
               />
             </div>
-          ) : null
+          ) : null,
         )}
       </div>
     </div>
