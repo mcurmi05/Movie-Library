@@ -2,24 +2,38 @@ import LogComponent from "../components/LogComponent.jsx";
 import { useRatings } from "../contexts/UserRatingsContext.jsx";
 import "../styles/Log.css";
 import { useLogs } from "../contexts/UserLogsContext.jsx";
+import { useBookLogs } from "../contexts/UserBookLogsContext.jsx";
+import AddBookLog from "../components/AddBookLog.jsx";
+import BookLogCard from "../components/BookLogCard.jsx";
 import { useEffect, useState } from "react";
 //
 function Log() {
   const { userLogs, userLogsLoaded } = useLogs();
+  const { bookLogs, bookLogsLoaded } = useBookLogs();
   const { userRatings } = useRatings();
   const [searchTerm, setSearchTerm] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
+  const [showAddBookLog, setShowAddBookLog] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, []);
 
-  if (!userLogsLoaded) {
+  if (!userLogsLoaded && mediaTypeFilter !== "books") {
     return (
       <>
         <h1 style={{ alignSelf: "center", marginTop: "-20px" }}>Your Log</h1>
         <div style={{ alignSelf: "center" }}>Loading log...</div>
+      </>
+    );
+  }
+
+  if (!bookLogsLoaded && mediaTypeFilter === "books") {
+    return (
+      <>
+        <h1 style={{ alignSelf: "center", marginTop: "-20px" }}>Your Log</h1>
+        <div style={{ alignSelf: "center" }}>Loading book logs...</div>
       </>
     );
   }
@@ -48,10 +62,45 @@ function Log() {
     return new Date(log.created_at);
   };
 
+  // Filter book logs
+  const filteredBookLogs = bookLogs
+    .filter((bookLog) => {
+      // Filter by search term
+      if (searchTerm.trim()) {
+        const title = bookLog.title || "";
+        const author = bookLog.author || "";
+        if (
+          !title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !author.toLowerCase().includes(searchTerm.toLowerCase())
+        ) {
+          return false;
+        }
+      }
+      // Filter by rating value
+      if (ratingFilter !== "all") {
+        if (Number(bookLog.book_rating) !== Number(ratingFilter)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by most recent first
+
+  // Debug logging
+  console.log("Log page state:", {
+    mediaTypeFilter,
+    bookLogs: bookLogs.length,
+    filteredBookLogs: filteredBookLogs.length,
+    bookLogsLoaded,
+    searchTerm,
+    ratingFilter
+  });
+
   const filteredLogs = userLogs
     .filter((log) => {
       // Filter by media type
       if (mediaTypeFilter !== "all") {
+        // Don't show movie/TV logs when books filter is selected
+        if (mediaTypeFilter === "books") return false;
+
         const type = (log.movie_object?.type || "").toLowerCase();
         const titleType = (log.movie_object?.titleType || "").toLowerCase();
         const isTV =
@@ -142,6 +191,7 @@ function Log() {
           <option value="all">Movies & TV</option>
           <option value="movies">Movies</option>
           <option value="tv">TV</option>
+          <option value="books">Books</option>
         </select>
         <select
           value={ratingFilter}
@@ -169,6 +219,36 @@ function Log() {
             </option>
           ))}
         </select>
+        {mediaTypeFilter === "books" && (
+          <button
+            onClick={() => setShowAddBookLog(true)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#4CAF50",
+              fontSize: "24px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              margin: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "4px",
+              borderRadius: "4px",
+              transition: "background-color 0.2s",
+              transform: "translateY(-3px)"
+            }}
+            title="Add Book Log"
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "rgba(76, 175, 80, 0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "transparent";
+            }}
+          >
+            +
+          </button>
+        )}
         <span
           style={{
             fontWeight: "bold",
@@ -184,44 +264,81 @@ function Log() {
             margin: "6px",
           }}
         >
-          {filteredLogs.length}
+          {mediaTypeFilter === "books"
+            ? filteredBookLogs.length
+            : filteredLogs.length}
         </span>
       </div>
-      {filteredLogs.length === 0 && (
-        <div style={{ textAlign: "center" }}>
-          No logs match your applied filters
-        </div>
-      )}
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        {filteredLogs.map((log) =>
-          log.id ? (
-            <div
-              style={{
-                marginBottom: "1rem",
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <LogComponent
-                key={log.id}
-                log_id={log.id}
-                created_at={log.created_at}
-                movie={log.movie_object}
-                logtext={log.log}
-              />
+      {mediaTypeFilter === "books" ? (
+        // Book logs section
+        <>
+          {filteredBookLogs.length === 0 && (
+            <div style={{ textAlign: "center" }}>
+              {bookLogs.length === 0
+                ? "No book logs yet. Add your first book!"
+                : "No book logs match your applied filters"}
             </div>
-          ) : null,
-        )}
-      </div>
+          )}
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            {filteredBookLogs.map((bookLog) => (
+              <BookLogCard key={bookLog.id} bookLog={bookLog} />
+            ))}
+          </div>
+        </>
+      ) : (
+        // Movie/TV logs section
+        <>
+          {filteredLogs.length === 0 && (
+            <div style={{ textAlign: "center" }}>
+              No logs match your applied filters
+            </div>
+          )}
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {filteredLogs.map((log) =>
+              log.id ? (
+                <div
+                  key={log.id}
+                  style={{
+                    marginBottom: "1rem",
+                    width: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <LogComponent
+                    log_id={log.id}
+                    created_at={log.created_at}
+                    movie={log.movie_object}
+                    logtext={log.log}
+                  />
+                </div>
+              ) : null,
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Add Book Log Modal */}
+      <AddBookLog
+        isOpen={showAddBookLog}
+        onClose={() => setShowAddBookLog(false)}
+      />
     </div>
   );
 }
