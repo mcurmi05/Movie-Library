@@ -44,8 +44,8 @@ const AddBookLog = ({ isOpen, onClose }) => {
     if (!date) return null;
     // Use local timezone to avoid date shifting
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
@@ -159,9 +159,11 @@ const AddBookLog = ({ isOpen, onClose }) => {
                 minWidth="120px"
               />
             </div>
-            
+
             <div className="form-field">
-              <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <label
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <input
                   type="checkbox"
                   checked={hasFinished}

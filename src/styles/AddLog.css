@@ -159,6 +159,12 @@
 
 .book-log-content {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.book-info-section {
+  display: flex;
   gap: 20px;
 }
 
@@ -195,6 +201,21 @@
 .book-details {
   flex: 1;
   min-width: 0;
+}
+
+.book-log-content .book-details {
+  display: flex;
+  gap: 20px;
+}
+
+.book-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-log-content .book-log-text {
+  width: 100%;
+  margin-top: 16px;
 }
 
 .book-header {
@@ -303,6 +324,11 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }

@@ -91,7 +91,7 @@ function Log() {
     filteredBookLogs: filteredBookLogs.length,
     bookLogsLoaded,
     searchTerm,
-    ratingFilter
+    ratingFilter,
   });
 
   const filteredLogs = userLogs
@@ -236,7 +236,7 @@ function Log() {
               padding: "4px",
               borderRadius: "4px",
               transition: "background-color 0.2s",
-              transform: "translateY(-3px)"
+              transform: "translateY(-3px)",
             }}
             title="Add Book Log"
             onMouseEnter={(e) => {
