@@ -5,6 +5,7 @@ import { Dialog } from "./ReactDayPicker.jsx";
 import "../styles/LogComponent.css";
 import "../styles/MovieRatingStar.css";
 import RatingModal from "./RatingModal.jsx";
+import EditBookInfoModal from "./EditBookInfoModal.jsx";
 
 const BookLogCard = ({ bookLog }) => {
   const { deleteBookLog, updateBookLog } = useBookLogs();
@@ -16,6 +17,7 @@ const BookLogCard = ({ bookLog }) => {
   const [ratingSaving, setRatingSaving] = useState(false);
   const [textEdited, setTextEdited] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const debounceTimeout = useRef(null);
   const textareaRef = useRef(null);
 
@@ -146,6 +148,16 @@ const BookLogCard = ({ bookLog }) => {
     }
   };
 
+  const handleUpdateBookInfo = async (bookLogId, updatedInfo) => {
+    try {
+      await updateBookLog(bookLogId, updatedInfo);
+      console.log("Updated book info successfully");
+    } catch (error) {
+      console.error("Error updating book info:", error);
+      throw error;
+    }
+  };
+
   const handleGoodreadsSearch = () => {
     const formattedTitle = bookLog.title.replace(/\s+/g, "+");
     const goodreadsUrl = `https://www.goodreads.com/search?q=${formattedTitle}`;
@@ -253,6 +265,30 @@ const BookLogCard = ({ bookLog }) => {
                           onMouseOver={(e) => (e.target.style.opacity = "0.8")}
                           onMouseOut={(e) => (e.target.style.opacity = "1")}
                         />
+                        <button
+                          onClick={() => setShowEditModal(true)}
+                          className="edit-book-info-btn"
+                          title="Edit book information"
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "2px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <img
+                            src="/pencil.png"
+                            alt="Edit"
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              filter: "saturate(1.5) brightness(1.3)",
+                            }}
+                          />
+                        </button>
                       </p>
                     </div>
                     <span
@@ -445,6 +481,13 @@ const BookLogCard = ({ bookLog }) => {
         currentRating={bookLog.book_rating || 0}
         movieTitle={bookLog.title}
         isRated={bookLog.book_rating && bookLog.book_rating > 0}
+      />
+
+      <EditBookInfoModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        bookLog={bookLog}
+        onSave={handleUpdateBookInfo}
       />
     </div>
   );

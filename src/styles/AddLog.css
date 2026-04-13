@@ -379,7 +379,8 @@
     align-self: center;
   }
 
-  .book-cover, .book-cover-placeholder {
+  .book-cover,
+  .book-cover-placeholder {
     width: 120px;
     height: 180px;
   }
@@ -439,7 +440,8 @@
     align-items: center;
   }
 
-  .book-cover, .book-cover-placeholder {
+  .book-cover,
+  .book-cover-placeholder {
     width: 100px;
     height: 150px;
   }
