@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import Rating from "@mui/material/Rating";
 import { useBookLogs } from "../contexts/UserBookLogsContext.jsx";
 import { format } from "date-fns";
 import { Dialog } from "./ReactDayPicker.jsx";
 import "../styles/LogComponent.css";
+import "../styles/MovieRatingStar.css";
+import RatingModal from "./RatingModal.jsx";
 
 const BookLogCard = ({ bookLog }) => {
   const { deleteBookLog, updateBookLog } = useBookLogs();
@@ -14,6 +15,7 @@ const BookLogCard = ({ bookLog }) => {
   const [buttonSaving, setButtonSaving] = useState(false);
   const [ratingSaving, setRatingSaving] = useState(false);
   const [textEdited, setTextEdited] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const debounceTimeout = useRef(null);
   const textareaRef = useRef(null);
 
@@ -81,12 +83,10 @@ const BookLogCard = ({ bookLog }) => {
     }
   };
 
-  const handleRatingChange = async (event, newValue) => {
-    if (newValue === null) return; // Ignore null values
-
+  const handleRatingChange = async (newRating) => {
     try {
       setRatingSaving(true);
-      await updateBookLog(bookLog.id, { book_rating: newValue });
+      await updateBookLog(bookLog.id, { book_rating: newRating });
       setTimeout(() => setRatingSaving(false), 1200);
     } catch (error) {
       setRatingSaving(false);
@@ -161,7 +161,7 @@ const BookLogCard = ({ bookLog }) => {
         ×
       </button>
       <div className="book-log-content">
-        <div className="book-info-section">
+        <div className="book-info-section" style={{ position: "relative" }}>
           <div className="book-cover-section">
             {bookLog.cover_image ? (
               <img
@@ -183,72 +183,80 @@ const BookLogCard = ({ bookLog }) => {
 
           <div className="book-details">
             <div className="book-info">
-              <div className="book-header">
-                <h3 className="book-title">{bookLog.title}</h3>
+              <div style={{ marginTop: "50px" }}>
+                <div className="book-header">
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "15px" }}>
+                    <div>
+                      <h3 className="book-title" style={{ margin: 0 }}>
+                        {bookLog.title}
+                      </h3>
+                      <p className="book-author" style={{ margin: 0, marginTop: "10px" }}>by {bookLog.author}</p>
+                    </div>
+                    <span className="user-rating-movie-card" style={{ position: "relative", top: "30px" }}>
+                      {!bookLog.book_rating || bookLog.book_rating === 0 ? (
+                        <>
+                          <img
+                            className="user-rating-star"
+                            src="/user-rating-star.png"
+                            onClick={() => setShowRatingModal(true)}
+                            style={{ cursor: "pointer" }}
+                          />
+                          <p 
+                            className="user-rating-number" 
+                            onClick={() => setShowRatingModal(true)}
+                            style={{ cursor: "pointer" }}
+                          ></p>
+                        </>
+                      ) : (
+                        <>
+                          <img
+                            className="user-rating-star"
+                            src="/user-rating-star2.png"
+                            onClick={() => setShowRatingModal(true)}
+                            style={{ cursor: "pointer" }}
+                          />
+                          <p 
+                            className="user-rating-number" 
+                            onClick={() => setShowRatingModal(true)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {bookLog.book_rating}
+                          </p>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {(saving || ratingSaving) && (
+                    <span
+                      className="saving-indicator"
+                      style={{
+                        color: "#4CAF50",
+                        fontSize: "0.8em",
+                        marginLeft: "8px",
+                      }}
+                    >
+                      Saving...
+                    </span>
+                  )}
+                </div>
+
+                
+                
               </div>
-
-              <p className="book-author">by {bookLog.author}</p>
-
-              <div
-                className="book-rating"
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <Rating
-                  value={bookLog.book_rating}
-                  onChange={handleRatingChange}
-                  max={10}
-                  size="small"
-                />
-                <span className="rating-number">
-                  (
-                  {bookLog.book_rating && bookLog.book_rating > 0
-                    ? bookLog.book_rating
-                    : "?"}
-                  /10)
-                </span>
-                {bookLog.book_rating && bookLog.book_rating > 0 && (
-                  <button
-                    onClick={handleClearRating}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#ff4444",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      padding: "2px 4px",
-                      borderRadius: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    title="Clear rating"
-                  >
-                    ×
-                  </button>
-                )}
-                {(saving || ratingSaving) && (
-                  <span
-                    className="saving-indicator"
-                    style={{
-                      marginLeft: "8px",
-                      color: "#4CAF50",
-                      fontSize: "0.8em",
-                    }}
-                  >
-                    Saving...
-                  </span>
-                )}
-              </div>
-
-              <div
-                className="book-dates"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "20px",
-                  marginBottom: "12px",
-                }}
-              >
+            </div>
+          </div>
+          
+          <div
+            className="book-dates"
+            style={{
+              position: "absolute",
+              bottom: "0px",
+              left: "155px",
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+            }}
+          >
                 <div
                   className="book-date-field"
                   style={{ display: "flex", alignItems: "center" }}
@@ -312,13 +320,6 @@ const BookLogCard = ({ bookLog }) => {
                         justifyContent: "center",
                         transform: "translateY(-2px)",
                       }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor =
-                          "rgba(255, 68, 68, 0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = "transparent";
-                      }}
                     >
                       ×
                     </button>
@@ -349,10 +350,8 @@ const BookLogCard = ({ bookLog }) => {
                   >
                     {buttonSaving ? "Saving..." : "Mark as Read"}
                   </button>
-                )}
+                )}              
               </div>
-            </div>
-          </div>
         </div>
 
         <div className="book-log-text">
@@ -368,6 +367,16 @@ const BookLogCard = ({ bookLog }) => {
           />
         </div>
       </div>
+      
+      <RatingModal
+        open={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        onRate={handleRatingChange}
+        onRemove={handleClearRating}
+        currentRating={bookLog.book_rating || 0}
+        movieTitle={bookLog.title}
+        isRated={bookLog.book_rating && bookLog.book_rating > 0}
+      />
     </div>
   );
 };

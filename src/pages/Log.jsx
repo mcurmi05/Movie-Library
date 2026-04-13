@@ -239,12 +239,6 @@ function Log() {
               transform: "translateY(-3px)",
             }}
             title="Add Book Log"
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "rgba(76, 175, 80, 0.1)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = "transparent";
-            }}
           >
             +
           </button>
