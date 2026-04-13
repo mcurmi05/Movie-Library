@@ -166,8 +166,9 @@ function Log() {
           alignItems: "center",
           justifyContent: "center",
           marginBottom: "20px",
-          gap: "10px",
+          gap: "8px",
           flexWrap: "wrap",
+          padding: "0 10px",
         }}
       >
         <input
@@ -180,7 +181,7 @@ function Log() {
             padding: "8px",
             borderRadius: "6px",
             border: "1px solid #ccc",
-            width: "180px",
+            width: "min(180px, 40vw)",
             textAlign: "center",
             margin: "6px",
             backgroundColor: "#3b3b3b",

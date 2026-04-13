@@ -163,6 +163,26 @@
   gap: 4px;
 }
 
+/* Mobile responsive adjustments for book log content */
+@media (max-width: 768px) {
+  .book-log-content {
+    align-items: center;
+  }
+
+  .book-log-content .book-log-text {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .book-log-content .book-log-text {
+    width: 100%;
+  }
+}
+
 .book-info-section {
   display: flex;
   gap: 20px;
@@ -227,6 +247,8 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .book-title {
@@ -337,5 +359,144 @@
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+/* Responsive styles for book log cards */
+@media (max-width: 768px) {
+  .book-log-card {
+    padding: 15px 8px 0px 8px;
+    max-width: 95%;
+  }
+
+  .book-info-section {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .book-cover-section {
+    align-self: center;
+  }
+
+  .book-cover, .book-cover-placeholder {
+    width: 120px;
+    height: 180px;
+  }
+
+  .book-cover-placeholder {
+    font-size: 36px;
+  }
+
+  .book-details {
+    text-align: center;
+    align-self: center;
+  }
+
+  .book-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .book-header {
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Override inline styles for mobile layout */
+  .book-dates {
+    position: static !important;
+    left: auto !important;
+    bottom: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: center !important;
+    margin-top: 12px !important;
+    justify-content: center !important;
+  }
+
+  .book-title {
+    font-size: 1.2em;
+    text-align: center;
+  }
+
+  .book-author {
+    margin-bottom: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .book-log-card {
+    padding: 12px 5px 0px 5px;
+    margin: 0 5px 4px 5px;
+  }
+
+  .book-info-section {
+    gap: 8px;
+    align-items: center;
+  }
+
+  .book-cover, .book-cover-placeholder {
+    width: 100px;
+    height: 150px;
+  }
+
+  .book-cover-placeholder {
+    font-size: 28px;
+  }
+
+  .book-title {
+    font-size: 1.1em;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .book-author {
+    text-align: center;
+  }
+
+  .book-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .book-header {
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Ensure positioning overrides apply to smaller screens too */
+  .book-dates {
+    position: static !important;
+    left: auto !important;
+    bottom: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    align-items: center !important;
+    margin-top: 8px !important;
+    justify-content: center !important;
+  }
+
+  .book-date-field {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .book-date-field span {
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .delete-btn {
+    top: 5px;
+    right: 5px;
+    font-size: 20px;
   }
 }
