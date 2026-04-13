@@ -62,6 +62,21 @@ function Log() {
     return new Date(log.created_at);
   };
 
+  const getMostRecentBookDate = (bookLog) => {
+    // Use end_date if the book is finished
+    if (bookLog.end_date) {
+      return new Date(bookLog.end_date);
+    }
+    
+    // Use start_date if currently reading
+    if (bookLog.start_date) {
+      return new Date(bookLog.start_date);
+    }
+    
+    // Fallback to creation date
+    return new Date(bookLog.created_at);
+  };
+
   // Filter book logs
   const filteredBookLogs = bookLogs
     .filter((bookLog) => {
@@ -82,7 +97,7 @@ function Log() {
       }
       return true;
     })
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by most recent first
+    .sort((a, b) => getMostRecentBookDate(b) - getMostRecentBookDate(a)); // Sort by most recent date (newest first)
 
   // Debug logging
   console.log("Log page state:", {

@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import { useBookLogs } from "../contexts/UserBookLogsContext.jsx";
-import { Dialog } from "./ReactDayPicker.jsx";
-import Rating from "@mui/material/Rating";
 import "../styles/AddLog.css";
 
 const AddBookLog = ({ isOpen, onClose }) => {
@@ -13,40 +11,16 @@ const AddBookLog = ({ isOpen, onClose }) => {
     title: "",
     author: "",
     cover_image: "",
-    book_rating: 0,
-    start_date: null,
-    end_date: null,
-    log: "",
+    release_year: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasFinished, setHasFinished] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  const handleFinishedChange = (finished) => {
-    setHasFinished(finished);
-    if (!finished) {
-      // Clear end date if user unchecks finished
-      setFormData((prev) => ({
-        ...prev,
-        end_date: null,
-      }));
-    }
-  };
-
-  const formatDateForDB = (date) => {
-    if (!date) return null;
-    // Use local timezone to avoid date shifting
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
   };
 
   const handleSubmit = async (e) => {
@@ -59,8 +33,6 @@ const AddBookLog = ({ isOpen, onClose }) => {
       const bookLogData = {
         ...formData,
         user_id: user.id,
-        start_date: formatDateForDB(formData.start_date),
-        end_date: formatDateForDB(formData.end_date),
       };
 
       console.log("Sending to createBookLog:", bookLogData);
@@ -72,12 +44,8 @@ const AddBookLog = ({ isOpen, onClose }) => {
         title: "",
         author: "",
         cover_image: "",
-        book_rating: 0,
-        start_date: null,
-        end_date: null,
-        log: "",
+        release_year: "",
       });
-      setHasFinished(false);
 
       console.log("Closing modal");
       onClose();
@@ -136,66 +104,15 @@ const AddBookLog = ({ isOpen, onClose }) => {
           </div>
 
           <div className="form-field">
-            <label>Rating *</label>
-            <Rating
-              name="book-rating"
-              value={formData.book_rating}
-              onChange={(event, newValue) => {
-                handleInputChange("book_rating", newValue || 0);
-              }}
-              max={10}
-              size="large"
-            />
-          </div>
-
-          <div className="form-field-row">
-            <div className="form-field">
-              <label>Start Date</label>
-              <Dialog
-                initialDate={formData.start_date}
-                onDateChange={(date) => handleInputChange("start_date", date)}
-                showWeekday={true}
-                dateColor="#ffffff"
-                minWidth="120px"
-              />
-            </div>
-
-            <div className="form-field">
-              <label
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={hasFinished}
-                  onChange={(e) => handleFinishedChange(e.target.checked)}
-                  style={{ margin: 0 }}
-                />
-                I have finished reading this book
-              </label>
-            </div>
-          </div>
-
-          {hasFinished && (
-            <div className="form-field">
-              <label>End Date</label>
-              <Dialog
-                initialDate={formData.end_date}
-                onDateChange={(date) => handleInputChange("end_date", date)}
-                showWeekday={true}
-                dateColor="#ffffff"
-                minWidth="120px"
-              />
-            </div>
-          )}
-
-          <div className="form-field">
-            <label htmlFor="log">Log/Notes</label>
-            <textarea
-              id="log"
-              value={formData.log}
-              onChange={(e) => handleInputChange("log", e.target.value)}
-              rows={4}
-              placeholder="Your thoughts about this book..."
+            <label htmlFor="release_year">Release Year</label>
+            <input
+              id="release_year"
+              type="number"
+              value={formData.release_year}
+              onChange={(e) => handleInputChange("release_year", e.target.value)}
+              placeholder="e.g. 1984"
+              min="1000"
+              max={new Date().getFullYear()}
             />
           </div>
 

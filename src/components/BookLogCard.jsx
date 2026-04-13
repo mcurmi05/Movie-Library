@@ -146,6 +146,18 @@ const BookLogCard = ({ bookLog }) => {
     }
   };
 
+  const handleGoodreadsSearch = () => {
+    const formattedTitle = bookLog.title.replace(/\s+/g, '+');
+    const goodreadsUrl = `https://www.goodreads.com/search?q=${formattedTitle}`;
+    window.open(goodreadsUrl, '_blank');
+  };
+
+  const handleAuthorSearch = () => {
+    const formattedAuthor = bookLog.author.replace(/\s+/g, '+');
+    const googleAuthorUrl = `https://www.google.com/search?q=${formattedAuthor}+books`;
+    window.open(googleAuthorUrl, '_blank');
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return null;
     try {
@@ -168,6 +180,8 @@ const BookLogCard = ({ bookLog }) => {
                 src={bookLog.cover_image}
                 alt={`${bookLog.title} cover`}
                 className="book-cover"
+                onClick={handleGoodreadsSearch}
+                style={{ cursor: "pointer" }}
                 onError={(e) => {
                   e.target.style.display = "none";
                   e.target.nextSibling.style.display = "flex";
@@ -193,14 +207,30 @@ const BookLogCard = ({ bookLog }) => {
                     }}
                   >
                     <div>
-                      <h3 className="book-title" style={{ margin: 0 }}>
+                      <h3 className="book-title" style={{ margin: 0, cursor: "pointer" }} onClick={handleGoodreadsSearch}>
                         {bookLog.title}
                       </h3>
                       <p
                         className="book-author"
-                        style={{ margin: 0, marginTop: "10px" }}
+                        style={{ margin: 0, marginTop: "10px", display: "flex", alignItems: "center", gap: "8px" }}
                       >
-                        by {bookLog.author}
+                        <span>
+                          by <span onClick={handleAuthorSearch} style={{ cursor: "pointer", textDecoration: "underline" }}>{bookLog.author}</span>{bookLog.release_year ? ` (${bookLog.release_year})` : ""}
+                        </span>
+                        <img
+                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVWGYFkKfh28rOYSP6XPkZgf3Cya8tsWasxA&s"
+                          alt="Goodreads"
+                          onClick={handleGoodreadsSearch}
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            cursor: "pointer",
+                            borderRadius: "4px",
+                            transition: "opacity 0.2s",
+                          }}
+                          onMouseOver={(e) => e.target.style.opacity = "0.8"}
+                          onMouseOut={(e) => e.target.style.opacity = "1"}
+                        />
                       </p>
                     </div>
                     <span
@@ -240,18 +270,6 @@ const BookLogCard = ({ bookLog }) => {
                       )}
                     </span>
                   </div>
-                  {(saving || ratingSaving) && (
-                    <span
-                      className="saving-indicator"
-                      style={{
-                        color: "#4CAF50",
-                        fontSize: "0.8em",
-                        marginLeft: "8px",
-                      }}
-                    >
-                      Saving...
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -276,7 +294,7 @@ const BookLogCard = ({ bookLog }) => {
                 style={{
                   fontSize: "0.9rem",
                   color: "#ccc",
-                  marginRight: "8px",
+                  marginRight: "4px",
                 }}
               >
                 Started:
@@ -301,7 +319,7 @@ const BookLogCard = ({ bookLog }) => {
                   style={{
                     fontSize: "0.9rem",
                     color: "#ccc",
-                    marginRight: "8px",
+                    marginRight: "4px",
                   }}
                 >
                   Read:
@@ -365,7 +383,7 @@ const BookLogCard = ({ bookLog }) => {
           </div>
         </div>
 
-        <div className="book-log-text">
+        <div className="book-log-text" style={{ position: "relative" }}>
           <textarea
             ref={textareaRef}
             className="log-input"
@@ -376,6 +394,21 @@ const BookLogCard = ({ bookLog }) => {
             }}
             placeholder="Add notes about this book..."
           />
+          {saving && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-12px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                fontSize: "0.8em",
+                color: "#888",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <p style={{ margin: 0, color: "#888" }}>Saving, please don't refresh or click away...</p>
+            </div>
+          )}
         </div>
       </div>
 
