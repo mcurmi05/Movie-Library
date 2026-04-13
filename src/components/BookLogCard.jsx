@@ -147,15 +147,15 @@ const BookLogCard = ({ bookLog }) => {
   };
 
   const handleGoodreadsSearch = () => {
-    const formattedTitle = bookLog.title.replace(/\s+/g, '+');
+    const formattedTitle = bookLog.title.replace(/\s+/g, "+");
     const goodreadsUrl = `https://www.goodreads.com/search?q=${formattedTitle}`;
-    window.open(goodreadsUrl, '_blank');
+    window.open(goodreadsUrl, "_blank");
   };
 
   const handleAuthorSearch = () => {
-    const formattedAuthor = bookLog.author.replace(/\s+/g, '+');
+    const formattedAuthor = bookLog.author.replace(/\s+/g, "+");
     const googleAuthorUrl = `https://www.google.com/search?q=${formattedAuthor}+books`;
-    window.open(googleAuthorUrl, '_blank');
+    window.open(googleAuthorUrl, "_blank");
   };
 
   const formatDate = (dateString) => {
@@ -207,15 +207,37 @@ const BookLogCard = ({ bookLog }) => {
                     }}
                   >
                     <div>
-                      <h3 className="book-title" style={{ margin: 0, cursor: "pointer" }} onClick={handleGoodreadsSearch}>
+                      <h3
+                        className="book-title"
+                        style={{ margin: 0, cursor: "pointer" }}
+                        onClick={handleGoodreadsSearch}
+                      >
                         {bookLog.title}
                       </h3>
                       <p
                         className="book-author"
-                        style={{ margin: 0, marginTop: "10px", display: "flex", alignItems: "center", gap: "8px" }}
+                        style={{
+                          margin: 0,
+                          marginTop: "10px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
                       >
                         <span>
-                          by <span onClick={handleAuthorSearch} style={{ cursor: "pointer", textDecoration: "underline" }}>{bookLog.author}</span>{bookLog.release_year ? ` (${bookLog.release_year})` : ""}
+                          by{" "}
+                          <span
+                            onClick={handleAuthorSearch}
+                            style={{
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                            }}
+                          >
+                            {bookLog.author}
+                          </span>
+                          {bookLog.release_year
+                            ? ` (${bookLog.release_year})`
+                            : ""}
                         </span>
                         <img
                           src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVWGYFkKfh28rOYSP6XPkZgf3Cya8tsWasxA&s"
@@ -228,8 +250,8 @@ const BookLogCard = ({ bookLog }) => {
                             borderRadius: "4px",
                             transition: "opacity 0.2s",
                           }}
-                          onMouseOver={(e) => e.target.style.opacity = "0.8"}
-                          onMouseOut={(e) => e.target.style.opacity = "1"}
+                          onMouseOver={(e) => (e.target.style.opacity = "0.8")}
+                          onMouseOut={(e) => (e.target.style.opacity = "1")}
                         />
                       </p>
                     </div>
@@ -406,7 +428,9 @@ const BookLogCard = ({ bookLog }) => {
                 whiteSpace: "nowrap",
               }}
             >
-              <p style={{ margin: 0, color: "#888" }}>Saving, please don't refresh or click away...</p>
+              <p style={{ margin: 0, color: "#888" }}>
+                Saving, please don't refresh or click away...
+              </p>
             </div>
           )}
         </div>

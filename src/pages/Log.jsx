@@ -67,12 +67,12 @@ function Log() {
     if (bookLog.end_date) {
       return new Date(bookLog.end_date);
     }
-    
+
     // Use start_date if currently reading
     if (bookLog.start_date) {
       return new Date(bookLog.start_date);
     }
-    
+
     // Fallback to creation date
     return new Date(bookLog.created_at);
   };

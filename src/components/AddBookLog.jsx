@@ -109,7 +109,9 @@ const AddBookLog = ({ isOpen, onClose }) => {
               id="release_year"
               type="number"
               value={formData.release_year}
-              onChange={(e) => handleInputChange("release_year", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("release_year", e.target.value)
+              }
               placeholder="e.g. 1984"
               min="1000"
               max={new Date().getFullYear()}
