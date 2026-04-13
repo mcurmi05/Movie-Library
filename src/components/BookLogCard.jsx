@@ -316,7 +316,7 @@ const BookLogCard = ({ bookLog }) => {
                 style={{
                   fontSize: "0.9rem",
                   color: "#ccc",
-                  marginRight: "4px",
+                  marginRight: "-2px",
                 }}
               >
                 Started:
@@ -380,26 +380,27 @@ const BookLogCard = ({ bookLog }) => {
                 onClick={handleMarkRead}
                 disabled={buttonSaving}
                 style={{
-                  padding: "6px 12px",
-                  border: "1px solid #4CAF50",
-                  borderRadius: "4px",
-                  backgroundColor: "transparent",
-                  color: "#4CAF50",
-                  fontSize: "0.8rem",
+                  background: "transparent",
+                  color: "white",
+                  border: "none",
+                  borderRadius: 4,
+                  padding: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
-                  transition: "all 0.2s",
-                  transform: "translateY(-3px)",
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#4CAF50";
-                  e.target.style.color = "#ffffff";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "transparent";
-                  e.target.style.color = "#4CAF50";
-                }}
+                title="Mark as read"
               >
-                {buttonSaving ? "Saving..." : "Mark as Read"}
+                <img
+                  src="/watched.png"
+                  alt="Mark as read"
+                  style={{
+                    width: 20,
+                    height: 20,
+                    transform: "translateY(-4px)",
+                  }}
+                />
               </button>
             )}
           </div>
