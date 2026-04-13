@@ -157,11 +157,7 @@ const BookLogCard = ({ bookLog }) => {
 
   return (
     <div className="book-log-card">
-      <button
-        onClick={handleDelete}
-        className="delete-btn"
-        title="Delete log"
-      >
+      <button onClick={handleDelete} className="delete-btn" title="Delete log">
         ×
       </button>
       <div className="book-log-content">
