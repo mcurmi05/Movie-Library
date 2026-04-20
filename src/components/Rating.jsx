@@ -15,6 +15,8 @@ function Rating({
   onMoveDown,
   onSendTop,
   onSendBottom,
+  dateSlot = null,
+  actionSlot = null,
 }) {
   const navigate = useNavigate();
 
@@ -203,6 +205,7 @@ function Rating({
               <div style={{ display: "flex", alignItems: "center" }}>
                 <AddWatchlist movie={movie_object}></AddWatchlist>
                 <AddLog movie={movie_object}></AddLog>
+                {actionSlot}
               </div>
             </div>
           </div>
@@ -218,12 +221,21 @@ function Rating({
             {addedToWatchlistDate ? (
               <span
                 style={{
-                  color: "#888",
-                  fontSize: "0.93em",
-                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                Added: {addedToWatchlistDate}
+                <span
+                  style={{
+                    color: "#888",
+                    fontSize: "0.93em",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Added: {addedToWatchlistDate}
+                </span>
+                {dateSlot}
               </span>
             ) : formattedDate !== "Invalid Date" && ratingDate !== null ? (
               <span

@@ -38,6 +38,14 @@ export const UserWatchlistProvider = ({ children }) => {
     );
   };
 
+  const updateNewSeason = (watchlist_id, value) => {
+    setUserWatchlist(prev =>
+      prev.map(item =>
+        item.id === watchlist_id ? { ...item, new_season_to_watch: value } : item
+      )
+    );
+  };
+
   useEffect(() => {
     const loadWatchlist = async () => {
       if (user && !hasFetched.current) {
@@ -64,6 +72,7 @@ export const UserWatchlistProvider = ({ children }) => {
       setUserWatchlist,
       addWatchlist,
       removeWatchlist,
+      updateNewSeason,
     }}>
       {children}
     </UserWatchlistContext.Provider>

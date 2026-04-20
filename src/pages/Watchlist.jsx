@@ -7,6 +7,7 @@ function Watchlist() {
   const { userWatchlist, userWatchlistLoaded } = useWatchlist();
   const [searchTerm, setSearchTerm] = useState("");
   const [mediaTypeFilter, setMediaTypeFilter] = useState("all");
+  const [newSeasonFilter, setNewSeasonFilter] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -24,6 +25,8 @@ function Watchlist() {
   }
 
   const filteredWatchlist = userWatchlist.filter((item) => {
+    // Filter by new season
+    if (newSeasonFilter && !item.new_season_to_watch) return false;
     // Filter by media type
     if (mediaTypeFilter !== "all") {
       const type = (item.movie_object?.type || "").toLowerCase();
@@ -101,6 +104,31 @@ function Watchlist() {
           <option value="movies">Movies</option>
           <option value="tv">TV</option>
         </select>
+        <button
+          onClick={() => {
+            const next = !newSeasonFilter;
+            setNewSeasonFilter(next);
+            if (next) setMediaTypeFilter("tv");
+            else setMediaTypeFilter("all");
+          }}
+          style={{
+            height: "32px",
+            padding: "0 12px",
+            border: "1px solid " + (newSeasonFilter ? "#e50914" : "#cccccc"),
+            borderRadius: "6px",
+            backgroundColor: newSeasonFilter ? "#e50914" : "#3b3b3b",
+            color: "#ffffff",
+            fontSize: "0.8rem",
+            fontWeight: "bold",
+            cursor: "pointer",
+            margin: "6px",
+            whiteSpace: "nowrap",
+            transition: "background 0.2s, border-color 0.2s",
+            outline: "none",
+          }}
+        >
+          {'\u2605'} New Season
+        </button>
         <span
           style={{
             fontWeight: "bold",
@@ -148,6 +176,7 @@ function Watchlist() {
                 watchlist_id={watchlist_entry.id}
                 movie={watchlist_entry.movie_object}
                 addedDate={watchlist_entry.created_at}
+                newSeasonToWatch={watchlist_entry.new_season_to_watch}
               />
             </div>
           ) : null,

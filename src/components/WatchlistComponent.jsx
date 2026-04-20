@@ -22,9 +22,30 @@ const modalStyle = {
   fontWeight: "bold",
 };
 
-export default function WatchlistComponent({ watchlist_id, movie, addedDate }) {
+export default function WatchlistComponent({ watchlist_id, movie, addedDate, newSeasonToWatch }) {
   const [visible, setVisible] = useState(true);
-  const { removeWatchlist } = useWatchlist();
+  const { removeWatchlist, updateNewSeason } = useWatchlist();
+  const [newSeason, setNewSeason] = useState(!!newSeasonToWatch);
+
+  const isTV =
+    (movie?.type || "").toLowerCase().includes("tv") ||
+    (movie?.titleType || "").toLowerCase().includes("tv") ||
+    !!movie?.episodes;
+
+  async function handleNewSeasonToggle() {
+    const newValue = !newSeason;
+    setNewSeason(newValue);
+    updateNewSeason(watchlist_id, newValue);
+    const { error } = await supabase
+      .from("watchlist")
+      .update({ new_season_to_watch: newValue || null })
+      .eq("id", watchlist_id);
+    if (error) {
+      console.error("Error updating new_season_to_watch:", error);
+      setNewSeason(!newValue);
+      updateNewSeason(watchlist_id, !newValue);
+    }
+  }
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -58,6 +79,24 @@ export default function WatchlistComponent({ watchlist_id, movie, addedDate }) {
         ratingDate={null}
         addedToWatchlistDate={
           formattedDate !== "Invalid Date" ? formattedDate : null
+        }
+        actionSlot={
+          isTV ? (
+            <img
+              src="/new_season_to_watch.png"
+              onClick={handleNewSeasonToggle}
+              title={newSeason ? "Unmark new season" : "Mark as new season to watch"}
+              style={{
+                width: "22px",
+                height: "22px",
+                cursor: "pointer",
+                opacity: newSeason ? 1 : 0.35,
+                transition: "opacity 0.2s",
+                marginLeft: "2px",
+                marginBottom: "1px",
+              }}
+            />
+          ) : null
         }
       />
       <img
