@@ -171,7 +171,14 @@ function Log() {
           padding: "0 10px",
         }}
       >
-        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", margin: "6px" }}>
+        <div
+          style={{
+            position: "relative",
+            display: "inline-flex",
+            alignItems: "center",
+            margin: "6px",
+          }}
+        >
           <input
             className="filter-input"
             type="text"
