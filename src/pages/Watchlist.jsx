@@ -67,23 +67,45 @@ function Watchlist() {
           flexWrap: "wrap",
         }}
       >
-        <input
-          className="filter-input"
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            padding: "8px",
-            borderRadius: "6px",
-            border: "1px solid #ccc",
-            width: "180px",
-            textAlign: "center",
-            margin: "6px",
-            backgroundColor: "#3b3b3b",
-            color: "#ffffff",
-          }}
-        />
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center", margin: "6px" }}>
+          <input
+            className="filter-input"
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: "8px",
+              paddingRight: searchTerm ? "26px" : "8px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+              width: "180px",
+              textAlign: "center",
+              backgroundColor: "#3b3b3b",
+              color: "#ffffff",
+            }}
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              aria-label="Clear search"
+              style={{
+                position: "absolute",
+                right: "6px",
+                background: "none",
+                border: "none",
+                color: "#aaa",
+                cursor: "pointer",
+                fontSize: "13px",
+                lineHeight: 1,
+                padding: 0,
+                outline: "none",
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <select
           value={mediaTypeFilter}
           onChange={(e) => setMediaTypeFilter(e.target.value)}

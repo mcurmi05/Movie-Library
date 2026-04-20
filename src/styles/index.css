@@ -112,6 +112,11 @@ dialog[open] {
 }
 
 /* Filter inputs placeholder color to grey, used on Ratings/Watchlist/Log */
+.filter-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .filter-input::placeholder {
   color: #898888; /* grey */
   opacity: 1; /* Firefox */
