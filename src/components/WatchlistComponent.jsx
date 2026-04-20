@@ -22,7 +22,12 @@ const modalStyle = {
   fontWeight: "bold",
 };
 
-export default function WatchlistComponent({ watchlist_id, movie, addedDate, newSeasonToWatch }) {
+export default function WatchlistComponent({
+  watchlist_id,
+  movie,
+  addedDate,
+  newSeasonToWatch,
+}) {
   const [visible, setVisible] = useState(true);
   const { removeWatchlist, updateNewSeason } = useWatchlist();
   const [newSeason, setNewSeason] = useState(!!newSeasonToWatch);
@@ -85,7 +90,9 @@ export default function WatchlistComponent({ watchlist_id, movie, addedDate, new
             <img
               src="/new_season_to_watch.png"
               onClick={handleNewSeasonToggle}
-              title={newSeason ? "Unmark new season" : "Mark as new season to watch"}
+              title={
+                newSeason ? "Unmark new season" : "Mark as new season to watch"
+              }
               style={{
                 width: "22px",
                 height: "22px",

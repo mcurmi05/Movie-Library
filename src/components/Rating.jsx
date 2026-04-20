@@ -73,10 +73,10 @@ function Rating({
                       rankNumber === 1
                         ? "linear-gradient(135deg,#FFD700,#E6C200)"
                         : rankNumber === 2
-                        ? "linear-gradient(135deg,#C0C0C0,#A9A9A9)"
-                        : rankNumber === 3
-                        ? "linear-gradient(135deg,#CD7F32,#B87333)"
-                        : "#444",
+                          ? "linear-gradient(135deg,#C0C0C0,#A9A9A9)"
+                          : rankNumber === 3
+                            ? "linear-gradient(135deg,#CD7F32,#B87333)"
+                            : "#444",
                     color: rankNumber ? "#000" : "#fff",
                     borderRadius: 10,
                     padding: "2px 8px",

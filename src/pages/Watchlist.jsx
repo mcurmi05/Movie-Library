@@ -127,7 +127,7 @@ function Watchlist() {
             outline: "none",
           }}
         >
-          {'\u2605'} New Season
+          {"\u2605"} New Season
         </button>
         <span
           style={{

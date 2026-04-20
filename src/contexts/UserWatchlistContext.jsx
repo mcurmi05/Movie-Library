@@ -1,7 +1,7 @@
-import { createContext, useContext, useState } from 'react';
-import { getUserWatchlist } from "../services/ratingsfromtable.js"
-import { useAuth } from './AuthContext.jsx';
-import { useEffect, useRef } from 'react';  
+import { createContext, useContext, useState } from "react";
+import { getUserWatchlist } from "../services/ratingsfromtable.js";
+import { useAuth } from "./AuthContext.jsx";
+import { useEffect, useRef } from "react";
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -10,7 +10,7 @@ const UserWatchlistContext = createContext();
 export const useWatchlist = () => {
   const context = useContext(UserWatchlistContext);
   if (!context) {
-    throw new Error('useWatchlist must be used within a UserWatchlistProvider');
+    throw new Error("useWatchlist must be used within a UserWatchlistProvider");
   }
   return context;
 };
@@ -23,26 +23,28 @@ export const UserWatchlistProvider = ({ children }) => {
 
   const addWatchlist = (watchlist_id, movie) => {
     const newWatchlistEntry = {
-      id:watchlist_id,
+      id: watchlist_id,
       movie_id: movie.id,
       user_id: user.id,
       movie_object: movie,
-      created_at: new Date().toISOString(), 
+      created_at: new Date().toISOString(),
     };
-    setUserWatchlist(prev => [newWatchlistEntry, ...prev]);
+    setUserWatchlist((prev) => [newWatchlistEntry, ...prev]);
   };
 
   const removeWatchlist = (watchlist_id) => {
-    setUserWatchlist(prev => 
-      prev.filter(watchlist => watchlist.id !== watchlist_id)
+    setUserWatchlist((prev) =>
+      prev.filter((watchlist) => watchlist.id !== watchlist_id),
     );
   };
 
   const updateNewSeason = (watchlist_id, value) => {
-    setUserWatchlist(prev =>
-      prev.map(item =>
-        item.id === watchlist_id ? { ...item, new_season_to_watch: value } : item
-      )
+    setUserWatchlist((prev) =>
+      prev.map((item) =>
+        item.id === watchlist_id
+          ? { ...item, new_season_to_watch: value }
+          : item,
+      ),
     );
   };
 
@@ -55,10 +57,10 @@ export const UserWatchlistProvider = ({ children }) => {
           const watchlist = await getUserWatchlist(user);
           console.log(watchlist);
           setUserWatchlist(watchlist);
-          setUserWatchlistLoaded(true); 
+          setUserWatchlistLoaded(true);
         } catch (err) {
           setUserWatchlistLoaded(false);
-          console.log(err)
+          console.log(err);
         }
       }
     };
@@ -66,14 +68,16 @@ export const UserWatchlistProvider = ({ children }) => {
   }, [user]);
 
   return (
-    <UserWatchlistContext.Provider value={{
-      userWatchlist,
-      userWatchlistLoaded,
-      setUserWatchlist,
-      addWatchlist,
-      removeWatchlist,
-      updateNewSeason,
-    }}>
+    <UserWatchlistContext.Provider
+      value={{
+        userWatchlist,
+        userWatchlistLoaded,
+        setUserWatchlist,
+        addWatchlist,
+        removeWatchlist,
+        updateNewSeason,
+      }}
+    >
       {children}
     </UserWatchlistContext.Provider>
   );
