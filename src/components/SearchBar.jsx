@@ -5,13 +5,9 @@ import { useNavigate } from "react-router-dom";
 import "../styles/SearchBar.css";
 
 export default function SearchBar() {
-  const { 
-    searchQuery, 
-    setSearchQuery, 
-    searchLoading,
-    setSearchLoading 
-  } = useSearch();
-  
+  const { searchQuery, setSearchQuery, searchLoading, setSearchLoading } =
+    useSearch();
+
   const [dropdownResults, setDropdownResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchSubmitted, setSearchSubmitted] = useState(false);
@@ -33,7 +29,7 @@ export default function SearchBar() {
         } catch (err) {
           console.log("Search error:", err);
           setDropdownResults([]);
-        } 
+        }
       }, 1000);
     } else {
       setShowDropdown(false);
@@ -61,21 +57,23 @@ export default function SearchBar() {
   }, []);
 
   const handleSearch = async (e) => {
-  e.preventDefault();
-  if (!searchQuery.trim()) return;
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
 
-  setShowDropdown(false);
-  setSearchSubmitted(true);
+    setShowDropdown(false);
+    setSearchSubmitted(true);
 
-  const imdbIdMatch = searchQuery.trim().match(/(?:imdb\.com\/title\/)?(tt\d+)/i);
-  if (imdbIdMatch) {
-    navigate(`/mediadetails/${imdbIdMatch[1]}`);
-    return;
-  }
+    const imdbIdMatch = searchQuery
+      .trim()
+      .match(/(?:imdb\.com\/title\/)?(tt\d+)/i);
+    if (imdbIdMatch) {
+      navigate(`/mediadetails/${imdbIdMatch[1]}`);
+      return;
+    }
 
-  setSearchLoading(true);
-  navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-};
+    setSearchLoading(true);
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+  };
 
   const handleDropdownClick = (movie) => {
     setShowDropdown(false);
