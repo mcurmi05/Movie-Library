@@ -66,8 +66,14 @@ export default function SearchBar() {
 
   setShowDropdown(false);
   setSearchSubmitted(true);
-  setSearchLoading(true);
 
+  const imdbIdMatch = searchQuery.trim().match(/(?:imdb\.com\/title\/)?(tt\d+)/i);
+  if (imdbIdMatch) {
+    navigate(`/mediadetails/${imdbIdMatch[1]}`);
+    return;
+  }
+
+  setSearchLoading(true);
   navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
 };
 
