@@ -316,7 +316,11 @@ export default function LogComponent({ log_id, movie, logtext, created_at }) {
                             </div>
                             <Dialog
                               initialDate={
-                                s.end_date ? new Date(s.end_date) : new Date()
+                                s.end_date
+                                  ? new Date(s.end_date)
+                                  : s.finished_at
+                                    ? new Date(s.finished_at)
+                                    : null
                               }
                               onDateChange={(d) =>
                                 updateSeasonDate(

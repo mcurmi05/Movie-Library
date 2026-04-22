@@ -86,10 +86,12 @@ export const UserLogsProvider = ({ children }) => {
         if (l.id !== log_id) return l;
         const current = Array.isArray(l.season_info) ? [...l.season_info] : [];
         if (!current[seasonIndex]) return l;
+        const now = finished ? new Date().toISOString() : null;
         current[seasonIndex] = {
           ...current[seasonIndex],
           finished: !!finished,
-          finished_at: finished ? new Date().toISOString() : null,
+          finished_at: now,
+          end_date: finished ? current[seasonIndex].end_date || now : null,
         };
         return { ...l, season_info: current };
       });
@@ -106,10 +108,12 @@ export const UserLogsProvider = ({ children }) => {
           finished: false,
           finished_at: null,
         };
+      const now = finished ? new Date().toISOString() : null;
       current[seasonIndex] = {
         ...current[seasonIndex],
         finished: !!finished,
-        finished_at: finished ? new Date().toISOString() : null,
+        finished_at: now,
+        end_date: finished ? current[seasonIndex].end_date || now : null,
       };
       const { error } = await supabase
         .from("logs")
