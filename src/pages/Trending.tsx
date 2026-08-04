@@ -18,6 +18,7 @@ import SortByMenu from "../components/filters/SortByMenu";
 import { yearInRange, compareNums } from "../utils/mediaFilters";
 import { makeNavHandlers } from "../utils/navClick";
 import { PRESS_HANDLERS } from "../utils/pressHandlers";
+import { formatCount } from "../utils/formatCount";
 
 const SORT_OPTIONS = [
   { value: "trending", label: "Trending" },
@@ -36,14 +37,6 @@ const yearOf = (mo) => {
   return Number.isFinite(y) && y > 0 ? y : null;
 };
 
-// compact vote count, e.g. 1234567 -> "1.2M", 12000 -> "12K"
-const formatVotes = (v) => {
-  if (!v) return null;
-  if (v >= 1000000) return (v / 1000000).toFixed(1) + "M";
-  if (v >= 1000) return Math.round(v / 1000) + "K";
-  return String(v);
-};
-
 // Compact live IMDb rating badge. Renders nothing until/unless the title has a
 // rating in the daily-synced dataset (resolved via its tconst, movie.id).
 function TrendingRating({ movie }) {
@@ -51,7 +44,7 @@ function TrendingRating({ movie }) {
   const live = useImdbRating(hasId ? movie.id : undefined);
   const loading = hasId && live === undefined;
   const rating = live?.rating;
-  const votes = formatVotes(live?.votes);
+  const votes = formatCount(live?.votes);
   if (rating != null) {
     return (
       <span className="trending-imdb">
@@ -80,7 +73,7 @@ function TrendingLetterboxd({ movie }) {
   if (!isMovie) return null;
   const loading = data === undefined;
   const rating = data?.rating;
-  const count = formatVotes(data?.ratingCount);
+  const count = formatCount(data?.ratingCount);
   if (rating != null) {
     return (
       <span className="trending-letterboxd">

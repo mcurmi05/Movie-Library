@@ -17,7 +17,3 @@ export function getRatingScaleKey(user) {
   const key = user?.user_metadata?.rating_scale;
   return RATING_SCALES[key] ? key : DEFAULT_RATING_SCALE;
 }
-
-export function getRatingScale(user) {
-  return RATING_SCALES[getRatingScaleKey(user)];
-}

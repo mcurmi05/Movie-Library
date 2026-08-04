@@ -41,15 +41,6 @@ export const getPopularTV = async () => {
   }
 };
 
-export const getTrendingPeople = async () => {
-  try {
-    const response = await fetch(`${API}?action=trending-people`);
-    return await response.json();
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 export const searchMovies = async (
   query: string,
   mediaType?: MediaType,

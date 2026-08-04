@@ -142,20 +142,47 @@ export const UserRatingsProvider = ({ children }) => {
     }
   };
 
+  // Renumber a whole ranking in one go. The in-memory list updates once and
+  // only the rows whose ranking actually moved are written, in parallel -
+  // ranking one-by-one used to mean a round trip per entry.
+  const applyRankings = async (orderedEntryIds) => {
+    const target = new Map(orderedEntryIds.map((id, i) => [id, i + 1]));
+    const changed = userRatings
+      .filter((r) => {
+        const next = target.get(r.movie_entry_id);
+        return next != null && r.ranking !== next;
+      })
+      .map((r) => r.movie_entry_id);
+    if (!changed.length) return;
+    setUserRatings((prev) =>
+      prev.map((r) => {
+        const next = target.get(r.movie_entry_id);
+        return next != null && r.ranking !== next ? { ...r, ranking: next } : r;
+      }),
+    );
+    if (!user) return;
+    try {
+      await Promise.all(
+        changed.map((id) => updateUserRanking(user.id, id, target.get(id))),
+      );
+    } catch (err) {
+      console.error("Failed to update rankings in Supabase:", err);
+    }
+  };
+
   useEffect(() => {
     const loadRatings = async () => {
       if (user && !hasFetched.current) {
         hasFetched.current = true;
         try {
           const ratings = await getUserRatings(user);
-          console.log(ratings);
           setUserRatings(ratings);
           setUserRatingsLoaded(true);
         } catch (err) {
           // Mark loaded even on failure so pages gated on this flag (home,
           // magic lists) don't hang forever on one bad fetch.
           setUserRatingsLoaded(true);
-          console.log(err);
+          console.error(err);
         }
       }
     };
@@ -172,6 +199,7 @@ export const UserRatingsProvider = ({ children }) => {
         removeRating,
         updateRating,
         updateRanking,
+        applyRankings,
         deleteRatingHistoryEvent,
       }}
     >

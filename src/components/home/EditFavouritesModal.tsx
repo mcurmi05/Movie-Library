@@ -2,15 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../services/supabase-client";
 
 const CATS = [
-  { key: "movies", label: "Movies" },
-  { key: "tv", label: "TV Shows" },
-  { key: "books", label: "Books" },
+  { key: "movies", label: "Movies", noun: "movie" },
+  { key: "tv", label: "TV Shows", noun: "show" },
+  { key: "books", label: "Books", noun: "book" },
 ];
+
+// Four slots per category, padded with nulls so an emptied slot keeps its place.
+const toSlots = (ids) => {
+  const out = (ids || []).slice(0, 4);
+  while (out.length < 4) out.push(null);
+  return out;
+};
 
 // Pick-your-own 4 favourites editor. Selections live in auth user_metadata
 // (favourites_v1), so no extra tables: { manual, movies: [], tv: [], books: [] }
-// holding entry ids in pick order. When manual is off the home page keeps
+// holding entry ids in slot order. When manual is off the home page keeps
 // using the top-ranked titles.
+//
+// Editing is per slot: click a slot to swap just that one, or clear it and
+// leave it empty.
 export default function EditFavouritesModal({
   onClose,
   options, // { movies: [{id,title,cover,rating}], tv: [...], books: [...] }
@@ -18,36 +28,46 @@ export default function EditFavouritesModal({
 }) {
   const [manual, setManual] = useState(!!initial?.manual);
   const [sel, setSel] = useState({
-    movies: initial?.movies || [],
-    tv: initial?.tv || [],
-    books: initial?.books || [],
+    movies: toSlots(initial?.movies),
+    tv: toSlots(initial?.tv),
+    books: toSlots(initial?.books),
   });
-  const [tab, setTab] = useState("movies");
+  // The slot being filled, as { cat, index }. Null means the slots overview.
+  const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setSearch("");
-  }, [tab]);
+  }, [editing]);
+
+  const byId = useMemo(() => {
+    const map = new Map();
+    CATS.forEach((c) =>
+      (options[c.key] || []).forEach((o) => map.set(`${c.key}:${o.id}`, o)),
+    );
+    return map;
+  }, [options]);
 
   const list = useMemo(() => {
-    const items = options[tab] || [];
+    if (!editing) return [];
+    const items = options[editing.cat] || [];
     const q = search.trim().toLowerCase();
     if (!q) return items;
     return items.filter((o) => (o.title || "").toLowerCase().includes(q));
-  }, [options, tab, search]);
+  }, [options, editing, search]);
 
-  const picked = sel[tab];
-
-  const toggle = (id) => {
+  const setSlot = (cat, index, id) =>
     setSel((prev) => {
-      const cur = prev[tab];
-      if (cur.includes(id))
-        return { ...prev, [tab]: cur.filter((x) => x !== id) };
-      if (cur.length >= 4) return prev;
-      return { ...prev, [tab]: [...cur, id] };
+      const next = [...prev[cat]];
+      // A title can only sit in one slot, so picking it elsewhere moves it.
+      if (id != null) {
+        const existing = next.indexOf(id);
+        if (existing !== -1) next[existing] = null;
+      }
+      next[index] = id;
+      return { ...prev, [cat]: next };
     });
-  };
 
   async function save() {
     setSaving(true);
@@ -55,9 +75,9 @@ export default function EditFavouritesModal({
       data: {
         favourites_v1: {
           manual,
-          movies: sel.movies,
-          tv: sel.tv,
-          books: sel.books,
+          movies: sel.movies.filter(Boolean),
+          tv: sel.tv.filter(Boolean),
+          books: sel.books.filter(Boolean),
         },
       },
     });
@@ -70,8 +90,15 @@ export default function EditFavouritesModal({
     onClose();
   }
 
+  const editingCat = editing && CATS.find((c) => c.key === editing.cat);
+
   return (
-    <div className="hp-rec-modal-backdrop" onClick={onClose} role="button" tabIndex={-1}>
+    <div
+      className="hp-rec-modal-backdrop"
+      onClick={onClose}
+      role="button"
+      tabIndex={-1}
+    >
       <div
         className="hp-rec-modal hp-fav-modal"
         onClick={(e) => e.stopPropagation()}
@@ -94,7 +121,11 @@ export default function EditFavouritesModal({
         >
           <span className="hp-toggle-box">
             {manual && (
-              <svg className="hp-toggle-tick" viewBox="0 0 12 12" aria-hidden="true">
+              <svg
+                className="hp-toggle-tick"
+                viewBox="0 0 12 12"
+                aria-hidden="true"
+              >
                 <path
                   d="M2.5 6.2l2.3 2.3 4.7-5"
                   fill="none"
@@ -109,20 +140,24 @@ export default function EditFavouritesModal({
           <span className="hp-toggle-label">Choose 4 favourites freely</span>
         </button>
 
-        {manual ? (
+        {!manual ? (
+          <p className="hp-fav-hint">
+            Your 4 favourites are taken from your top-ranked titles. Tick the
+            box above to pick any 4 of your rated titles instead.
+          </p>
+        ) : editing ? (
           <>
-            <div className="hp-fav-tabs">
-              {CATS.map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  className={`hp-fav-tab${tab === c.key ? " is-active" : ""}`}
-                  onClick={() => setTab(c.key)}
-                >
-                  {c.label}
-                  <span className="hp-fav-count">{sel[c.key].length}/4</span>
-                </button>
-              ))}
+            <div className="hp-fav-picker-head">
+              <button
+                type="button"
+                className="hp-fav-back"
+                onClick={() => setEditing(null)}
+              >
+                {String.fromCharCode(0x2190)} Back
+              </button>
+              <span>
+                Pick a {editingCat.noun} for slot {editing.index + 1}
+              </span>
             </div>
             <input
               className="hp-fav-search"
@@ -135,38 +170,80 @@ export default function EditFavouritesModal({
               <p className="hp-empty">No rated titles found.</p>
             ) : (
               <div className="hp-fav-grid">
-                {list.map((o) => {
-                  const pos = picked.indexOf(o.id);
+                {list.map((o) => (
+                  <div
+                    key={o.id}
+                    className={`hp-fav-option${
+                      sel[editing.cat][editing.index] === o.id
+                        ? " is-picked"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSlot(editing.cat, editing.index, o.id);
+                      setEditing(null);
+                    }}
+                    title={o.title}
+                  >
+                    <img
+                      src={o.cover || "/images/placeholderimage.jpg"}
+                      alt={o.title || ""}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/images/placeholderimage.jpg";
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          CATS.map((c) => (
+            <div key={c.key} className="hp-fav-cat">
+              <div className="hp-sub-label">{c.label}</div>
+              <div className="hp-fav-slots">
+                {sel[c.key].map((id, i) => {
+                  const o = id != null ? byId.get(`${c.key}:${id}`) : null;
                   return (
-                    <div
-                      key={o.id}
-                      className={`hp-fav-option${pos !== -1 ? " is-picked" : ""}`}
-                      onClick={() => toggle(o.id)}
-                      title={o.title}
-                    >
-                      <img
-                        src={o.cover || "/images/placeholderimage.jpg"}
-                        alt={o.title || ""}
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/images/placeholderimage.jpg";
-                        }}
-                      />
-                      {pos !== -1 && (
-                        <span className="hp-fav-pick-badge">{pos + 1}</span>
+                    <div className="hp-fav-slot" key={`${c.key}-${i}`}>
+                      <button
+                        type="button"
+                        className={`hp-fav-slot-btn${o ? " is-filled" : ""}`}
+                        onClick={() => setEditing({ cat: c.key, index: i })}
+                        title={o ? o.title : `Add a ${c.noun}`}
+                      >
+                        {o ? (
+                          <img
+                            src={o.cover || "/images/placeholderimage.jpg"}
+                            alt={o.title || ""}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/images/placeholderimage.jpg";
+                            }}
+                          />
+                        ) : (
+                          <span className="hp-fav-slot-plus">+</span>
+                        )}
+                      </button>
+                      {o && (
+                        <button
+                          type="button"
+                          className="hp-fav-slot-clear"
+                          onClick={() => setSlot(c.key, i, null)}
+                          aria-label={`Clear slot ${i + 1}`}
+                          title="Clear this slot"
+                        >
+                          {String.fromCharCode(0x00d7)}
+                        </button>
                       )}
                     </div>
                   );
                 })}
               </div>
-            )}
-          </>
-        ) : (
-          <p className="hp-fav-hint">
-            Your 4 favourites are taken from your top-ranked titles. Tick the
-            box above to pick any 4 of your rated titles instead.
-          </p>
+            </div>
+          ))
         )}
 
         <div className="hp-fav-actions">

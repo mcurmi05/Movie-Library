@@ -80,6 +80,15 @@ function Person() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bioOpen, setBioOpen] = useState(false);
+  // Guest spots as themselves clutter the credit strips for anyone who does
+  // the chat-show circuit. Off by default, kept for the whole session.
+  const [hideSelf, setHideSelf] = useState(
+    () => localStorage.getItem("person-hide-self") === "true",
+  );
+
+  useEffect(() => {
+    localStorage.setItem("person-hide-self", String(hideSelf));
+  }, [hideSelf]);
 
   useEffect(() => {
     let live = true;
@@ -109,6 +118,10 @@ function Person() {
     const ib = DEPT_ORDER.indexOf(b);
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
+
+  const visible = (items) =>
+    hideSelf ? (items || []).filter((it) => !it.self) : items;
+  const selfCount = (person.acting || []).filter((it) => it.self).length;
 
   return (
     <div className="person-page">
@@ -159,15 +172,26 @@ function Person() {
         </div>
       </div>
 
+      {selfCount > 0 && (
+        <label className="person-self-toggle">
+          <input
+            type="checkbox"
+            checked={hideSelf}
+            onChange={(e) => setHideSelf(e.target.checked)}
+          />
+          Hide appearances as themselves ({selfCount})
+        </label>
+      )}
+
       <TitleStrip
         title="Known For"
-        items={person.knownFor}
+        items={visible(person.knownFor)}
         navigate={navigate}
         coverForTmdb={coverForTmdb}
       />
       <TitleStrip
         title="Actor"
-        items={person.acting}
+        items={visible(person.acting)}
         navigate={navigate}
         coverForTmdb={coverForTmdb}
       />
@@ -175,7 +199,7 @@ function Person() {
         <TitleStrip
           key={dept}
           title={DEPT_LABEL[dept] || dept}
-          items={person.crewByDept[dept]}
+          items={visible(person.crewByDept[dept])}
           navigate={navigate}
           coverForTmdb={coverForTmdb}
         />

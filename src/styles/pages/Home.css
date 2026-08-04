@@ -556,9 +556,6 @@
   background: #d6453f;
   transition: background 160ms ease;
 }
-.hp-bar-active {
-  background: #ec6a64;
-}
 .hp-bar-decade {
   width: 36%;
   max-width: 18px;
@@ -635,23 +632,6 @@
   padding-top: 5px;
   color: var(--foreground);
 }
-.hp-dot {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  margin-right: 5px;
-  vertical-align: middle;
-}
-.hp-dot-film {
-  background: #e0a45a;
-}
-.hp-dot-tv {
-  background: #7f8fb0;
-}
-.hp-dot-book {
-  background: #5fb0a7;
-}
 
 /* ---- recent activity feed ---- */
 .hp-feed {
@@ -705,24 +685,6 @@
 }
 .hp-feed-item:hover .hp-feed-text {
   color: var(--foreground);
-}
-.hp-feed-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.hp-feed-dot-rate {
-  background: #c91919;
-}
-.hp-feed-dot-log {
-  background: #5fb0a7;
-}
-.hp-feed-dot-add {
-  background: #7f8fb0;
-}
-.hp-feed-dot-finish {
-  background: #7bbd6a;
 }
 .hp-feed-media-icon {
   width: 18px;
@@ -1000,17 +962,6 @@
 .hp-rec-seed:hover .hp-rec-seed-poster img {
   transform: scale(1.05);
 }
-.hp-rec-seed-badge {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.78);
-  color: #f5c518;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 6px;
-}
 .hp-rec-seed-title {
   margin-top: 5px;
   font-size: 0.75rem;
@@ -1021,99 +972,22 @@
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
-
-/* recommendations refresh button */
-.hp-rec-refresh {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--muted-foreground);
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.hp-rec-refresh:hover:not(:disabled) {
-  border-color: var(--muted-foreground);
-  color: var(--foreground);
-}
-.hp-rec-refresh:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-.hp-rec-refresh img {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-  transform: scaleX(-1);
-}
-.hp-rec-refresh.is-loading img {
-  animation: hp-rec-spin 0.8s linear infinite;
-}
-/* keep the base scaleX(-1) mirror in every frame, otherwise the browser
-   matrix-interpolates the flip away and the icon wobbles instead of spinning */
-@keyframes hp-rec-spin {
-  from {
-    transform: scaleX(-1) rotate(0deg);
-  }
-  to {
-    transform: scaleX(-1) rotate(-360deg);
-  }
-}
-
-.hp-rec-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* filter button shows as active (brand-coloured) when any pref is set */
-.hp-rec-filter-active {
-  color: var(--brand, #e23030);
-  border-color: var(--brand, #e23030);
-}
-
-/* recommendation preferences popup rows */
-.hp-rec-pref-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
-  color: var(--foreground);
-}
-.hp-rec-pref-row select {
-  background: #101010;
-  border: 1px solid #2e2e2e;
-  border-radius: 8px;
-  color: var(--foreground);
-  padding: 6px 10px;
-  font-size: 0.86rem;
-  outline: none;
-  cursor: pointer;
-}
-.hp-rec-pref-note {
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
-  margin: 14px 0 0;
-}
-
 /* ---- pick-your-own favourites editor ---- */
 .hp-fav-edit {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 999px;
   color: var(--muted-foreground);
-  width: 28px;
   height: 28px;
-  display: flex;
+  padding: 0 12px;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
 }
 .hp-fav-edit:hover {
   border-color: var(--muted-foreground);
@@ -1136,30 +1010,90 @@
   font-size: 0.9rem;
   margin: 4px 0 10px;
 }
-.hp-fav-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+.hp-fav-cat {
+  margin-bottom: 14px;
 }
-.hp-fav-tab {
+.hp-fav-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.hp-fav-slot {
+  position: relative;
+}
+.hp-fav-slot-btn {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #101010;
+  border: 1px dashed #3a3a3a;
+  color: var(--muted-foreground);
+}
+.hp-fav-slot-btn.is-filled {
+  border-style: solid;
+  border-color: transparent;
+}
+.hp-fav-slot-btn:hover {
+  border-color: #666;
+}
+.hp-fav-slot-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hp-fav-slot-plus {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.hp-fav-slot-clear {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #1a1a1a;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hp-fav-slot-clear:hover {
+  background: var(--brand, #e23030);
+  border-color: var(--brand, #e23030);
+  color: #fff;
+}
+.hp-fav-picker-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.hp-fav-back {
   background: none;
   border: 1px solid var(--border);
   border-radius: 8px;
-  color: var(--muted-foreground);
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 0.82rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.hp-fav-tab.is-active {
   color: var(--foreground);
-  border-color: var(--muted-foreground);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
 }
-.hp-fav-count {
-  font-size: 0.7rem;
-  color: var(--muted-foreground);
+.hp-fav-back:hover {
+  border-color: var(--muted-foreground);
 }
 .hp-fav-search {
   width: 100%;
@@ -1201,21 +1135,6 @@
 }
 .hp-fav-option.is-picked {
   border-color: var(--brand, #e23030);
-}
-.hp-fav-pick-badge {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--brand, #e23030);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .hp-fav-actions {
   display: flex;

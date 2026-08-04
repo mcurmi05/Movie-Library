@@ -188,7 +188,6 @@ function mapPersonListItem(p) {
 function mapCredit(c) {
   const mt = c.media_type;
   if (mt !== "movie" && mt !== "tv") return null;
-  const isTV = mt === "tv";
   return {
     tmdb_id: c.id,
     media_type: mt,
@@ -196,8 +195,16 @@ function mapCredit(c) {
     primaryImage: posterUrl(c.poster_path),
     startYear: yearOf(c.release_date || c.first_air_date),
     role: c.character || c.job || null,
+    self: isSelfAppearance(c),
     popularity: c.popularity || 0,
   };
+}
+
+// Guest spots and interviews where the person plays themselves.
+function isSelfAppearance(c) {
+  return /\bself\b|\bhimself\b|\bherself\b|\bthemselves\b/i.test(
+    c.character || "",
+  );
 }
 
 // A full detail response -> complete movie_object shape.
@@ -338,7 +345,7 @@ function scoreTitle(qNorm, title) {
   if (!title || !qNorm) return 0;
 
   const full = simRatio(qNorm, title);
-  const prefix = simRatio(qNorm, title.slice(0, qNorm.length));
+  const rawPrefix = simRatio(qNorm, title.slice(0, qNorm.length));
   const substr = title.includes(qNorm) ? 0.3 : 0;
 
   const qTokens = qNorm.split(" ").filter(Boolean);
@@ -362,11 +369,27 @@ function scoreTitle(qNorm, title) {
     }
   }
   const tokenScore = qTokens.length ? (tokenHits / qTokens.length) * 0.45 : 0;
+
+  // Whole-word evidence. Character similarity alone favours short titles that
+  // merely look like the query ("Tokyo Drifter") over long ones that literally
+  // contain it ("The Fast and the Furious: Tokyo Drift"), and people routinely
+  // search a franchise entry by its subtitle alone.
+  const phrase = ` ${title} `.includes(` ${qNorm} `) ? 0.35 : 0;
+  const allTokensExact =
+    qTokens.length > 0 && qTokens.every((qt) => tTokens.includes(qt));
+  const exactWords = allTokensExact ? 0.3 : 0;
   // Among titles matching the same query tokens, prefer the one with fewer
   // leftover words ("dark knight" -> The Dark Knight, not ... Rises).
-  const coverage = tTokens.length
-    ? (Math.min(titleTokensMatched, tTokens.length) / tTokens.length) * 0.1
+  const coverageRatio = tTokens.length
+    ? Math.min(titleTokensMatched, tTokens.length) / tTokens.length
     : 0;
+  const coverage = coverageRatio * 0.1;
+
+  // A title merely starting with the query is weaker evidence than one that
+  // *is* the query, so the prefix bonus is discounted by how much of the title
+  // is left over. Without this, any obscure "<query> in Virus Season" outranks
+  // the title people actually meant.
+  const prefix = rawPrefix * (0.75 + 0.25 * coverageRatio);
 
   // Whole-string similarity on alphabetically sorted tokens: order-
   // insensitive, so "knight dark" still lands on The Dark Knight.
@@ -378,7 +401,14 @@ function scoreTitle(qNorm, title) {
         ) * 0.95
       : 0;
 
-  return Math.max(full, prefix, sortedFull) + substr + tokenScore + coverage;
+  return (
+    Math.max(full, prefix, sortedFull) +
+    substr +
+    tokenScore +
+    coverage +
+    phrase +
+    exactWords
+  );
 }
 
 // Best raw title similarity for an item, checked against the display title
@@ -419,7 +449,13 @@ function relevanceScore(item, qNorm) {
   }
   if (!best) return 0;
   const pop = Math.log10((item.popularity || 0) + 1) / 12;
-  return best + pop;
+  // How well known the title is. Vote count is a far steadier fame signal than
+  // TMDB's popularity (which is a rolling trend score), and it's what stops a
+  // no-name title that happens to start with the query from outranking the
+  // famous one that contains it - "Tokyo Drift in Virus Season" vs
+  // "The Fast and the Furious: Tokyo Drift".
+  const fame = Math.log10((item.vote_count || 0) + 1) / 6;
+  return best + pop + fame;
 }
 
 // If the initial candidate pool has no strong title match, the query itself
@@ -859,10 +895,6 @@ export default async function handler(req, res) {
       const isTalkish = (c) =>
         c.media_type === "tv" &&
         (c.genre_ids || []).some((id) => excludedTvGenres.has(id));
-      const isSelfAppearance = (c) =>
-        /\bself\b|\bhimself\b|\bherself\b|\bthemselves\b/i.test(
-          c.character || "",
-        );
       const knownFor = dedupe(
         [
           ...(data.combined_credits?.cast || []),

@@ -1,0 +1,217 @@
+/* IMDb rating distribution + IMDb/Letterboxd reviews on the media details
+   page. Both live in the same section, so they share this file. */
+
+.rating-dist {
+  margin-top: 30px;
+}
+
+.rating-dist-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rating-dist-icon {
+  height: 16px;
+  width: auto;
+}
+
+.rating-dist-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.rating-dist-readout {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-dist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 110px;
+}
+
+.rating-dist-bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.rating-dist-fill {
+  display: block;
+  border-radius: 3px 3px 0 0;
+  background: var(--secondary);
+  transition:
+    background 150ms ease,
+    opacity 150ms ease;
+}
+
+.rating-dist-bar:hover .rating-dist-fill,
+.rating-dist-bar.is-active .rating-dist-fill {
+  background: #f5c518; /* IMDb yellow */
+}
+
+.rating-dist-label {
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.rating-dist-bar.is-active .rating-dist-label {
+  color: var(--foreground);
+}
+
+/* Reviews */
+
+.xr-section {
+  margin-top: 30px;
+}
+
+.xr-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.xr-heading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.xr-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.xr-tab {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.xr-tab.is-active {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.xr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.xr-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.xr-card-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.xr-author {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.xr-rating {
+  font-variant-numeric: tabular-nums;
+}
+
+.xr-link {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+
+.xr-link:hover {
+  color: var(--foreground);
+}
+
+.xr-title {
+  margin: 8px 0 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.xr-text {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.xr-text.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.xr-spoiler,
+.xr-more {
+  margin-top: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.xr-spoiler:hover,
+.xr-more:hover {
+  color: var(--foreground);
+}
+
+.xr-empty {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+.xr-load {
+  margin-top: 12px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.xr-load:hover:not(:disabled) {
+  background: var(--secondary);
+}
+
+.xr-load:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

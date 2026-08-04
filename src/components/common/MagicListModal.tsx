@@ -619,7 +619,16 @@ export default function MagicListModal({
                       step={meta.step}
                       min={meta.min}
                       max={meta.max}
-                      placeholder={meta.kind === "number" ? "0" : "e.g. Nolan"}
+                      placeholder={
+                        meta.kind === "number"
+                          ? "0"
+                          : "e.g. Sci-Fi, Science Fiction"
+                      }
+                      title={
+                        meta.kind === "text"
+                          ? "Separate alternatives with commas to match any of them"
+                          : undefined
+                      }
                       value={rule.value}
                       onChange={(e) => setRule(idx, { value: e.target.value })}
                     />

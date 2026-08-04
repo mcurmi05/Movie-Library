@@ -51,7 +51,7 @@ function Watchlist() {
     userWatchlist,
     userWatchlistLoaded,
     watchlistQueue,
-    updateQueueRank,
+    applyQueueRanks,
     removeFromQueue,
   } = useWatchlist();
   const { userBookTbr, userBookTbrLoaded } = useBookTbr();
@@ -369,11 +369,7 @@ function Watchlist() {
 
   // Persist a new sequential ordering (1..n) for the given queue ids. Called
   // per category so each category is renumbered independently.
-  const applyQueueOrder = async (orderedQueueIds) => {
-    for (let i = 0; i < orderedQueueIds.length; i++) {
-      await updateQueueRank(orderedQueueIds[i], i + 1);
-    }
-  };
+  const applyQueueOrder = (orderedQueueIds) => applyQueueRanks(orderedQueueIds);
 
   const handleQueueMove = async (category, queueId, direction) => {
     const ids = queueByCategory[category].map((q) => q.queue_id);

@@ -24,12 +24,6 @@ function GoodreadsInfo({ book, live = false }) {
   const rating = data?.rating ?? null;
   const href = link || `https://www.goodreads.com/book/show/${id}`;
 
-  const formatCount = (v) => {
-    if (!v) return null;
-    if (v >= 1000000) return "(" + (v / 1000000).toFixed(1) + "M)";
-    if (v >= 1000) return "(" + (v / 1000).toFixed(0) + "K)";
-    return "(" + v + ")";
-  };
   const count = data?.ratingCount ?? null;
 
   return (
@@ -56,7 +50,7 @@ function GoodreadsInfo({ book, live = false }) {
           : isLoading
             ? ""
             : "No ratings yet"}{" "}
-        {count ? formatCount(count) : null}
+        {formatCountParens(count)}
       </p>
     </a>
   );

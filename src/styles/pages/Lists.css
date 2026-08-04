@@ -68,48 +68,6 @@
   transform: scale(0.97);
 }
 
-.lists-filter-bar {
-  width: 100%;
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.lists-filter-bar label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--text-dim, rgba(255, 255, 255, 0.7));
-}
-
-.lists-filter-bar select {
-  height: 32px;
-  padding: 0 10px;
-  background-color: var(--surface, #2a2929);
-  color: var(--text, #fff);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.15));
-  border-radius: var(--app-radius-sm, 8px);
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
-}
-
-.lists-section {
-  width: 100%;
-  margin-bottom: 1.5rem;
-}
-
-.lists-section-title {
-  width: 100%;
-  text-align: left;
-  font-size: 1.3rem;
-  margin: 0.5rem 0 1rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 .lists-empty {
   color: var(--text-dim);
   text-align: center;
@@ -612,6 +570,112 @@
   font-size: 0.85rem;
 }
 
+/* How much of the list the viewer has logged / rated / watchlisted */
+.lv-progress {
+  max-width: 380px;
+  margin: 0 auto 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lv-progress-row {
+  display: grid;
+  grid-template-columns: 76px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.55));
+}
+
+.lv-progress-label {
+  text-align: left;
+}
+
+.lv-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+
+.lv-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 320ms var(--ease-out);
+}
+
+.lv-progress-fill-logged {
+  background: #22c55e;
+}
+.lv-progress-fill-rated {
+  background: #f5c518;
+}
+.lv-progress-fill-saved {
+  background: #3b82f6;
+}
+
+.lv-progress-value {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+
+.lv-progress-count {
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+}
+
+/* Ranked lists lay the row out sideways so the number (and drag handle) sit
+   beside the item instead of stacking above it. */
+.list-row.lv-row-ranked {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.list-row.lv-row-ranked > *:not(.lv-rank):not(.lv-drag-handle) {
+  flex: 1;
+  min-width: 0;
+}
+
+.lv-rank {
+  flex: 0 0 auto;
+  min-width: 1.6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+}
+
+.lv-drag-handle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+  cursor: grab;
+  touch-action: none;
+}
+
+.lv-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.list-row.lv-row-dragging {
+  opacity: 0.7;
+}
+
+.list-row.lv-row-dragging .lv-drag-handle {
+  cursor: grabbing;
+}
+
 .lv-actions {
   display: flex;
   align-items: center;
@@ -703,7 +767,6 @@
   align-items: center;
   gap: 0.6rem;
 }
-
 
 .lv-magic-rules {
   display: flex;
@@ -1075,20 +1138,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.magic-pick-label {
-  display: block;
-}
-
-.magic-pick-sub {
-  display: block;
-  font-size: 0.68rem;
-  color: var(--text-dim, rgba(255, 255, 255, 0.5));
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 240px;
 }
 
 /* Title row: heading plus the owner's pencil (opens name/description edit). */

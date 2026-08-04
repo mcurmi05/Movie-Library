@@ -1,5 +1,6 @@
 import "../../styles/media/LetterboxdInfo.css";
 import { useLetterboxdRating } from "../../contexts/LetterboxdRatingsContext";
+import { formatCountParens } from "../../utils/formatCount";
 
 // Live Letterboxd rating (native 0–5 scale), served from the daily-synced
 // `letterboxd_ratings` cache keyed by tmdb_id. Pass `live` on the media details
@@ -21,12 +22,6 @@ function LetterboxdInfo({ movie, live = false }) {
     ? `https://letterboxd.com/film/${slug}/`
     : `https://letterboxd.com/tmdb/${tmdbId}/`;
 
-  const formatCount = (v) => {
-    if (!v) return null;
-    if (v >= 1000000) return "(" + (v / 1000000).toFixed(1) + "M)";
-    if (v >= 1000) return "(" + (v / 1000).toFixed(0) + "K)";
-    return "(" + v + ")";
-  };
   const count = data?.ratingCount ?? null;
 
   return (
@@ -57,7 +52,7 @@ function LetterboxdInfo({ movie, live = false }) {
           : isLoading
             ? ""
             : "No ratings yet"}{" "}
-        {count ? formatCount(count) : null}
+        {formatCountParens(count)}
       </p>
     </a>
   );

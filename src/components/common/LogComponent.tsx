@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Check, Pencil } from "lucide-react";
 import ListComponent from "./ListComponent";
 import AddToList from "./AddToList";
 import "../../styles/pages/Rating.css";
@@ -38,6 +38,7 @@ export default function LogComponent({
   logtext,
   created_at,
   movie_end_date,
+  hideNotes = false,
 }) {
   const [visible, setVisible] = useState(true);
   const {
@@ -167,6 +168,18 @@ export default function LogComponent({
       setMetaLoading(false);
     }
   }, [seasonsMeta, metaLoading, movie?.tmdb_id, movie?.media_type]);
+
+  // Only a log whose logged seasons are all finished can earn the whole-show
+  // tick, so the season list is fetched for those logs only.
+  const allSeasonsFinished =
+    !logDnf &&
+    Array.isArray(liveLog?.season_info) &&
+    liveLog.season_info.length > 0 &&
+    liveLog.season_info.every((s) => s.finished);
+
+  useEffect(() => {
+    if (isTV && allSeasonsFinished) loadSeasonsMeta();
+  }, [isTV, allSeasonsFinished, loadSeasonsMeta]);
 
   // Lazy-load the per-episode watch status and episode metadata the first time a
   // season is expanded.
@@ -355,7 +368,6 @@ export default function LogComponent({
         updateLog(log_id, text);
         setSaving(false);
         setTextEdited(false);
-        console.log("Updated log");
       } else {
         setSaving(false);
         console.error("Error updating log:", error);
@@ -379,6 +391,15 @@ export default function LogComponent({
   const availableSeasonNumbers = tmdbSeasonNumbers.filter(
     (n) => !loggedSeasonNumbers.has(n),
   );
+
+  // Whole-show tick: every regular season TMDB knows about is logged here and
+  // marked finished. Season 0 (specials) doesn't count towards completion.
+  const regularTmdbSeasons = tmdbSeasonNumbers.filter((n) => n > 0);
+  const seriesComplete =
+    isTV &&
+    allSeasonsFinished &&
+    regularTmdbSeasons.length > 0 &&
+    regularTmdbSeasons.every((n) => loggedSeasonNumbers.has(n));
 
   // Action buttons offered inside the movie date pickers. DNF can only be
   // set from here; it is undone by clicking the red DNF badge.
@@ -411,7 +432,7 @@ export default function LogComponent({
   // Inline "add note" shown next to the date when no note exists yet, so an
   // empty note takes no vertical space.
   const noteEmpty = !editingNote && !(text && text.trim());
-  const addNoteBtn = noteEmpty ? (
+  const addNoteBtn = noteEmpty && !hideNotes ? (
     <button
       type="button"
       className="log-note-add"
@@ -571,6 +592,15 @@ export default function LogComponent({
                   style={{ width: 16, height: 16 }}
                 />
               </button>
+              {seriesComplete && (
+                <span
+                  className="series-complete-badge"
+                  title="Every season watched"
+                >
+                  <Check className="size-3.5" />
+                  Series complete
+                </span>
+              )}
               {addNoteBtn}
             </div>
             <div
@@ -926,7 +956,7 @@ export default function LogComponent({
             </div>
           </div>
         )}
-      {(editingNote || (text && text.trim())) && (
+      {!hideNotes && (editingNote || (text && text.trim())) && (
         <textarea
           ref={textareaRef}
           className="log-input"

@@ -101,15 +101,24 @@ export default function Calendar() {
           if (s.finished && s.end_date) tvEvent(s.end_date, `S${s.season} End`);
         });
       } else if (!l.date_unknown) {
-        push(l.movie_end_date || l.created_at, {
-          cover: coverForTmdb(mo?.media_type, mo?.tmdb_id) || mo?.primaryImage,
-          title: mo?.primaryTitle || "Untitled",
-          tag: null,
-          media: "movie",
-          onClick: () =>
-            mo?.tmdb_id != null &&
-            navigate(`/mediadetails/${mo.media_type}/${mo.tmdb_id}`),
-        });
+        const movieEvent = (dateVal, tag) =>
+          push(dateVal, {
+            cover: coverForTmdb(mo?.media_type, mo?.tmdb_id) || mo?.primaryImage,
+            title: mo?.primaryTitle || "Untitled",
+            tag,
+            media: "movie",
+            onClick: () =>
+              mo?.tmdb_id != null &&
+              navigate(`/mediadetails/${mo.media_type}/${mo.tmdb_id}`),
+          });
+        // A film watched across several days lands on both days, the same way
+        // a TV season does. created_at is the day it was started.
+        if (l.multi_day) {
+          movieEvent(l.created_at, "Start");
+          if (l.movie_end_date) movieEvent(l.movie_end_date, "End");
+        } else {
+          movieEvent(l.movie_end_date || l.created_at, null);
+        }
       }
     });
 

@@ -105,7 +105,7 @@ export default function SearchBar() {
           setShowDropdown(true);
         } catch (err) {
           if (cancelled) return;
-          console.log("Search error:", err);
+          console.error("Search error:", err);
           setDropdownResults([]);
           setShowDropdown(true);
         } finally {

@@ -17,6 +17,8 @@ import { useLetterboxdRatings } from "../contexts/LetterboxdRatingsContext";
 import { useGoodreadsRatings } from "../contexts/GoodreadsRatingsContext";
 import ExtraFiltersPanel from "../components/filters/ExtraFiltersPanel";
 import { useDebouncedValue } from "../utils/useDebouncedValue";
+import { useDragOrder } from "../hooks/useDragOrder";
+import { GripVertical } from "lucide-react";
 import "../styles/search/Toolbar.css";
 import { isTV, movieYear, bookYear, compareNums, yearInRange, addedInRange, imdbRatingFor, imdbVotesFor, letterboxdRatingFor, letterboxdCountFor, goodreadsRatingFor, goodreadsCountFor } from "../utils/mediaFilters";
 
@@ -33,8 +35,8 @@ const SORT_OPTIONS = [
 ];
 
 function Ratings() {
-  const { userRatings, userRatingsLoaded, updateRanking } = useRatings();
-  const { bookRatings, bookRatingsLoaded, updateBookRanking } =
+  const { userRatings, userRatingsLoaded, applyRankings } = useRatings();
+  const { bookRatings, bookRatingsLoaded, applyBookRankings } =
     useBookRatings();
   const { ratings: imdbRatings } = useImdbRatings();
   const { ratings: lbRatings } = useLetterboxdRatings();
@@ -366,13 +368,7 @@ function Ratings() {
   // Move rank up/down among 10s by swapping ranking values and normalizing
   // Note: normalization handled implicitly by applyRankOrder indices
 
-  const applyRankOrder = async (orderedIds) => {
-    // Persist sequential rankings based on provided order of movie_entry_ids
-    for (let i = 0; i < orderedIds.length; i++) {
-      const entryId = orderedIds[i];
-      await updateRanking(entryId, i + 1);
-    }
-  };
+  const applyRankOrder = (orderedIds) => applyRankings(orderedIds);
 
   const handleMove = async (entryId, direction) => {
     const tensSorted = [...allTens].sort(rankSort);
@@ -406,11 +402,7 @@ function Ratings() {
   };
 
   // Book rank handlers operate on book log ids and persist via updateBookRanking
-  const applyBookRankOrder = async (orderedIds) => {
-    for (let i = 0; i < orderedIds.length; i++) {
-      await updateBookRanking(orderedIds[i], i + 1);
-    }
-  };
+  const applyBookRankOrder = (orderedIds) => applyBookRankings(orderedIds);
 
   // Rank reorder operates on all rated books (every row in book_ratings).
   const finishedSortedForRank = () => bookRatings.slice().sort(bookRankSort);
@@ -505,6 +497,59 @@ function Ratings() {
       : !userRatingsLoaded;
 
   const { pageStart, pageEnd } = pageBounds(pag.page, pag.pageSize, displayCount);
+
+  // Drag to rank. Only offered while the page is actually showing the ranked
+  // order - any other sort and a dropped position would mean nothing. Rows are
+  // dragged within the current page and spliced back into the full order.
+  const rankDragEnabled =
+    rankModeType !== "none" && !isAllView && sortKey === "date";
+  const rankRowId = (row) => (isBooksView ? row.id : row.movie_entry_id);
+  const rankedRows = isBooksView ? sortedBooks : sortedRatings;
+
+  const pageRankIds = useMemo(
+    () =>
+      rankDragEnabled
+        ? rankedRows.slice(pageStart, pageEnd).map(rankRowId)
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rankDragEnabled, rankedRows, pageStart, pageEnd, isBooksView],
+  );
+
+  const commitRankOrder = useCallback(
+    (orderedPageIds) => {
+      const allIds = rankedRows.map(rankRowId);
+      allIds.splice(pageStart, orderedPageIds.length, ...orderedPageIds);
+      return isBooksView ? applyBookRankings(allIds) : applyRankings(allIds);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rankedRows, pageStart, isBooksView, applyBookRankings, applyRankings],
+  );
+
+  const rankDrag = useDragOrder(pageRankIds, commitRankOrder);
+
+  const rankRowClass = (id) =>
+    `list-row${rankDragEnabled ? " rk-row-draggable" : ""}${
+      rankDrag.draggingId === id ? " rk-row-dragging" : ""
+    }`;
+
+  const rankGrip = (id) =>
+    rankDragEnabled ? (
+      <button
+        type="button"
+        className="rk-drag-handle"
+        title="Drag to reorder"
+        aria-label="Drag to reorder"
+        {...rankDrag.handleProps(id)}
+      >
+        <GripVertical size={16} />
+      </button>
+    ) : null;
+
+  const draggedRankRows = rankDragEnabled
+    ? rankDrag.order
+        .map((id) => rankedRows.find((row) => rankRowId(row) === id))
+        .filter(Boolean)
+    : rankedRows.slice(pageStart, pageEnd);
 
   if (isLoading) return <Loader />;
 
@@ -655,7 +700,7 @@ function Ratings() {
         </div>
       ) : null}
       <PaginationControls pag={pag} totalCount={displayCount} />
-      <div className="list-col">
+      <div className="list-col" ref={rankDrag.containerRef}>
         {isAllView
           ? combinedAll.slice(pageStart, pageEnd).map((item) =>
               item.kind === "rating" ? (
@@ -697,11 +742,13 @@ function Ratings() {
               ),
             )
           : isBooksView
-          ? sortedBooks.slice(pageStart, pageEnd).map((bookLog) => (
+          ? draggedRankRows.map((bookLog) => (
               <div
                 key={bookLog.id}
-                className="list-row"
+                className={rankRowClass(bookLog.id)}
+                data-drag-id={rankDragEnabled ? bookLog.id : undefined}
               >
+                {rankGrip(bookLog.id)}
                 <div className="div-wrapper-rating-testing">
                   <BookRating
                     bookLog={bookLog}
@@ -715,11 +762,15 @@ function Ratings() {
                 </div>
               </div>
             ))
-          : sortedRatings.slice(pageStart, pageEnd).map((rating) => (
+          : draggedRankRows.map((rating) => (
               <div
                 key={rating.id || rating.movie_entry_id}
-                className="list-row"
+                className={rankRowClass(rating.movie_entry_id)}
+                data-drag-id={
+                  rankDragEnabled ? rating.movie_entry_id : undefined
+                }
               >
+                {rankGrip(rating.movie_entry_id)}
                 <div className="div-wrapper-rating-testing">
                   <ListComponent
                     movie_object={rating.movie_object}

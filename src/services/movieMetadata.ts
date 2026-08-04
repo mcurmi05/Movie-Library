@@ -5,6 +5,7 @@
 
 import { supabase } from "./supabase-client";
 import { getMovieById, findByImdbId } from "./api";
+import { entryToMovieRow } from "./mediaEntryAdapters";
 
 const toInt = (v) => {
   const n = parseInt(v, 10);
@@ -101,6 +102,34 @@ export async function resolveFullMovie(movie) {
   if (!mediaType || tmdbId == null) return movie;
   const full = await getMovieById(mediaType, tmdbId);
   return full || movie;
+}
+
+// Bulk metadata read straight out of media_entries, so a page showing many
+// titles does one DB round trip instead of one TMDB call per title. Keyed
+// "media_type:tmdb_id"; rows that aren't cached yet are simply absent, and
+// thin rows (no cast) are skipped so the caller still refreshes them.
+export async function getCachedMovieObjects(refs) {
+  const ids = [
+    ...new Set(
+      refs.map((r) => toInt(r?.tmdb_id)).filter((id) => id != null),
+    ),
+  ];
+  if (!ids.length) return new Map();
+
+  const { data, error } = await supabase
+    .from("media_entries")
+    .select("*")
+    .in("tmdb_id", ids)
+    .neq("media_type", "book");
+  if (error) throw error;
+
+  const map = new Map();
+  (data ?? []).forEach((entry) => {
+    const mo = movieRowToMovieObject(entryToMovieRow(entry));
+    if (!mo?.cast?.length) return;
+    map.set(`${entry.media_type}:${entry.tmdb_id}`, mo);
+  });
+  return map;
 }
 
 // movie_object -> unified media_entries row (type-specific fields packed

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCovers } from "../contexts/UserCoversContext";
@@ -31,7 +31,10 @@ import {
   bulkRemoveListItems,
   getListSaveCounts,
   createList,
+  reorderListItems,
 } from "../services/lists";
+import { useDragOrder } from "../hooks/useDragOrder";
+import { getCachedMovieObjects } from "../services/movieMetadata";
 import {
   computeMagicSnapshots,
   computeGlobalSnapshots,
@@ -39,6 +42,12 @@ import {
   describeRule,
 } from "../utils/magicLists";
 import { useMagicLibrary } from "../hooks/useMagicLibrary";
+import { useLogs } from "../contexts/UserLogsContext";
+import { useRatings } from "../contexts/UserRatingsContext";
+import { useWatchlist } from "../contexts/UserWatchlistContext";
+import { useBookLogs } from "../contexts/UserBookLogsContext";
+import { useBookRatings } from "../contexts/UserBookRatingsContext";
+import { useBookTbr } from "../contexts/UserBookTbrContext";
 import { useImdbRatings } from "../contexts/ImdbRatingsContext";
 import { useLetterboxdRatings } from "../contexts/LetterboxdRatingsContext";
 import { useGoodreadsRatings } from "../contexts/GoodreadsRatingsContext";
@@ -48,6 +57,7 @@ import {
   letterboxdRatingFor,
   goodreadsRatingFor,
 } from "../utils/mediaFilters";
+import { GripVertical } from "lucide-react";
 import SortByMenu from "../components/filters/SortByMenu";
 import MagicListModal from "../components/common/MagicListModal";
 import ListComponent from "../components/common/ListComponent";
@@ -276,6 +286,12 @@ export default function ListView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { userLogs } = useLogs();
+  const { userRatings } = useRatings();
+  const { userWatchlist } = useWatchlist();
+  const { bookLogs } = useBookLogs();
+  const { bookRatings } = useBookRatings();
+  const { userBookTbr } = useBookTbr();
 
   const [list, setList] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -377,13 +393,16 @@ export default function ListView() {
   // results would leave those rows on a spinner forever.
   useEffect(() => {
     if (!list?.items?.length) return;
-    list.items.forEach(async (it) => {
-      if (requestedRef.current.has(it.id)) return;
-      requestedRef.current.add(it.id);
-      try {
-        if (it.media_type === "book") {
-          const hid = it.item_data?.hardcover_id;
-          if (!hid) return;
+    const fresh = list.items.filter((it) => !requestedRef.current.has(it.id));
+    if (!fresh.length) return;
+    fresh.forEach((it) => requestedRef.current.add(it.id));
+
+    fresh
+      .filter((it) => it.media_type === "book")
+      .forEach(async (it) => {
+        const hid = it.item_data?.hardcover_id;
+        if (!hid) return;
+        try {
           const full = await getBookByHardcoverId(hid);
           if (!full) return;
           // Snapshot first, then any non-null fresh fields on top.
@@ -394,23 +413,60 @@ export default function ListView() {
             ),
           };
           setBookDetails((prev) => new Map(prev).set(it.id, merged));
-        } else {
-          const d = it.item_data;
-          if (d?.tmdb_id == null) return;
+        } catch (err) {
+          console.error("Failed to load book details:", err);
+        }
+      });
+
+    const movieItems = fresh.filter(
+      (it) => it.media_type !== "book" && it.item_data?.tmdb_id != null,
+    );
+    if (!movieItems.length) return;
+
+    (async () => {
+      // Almost every title in a list is already sitting in media_entries, so
+      // one batched DB read fills the page in and only the gaps go to TMDB.
+      let cached = new Map();
+      try {
+        cached = await getCachedMovieObjects(
+          movieItems.map((it) => it.item_data),
+        );
+      } catch (err) {
+        console.error("Failed to read cached list metadata:", err);
+      }
+
+      const hits = new Map();
+      const misses = [];
+      movieItems.forEach((it) => {
+        const mo = cached.get(
+          `${it.item_data.media_type}:${Number(it.item_data.tmdb_id)}`,
+        );
+        if (mo) hits.set(it.id, mo);
+        else misses.push(it);
+      });
+      if (hits.size) {
+        setMovieDetails((prev) => {
+          const next = new Map(prev);
+          hits.forEach((mo, id) => next.set(id, mo));
+          return next;
+        });
+      }
+
+      misses.forEach(async (it) => {
+        const d = it.item_data;
+        try {
           const full = await getMovieById(d.media_type, d.tmdb_id);
           // ListComponent renders cast/directors unguarded — only hand over
           // objects that actually carry them. A null marks the fetch as done
           // so the row settles on the simple fallback instead of a spinner.
           const ok = full?.tmdb_id != null && Array.isArray(full.cast);
           setMovieDetails((prev) => new Map(prev).set(it.id, ok ? full : null));
-        }
-      } catch (err) {
-        console.error("Failed to load item details:", err);
-        if (it.media_type !== "book") {
+        } catch (err) {
+          console.error("Failed to load item details:", err);
           setMovieDetails((prev) => new Map(prev).set(it.id, null));
         }
-      }
-    });
+      });
+    })();
   }, [list?.items]);
 
   // Whether the current (non-owner) user has already saved this list.
@@ -451,6 +507,76 @@ export default function ListView() {
       active = false;
     };
   }, [debouncedQuery, addOpen]);
+
+  // How much of the list the viewer has already logged / rated / watchlisted.
+  // Keys are media-type scoped so a movie and a show sharing a TMDB id can't
+  // collide; books fall back to title+author when they have no hardcover id.
+  const progress = useMemo(() => {
+    const items = list?.items || [];
+    if (!isAuthenticated || !items.length) return null;
+
+    const screenKey = (mo) =>
+      mo?.tmdb_id != null ? `${mo.media_type}:${mo.tmdb_id}` : null;
+    const bookKey = (be) => {
+      if (!be) return null;
+      if (be.hardcover_id) return `book:${be.hardcover_id}`;
+      if (!be.title) return null;
+      return `book:${be.title}|${be.author || ""}`.toLowerCase();
+    };
+
+    const collect = (screenRows, bookRows) => {
+      const set = new Set();
+      screenRows.forEach((r) => {
+        const k = screenKey(r.movie_object);
+        if (k) set.add(k);
+      });
+      bookRows.forEach((r) => {
+        const k = bookKey(r.book_entries);
+        if (k) set.add(k);
+      });
+      return set;
+    };
+
+    const logged = collect(userLogs, bookLogs);
+    const rated = collect(userRatings, bookRatings);
+    const saved = collect(userWatchlist, userBookTbr);
+
+    const itemKey = (it) =>
+      it.media_type === "book"
+        ? bookKey(it.item_data)
+        : screenKey({
+            media_type: it.item_data?.media_type,
+            tmdb_id: it.item_data?.tmdb_id,
+          });
+
+    let nLogged = 0;
+    let nRated = 0;
+    let nSaved = 0;
+    items.forEach((it) => {
+      const k = itemKey(it);
+      if (!k) return;
+      if (logged.has(k)) nLogged += 1;
+      if (rated.has(k)) nRated += 1;
+      if (saved.has(k)) nSaved += 1;
+    });
+
+    const pct = (n) => Math.round((n / items.length) * 100);
+    return {
+      total: items.length,
+      logged: { n: nLogged, pct: pct(nLogged) },
+      rated: { n: nRated, pct: pct(nRated) },
+      saved: { n: nSaved, pct: pct(nSaved) },
+    };
+  }, [
+    list,
+    isAuthenticated,
+    userLogs,
+    userRatings,
+    userWatchlist,
+    bookLogs,
+    bookRatings,
+    userBookTbr,
+  ]);
 
   // Items as currently viewed: text/type filters plus sort. "position" keeps
   // the stored list order (what reordering/syncs produce).
@@ -515,6 +641,67 @@ export default function ListView() {
     grTable,
     movieDetails,
   ]);
+
+  // Ranked lists show 1..n and can be dragged into order. Plain lists don't,
+  // since most lists aren't meant to be a ranking.
+  const ranked = !!list?.ranked;
+
+  const toggleRanked = async () => {
+    const next = !ranked;
+    setList((prev) => (prev ? { ...prev, ranked: next } : prev));
+    try {
+      await updateList(list.id, { ranked: next });
+    } catch (err) {
+      console.error("Failed to toggle list ranking:", err);
+      setList((prev) => (prev ? { ...prev, ranked: !next } : prev));
+    }
+  };
+
+  // Drag reordering only makes sense while the list is shown in its stored
+  // order and unfiltered - anywhere else a dropped position is ambiguous.
+  const canReorder =
+    !!isOwner &&
+    ranked &&
+    sortKey === "position" &&
+    sortDir === "asc" &&
+    typeFilter === "all" &&
+    !itemSearch.trim() &&
+    visibleItems.length > 1;
+
+  const visibleIds = useMemo(
+    () => visibleItems.map((it) => it.id),
+    [visibleItems],
+  );
+
+  const commitOrder = useCallback(
+    async (orderedIds) => {
+      const items = list?.items || [];
+      const byId = new Map(items.map((it) => [it.id, it]));
+      const positions = new Map(
+        items.map((it) => [it.id, Number(it.position) || 0]),
+      );
+      const reordered = orderedIds
+        .map((id, i) => {
+          const it = byId.get(id);
+          return it ? { ...it, position: i } : null;
+        })
+        .filter(Boolean);
+      setList((prev) => (prev ? { ...prev, items: reordered } : prev));
+      try {
+        await reorderListItems(orderedIds, positions);
+      } catch (err) {
+        console.error("Failed to save the new list order:", err);
+      }
+    },
+    [list?.items],
+  );
+
+  const dragOrder = useDragOrder(visibleIds, commitOrder);
+  const orderedItems = canReorder
+    ? dragOrder.order
+        .map((id) => visibleItems.find((it) => it.id === id))
+        .filter(Boolean)
+    : visibleItems;
 
   // Media keys of everything already in the list, for "Added ✓" states.
   const existingKeys = useMemo(() => {
@@ -864,6 +1051,37 @@ export default function ListView() {
           </span>
         </p>
 
+        {progress && (
+          <div className="lv-progress">
+            {[
+              { key: "logged", label: "Logged", data: progress.logged },
+              { key: "rated", label: "Rated", data: progress.rated },
+              { key: "saved", label: "Watchlisted", data: progress.saved },
+            ].map(({ key, label, data }) => (
+              <div
+                key={key}
+                className="lv-progress-row"
+                title={`${data.n} of ${progress.total} ${label.toLowerCase()}`}
+              >
+                <span className="lv-progress-label">{label}</span>
+                <span className="lv-progress-track">
+                  <span
+                    className={`lv-progress-fill lv-progress-fill-${key}`}
+                    style={{ width: `${data.pct}%` }}
+                  />
+                </span>
+                <span className="lv-progress-value">
+                  {data.pct}%
+                  <span className="lv-progress-count">
+                    {" "}
+                    ({data.n}/{progress.total})
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {list.magic && (
           <div className="lv-magic">
             <div className="lv-magic-head">
@@ -944,6 +1162,17 @@ export default function ListView() {
                 onClick={() => setAddOpen((v) => !v)}
               >
                 + Add items
+              </button>
+              <button
+                className={`lv-btn${ranked ? " lv-btn-active" : ""}`}
+                onClick={toggleRanked}
+                title={
+                  ranked
+                    ? "Turn off ranking (hides the numbers and drag handles)"
+                    : "Number this list 1..n and drag items to rank them"
+                }
+              >
+                {ranked ? "Ranked ✓" : "Ranked"}
               </button>
               <button
                 className="lv-btn lv-btn-danger"
@@ -1191,16 +1420,41 @@ export default function ListView() {
       ) : visibleItems.length === 0 ? (
         <div className="empty-msg">No items match this filter.</div>
       ) : (
-        <div className="list-col">
-          {visibleItems.map((item) => {
+        <div className="list-col" ref={dragOrder.containerRef}>
+          {orderedItems.map((item, index) => {
             const removeProps = {
               isOwner,
               onRemove: () => handleRemoveItem(item.id),
               removing: removingId === item.id,
             };
+            const rowClass = `list-row${ranked ? " lv-row-ranked" : ""}${
+              canReorder ? " lv-row-draggable" : ""
+            }${dragOrder.draggingId === item.id ? " lv-row-dragging" : ""}`;
+            const grip = canReorder ? (
+              <button
+                type="button"
+                className="lv-drag-handle"
+                title="Drag to reorder"
+                aria-label="Drag to reorder"
+                {...dragOrder.handleProps(item.id)}
+              >
+                <GripVertical size={16} />
+              </button>
+            ) : null;
+            // Rank numbers follow the displayed order, so they stay 1..n even
+            // while the list is sorted or filtered some other way.
+            const rankBadge = ranked ? (
+              <span className="lv-rank">{index + 1}</span>
+            ) : null;
             if (item.media_type === "book") {
               return (
-                <div className="list-row" key={item.id}>
+                <div
+                  className={rowClass}
+                  key={item.id}
+                  data-drag-id={canReorder ? item.id : undefined}
+                >
+                  {rankBadge}
+                  {grip}
                   <BookListRow
                     book={bookDetails.get(item.id) || item.item_data}
                     {...removeProps}
@@ -1210,7 +1464,13 @@ export default function ListView() {
             }
             const full = movieDetails.get(item.id);
             return (
-              <div className="list-row" key={item.id}>
+              <div
+                className={rowClass}
+                key={item.id}
+                data-drag-id={canReorder ? item.id : undefined}
+              >
+                {rankBadge}
+                {grip}
                 {full ? (
                   <div className="div-wrapper-rating-testing">
                     <ListComponent

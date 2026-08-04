@@ -109,35 +109,6 @@
   font-size: 1.15rem;
 }
 
-.bd-gr-link {
-  display: inline-flex;
-  align-items: center;
-}
-
-.bd-gr-link img {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-}
-
-.bd-gr-rating {
-  display: inline-flex;
-  align-items: center;
-  font-size: 1.15rem;
-  cursor: pointer;
-}
-
-.bd-rating-star {
-  color: #f5c518;
-  font-size: 1.3rem;
-  margin-right: 4px;
-}
-
-.bd-rating-count {
-  font-size: 1.15rem;
-  margin-left: 5px;
-}
-
 .bd-description {
   margin-top: 20px;
   font-size: 0.82rem;
@@ -146,10 +117,6 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-}
-
-.bd-muted {
-  color: #888;
 }
 
 @media (max-width: 900px) {

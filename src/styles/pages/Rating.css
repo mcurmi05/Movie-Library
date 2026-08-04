@@ -379,6 +379,12 @@
     padding: 0;
   }
 
+  /* The wrapper's padding is zeroed above, so the note textarea would sit
+     flush against the bottom border. Give it its own breathing room. */
+  .log-rating-wrapper .log-input {
+    margin-bottom: 10px;
+  }
+
   /* Delete icon: tuck it into the top-right corner, small, and reserve a little
      room so the title-row actions don't slide under it. `img.` adds specificity
      so this beats the base `.log-delete-icon { width: 20px }` rule regardless of

@@ -169,6 +169,34 @@ export const UserBookRatingsProvider = ({ children }) => {
     }
   };
 
+  // Renumber a whole book ranking at once: one state update, and only the
+  // rows that actually moved get written, in parallel.
+  const applyBookRankings = async (orderedRatingIds) => {
+    const target = new Map(orderedRatingIds.map((id, i) => [id, i + 1]));
+    const changed = bookRatings
+      .filter((r) => {
+        const next = target.get(r.id);
+        return next != null && r.ranking !== next;
+      })
+      .map((r) => r.id);
+    if (!changed.length) return;
+    setBookRatings((prev) =>
+      prev.map((r) => {
+        const next = target.get(r.id);
+        return next != null && r.ranking !== next ? { ...r, ranking: next } : r;
+      }),
+    );
+    try {
+      await Promise.all(
+        changed.map((id) =>
+          updateBookRatingService(id, { ranking: target.get(id) }),
+        ),
+      );
+    } catch (err) {
+      console.error("Error updating book rankings:", err);
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       if (!user || hasFetched.current) return;
@@ -188,16 +216,20 @@ export const UserBookRatingsProvider = ({ children }) => {
           const sorted = [...unranked].sort(
             (a, b) => new Date(b.created_at) - new Date(a.created_at),
           );
-          for (let i = 0; i < sorted.length; i++) {
-            const newRank = maxRank + i + 1;
-            try {
-              await updateBookRatingService(sorted[i].id, { ranking: newRank });
-              finalRows = finalRows.map((r) =>
-                r.id === sorted[i].id ? { ...r, ranking: newRank } : r,
-              );
-            } catch (err) {
-              console.error("Error backfilling book rating ranking:", err);
-            }
+          const ranks = new Map(
+            sorted.map((r, i) => [r.id, maxRank + i + 1]),
+          );
+          finalRows = rows.map((r) =>
+            ranks.has(r.id) ? { ...r, ranking: ranks.get(r.id) } : r,
+          );
+          try {
+            await Promise.all(
+              [...ranks].map(([id, ranking]) =>
+                updateBookRatingService(id, { ranking }),
+              ),
+            );
+          } catch (err) {
+            console.error("Error backfilling book rating rankings:", err);
           }
         }
 
@@ -227,6 +259,7 @@ export const UserBookRatingsProvider = ({ children }) => {
         rateBook,
         findRatingForBook,
         updateBookRanking: updateBookRankingValue,
+        applyBookRankings,
         deleteBookRatingHistoryEvent,
         syncBookEntry,
       }}

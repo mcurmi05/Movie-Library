@@ -3,6 +3,11 @@
 // film page (resolved via Letterboxd's /tmdb/{id}/ redirect), upserts the
 // result into the `letterboxd_ratings` cache, and returns it.
 //
+// ?action=reviews returns the popular reviews off the same film page instead
+// (nothing cached). Letterboxd's own review and histogram endpoints sit behind
+// a bot challenge, so the film page is the only thing we can read - it carries
+// twelve popular reviews, which is all we can offer.
+//
 // Ratings stay on Letterboxd's native 0–5 scale.
 
 // URL can come from the dedicated server var or the existing client var (same
@@ -51,6 +56,80 @@ async function scrapeRating(tmdbId) {
   };
 }
 
+const ENTITIES = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+function decode(s) {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&(\w+);/g, (m, name) => ENTITIES[name] ?? m);
+}
+
+// Star glyphs carry the rating in their aria-label: "★★★½" is 3.5.
+function starsToRating(label) {
+  if (!label) return null;
+  const full = (label.match(/★/g) || []).length;
+  const half = label.includes("½") ? 0.5 : 0;
+  return full + half || null;
+}
+
+function parseReview(block, slug) {
+  const link = block.match(/href="([^"]+)" class="context"/)?.[1];
+  const author = block.match(
+    /<strong class="displayname">([\s\S]*?)<\/strong>/,
+  )?.[1];
+  if (!link || !author) return null;
+
+  // The body sits between the review div and the like/comment actions; the
+  // markup in between is <p> paragraphs plus the odd link.
+  const bodyAt = block.indexOf("js-review-body");
+  const endAt = block.indexOf('<div class="viewing-actions"', bodyAt);
+  const body = bodyAt === -1 || endAt === -1 ? "" : block.slice(bodyAt, endAt);
+  const text = decode(
+    body
+      .slice(body.indexOf(">") + 1)
+      .replace(/<\/p>/g, "\n\n")
+      .replace(/<[^>]+>/g, "")
+      .trim(),
+  ).replace(/\n{3,}/g, "\n\n");
+  if (!text) return null;
+
+  return {
+    id: link,
+    url: `https://letterboxd.com${link}`,
+    author: decode(author.trim()),
+    text,
+    rating: starsToRating(
+      block.match(/class="glyph -rating"[^>]*aria-label="([^"]*)"/)?.[1],
+    ),
+    likes: Number(block.match(/data-count="(\d+)"/)?.[1] ?? 0) || null,
+    spoiler: block.includes("This review may contain spoilers"),
+    slug,
+  };
+}
+
+async function scrapeReviews(tmdbId) {
+  const res = await fetch(`https://letterboxd.com/tmdb/${tmdbId}/`, {
+    headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
+    redirect: "follow",
+  });
+  if (!res.ok || !res.url.includes("/film/")) return null;
+
+  const slug = new URL(res.url).pathname.replace(/^\/film\//, "").replace(/\/$/, "");
+  const html = await res.text();
+  return html
+    .split('<div class="listitem js-listitem">')
+    .slice(1)
+    .map((block) => parseReview(block.slice(0, block.indexOf("</article>")), slug))
+    .filter(Boolean);
+}
+
 async function cacheRow(row) {
   if (!SUPABASE_URL || !SERVICE_KEY) return; // best-effort cache write
   const url =
@@ -77,7 +156,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing or invalid tmdb_id" });
   }
 
+  const action =
+    req.query?.action ||
+    (req.url && new URL(req.url, "http://x").searchParams.get("action"));
+
   try {
+    if (action === "reviews") {
+      const reviews = await scrapeReviews(tmdbId);
+      if (!reviews) return res.status(404).json({ error: "Film not found" });
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).json({ reviews });
+    }
+
     const row = await scrapeRating(tmdbId);
     if (!row) return res.status(404).json({ error: "No rating found" });
     await cacheRow(row);

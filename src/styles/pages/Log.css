@@ -1,8 +1,4 @@
-.logs-container-vertically-down {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+
 
 /* Match the width of a watchlist component (.log-rating-wrapper) below it */
 .watchlist-queue {

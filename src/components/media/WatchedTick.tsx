@@ -61,7 +61,10 @@ export default function WatchedTick({ movie, book }) {
 
   // A finished book reads start -> end; in progress it's "still reading".
   function bookLabel(bl) {
-    if (bl.dnf) return `DNF (${fmt(bl.start_date) || "date unknown"})`;
+    if (bl.dnf) {
+      const d = fmt(bl.start_date);
+      return d ? `DNF (${d})` : "DNF";
+    }
     if (bl.end_date) {
       const s = fmt(bl.start_date);
       const e = fmt(bl.end_date);
@@ -87,7 +90,7 @@ export default function WatchedTick({ movie, book }) {
         .map((d) => new Date(d));
       const start = starts.length ? new Date(Math.min(...starts)) : null;
       const end = ends.length ? new Date(Math.max(...ends)) : null;
-      if (log.dnf) return `DNF (${fmt(start) || "date unknown"})`;
+      if (log.dnf) return start ? `DNF (${fmt(start)})` : "DNF";
       if (seasons.every((s) => s.finished) && end) {
         const s = fmt(start);
         const e = fmt(end);
@@ -97,17 +100,18 @@ export default function WatchedTick({ movie, book }) {
         ? `Still watching (since ${fmt(start)})`
         : "Still watching";
     }
-    // Movie
-    if (log.dnf) return `DNF (${fmt(log.created_at) || "date unknown"})`;
+    // Movie. A log flagged date_unknown carries a meaningless created_at, so
+    // it reads as a plain "Watched" with no date at all.
+    const movieDate = log.date_unknown ? null : fmt(log.created_at);
+    if (log.dnf) return movieDate ? `DNF (${movieDate})` : "DNF";
     if (log.multi_day) {
-      if (log.movie_end_date)
-        return `Watched: ${fmt(log.created_at)} – ${fmt(log.movie_end_date)}`;
-      return log.created_at
-        ? `Still watching (since ${fmt(log.created_at)})`
+      if (log.movie_end_date && movieDate)
+        return `Watched: ${movieDate} – ${fmt(log.movie_end_date)}`;
+      return movieDate
+        ? `Still watching (since ${movieDate})`
         : "Still watching";
     }
-    const d = fmt(log.created_at);
-    return d ? `Watched: ${d}` : "Watched: date unknown";
+    return movieDate ? `Watched: ${movieDate}` : "Watched";
   }
 
   return (

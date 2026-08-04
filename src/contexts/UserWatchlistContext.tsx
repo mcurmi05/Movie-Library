@@ -98,14 +98,30 @@ export const UserWatchlistProvider = ({ children }) => {
     }
   };
 
-  const updateQueueRank = async (queue_id, queue_rank) => {
+  // Renumber a whole queue in one go. The in-memory queue updates once and
+  // only the rows that actually moved are written, in parallel - reordering
+  // one row at a time meant a round trip per entry.
+  const applyQueueRanks = async (orderedQueueIds) => {
+    const target = new Map(orderedQueueIds.map((id, i) => [id, i + 1]));
+    const changed = watchlistQueue.filter((q) => {
+      const next = target.get(q.id);
+      return next != null && q.queue_rank !== next;
+    });
+    if (!changed.length) return;
     setWatchlistQueue((prev) =>
-      prev.map((q) => (q.id === queue_id ? { ...q, queue_rank } : q)),
+      prev.map((q) => {
+        const next = target.get(q.id);
+        return next != null && q.queue_rank !== next
+          ? { ...q, queue_rank: next }
+          : q;
+      }),
     );
     try {
-      await updateWatchlistQueueRank(queue_id, queue_rank);
+      await Promise.all(
+        changed.map((q) => updateWatchlistQueueRank(q.id, target.get(q.id))),
+      );
     } catch (err) {
-      console.error("Error updating watchlist queue rank:", err);
+      console.error("Error updating watchlist queue ranks:", err);
     }
   };
 
@@ -126,14 +142,13 @@ export const UserWatchlistProvider = ({ children }) => {
         try {
           setUserWatchlistLoaded(false);
           const watchlist = await getUserWatchlist(user);
-          console.log(watchlist);
           setUserWatchlist(watchlist);
           setUserWatchlistLoaded(true);
         } catch (err) {
           // Mark loaded even on failure so pages gated on this flag (home,
           // magic lists) don't hang forever on one bad fetch.
           setUserWatchlistLoaded(true);
-          console.log(err);
+          console.error(err);
         }
         try {
           const queue = await getUserWatchlistQueue(user);
@@ -141,7 +156,7 @@ export const UserWatchlistProvider = ({ children }) => {
           setWatchlistQueueLoaded(true);
         } catch (err) {
           setWatchlistQueueLoaded(false);
-          console.log(err);
+          console.error(err);
         }
       }
     };
@@ -162,7 +177,7 @@ export const UserWatchlistProvider = ({ children }) => {
         addToQueue,
         addBookToQueue,
         removeFromQueue,
-        updateQueueRank,
+        applyQueueRanks,
       }}
     >
       {children}

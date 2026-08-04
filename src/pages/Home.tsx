@@ -744,18 +744,34 @@ export default function Home() {
         title: list.title,
         onClick: () => navigate(`/lists/${list.id}`),
       });
+      // Item additions roll up into one "Updated <list>" row per day instead
+      // of a row per item, which used to bury everything else in the feed.
+      // Additions on the list's creation day are already implied by the
+      // "Created list" row above.
+      const createdDay = String(list.created_at || "").slice(0, 10);
+      const perDay = new Map();
       (list.list_items || []).forEach((it) => {
-        const itemTitle =
-          it.media_type === "book"
-            ? stripSeries(it.item_data?.title)
-            : it.item_data?.primaryTitle;
+        if (!it.created_at) return;
+        const day = String(it.created_at).slice(0, 10);
+        if (day === createdDay) return;
+        const prev = perDay.get(day);
+        perDay.set(day, {
+          // Sort by the day's last addition so the row lands at the right spot.
+          date:
+            !prev || new Date(it.created_at) > new Date(prev.date)
+              ? it.created_at
+              : prev.date,
+          count: (prev?.count || 0) + 1,
+        });
+      });
+      perDay.forEach(({ date, count }) => {
         ev.push({
-          date: it.created_at,
+          date,
           type: "list",
-          media: it.media_type === "book" ? "book" : "screen",
-          prefix: "Added",
-          title: itemTitle || "an item",
-          suffix: ` to ${list.title}`,
+          media: "list",
+          prefix: "Updated",
+          title: list.title,
+          suffix: count === 1 ? " (1 item added)" : ` (${count} items added)`,
           onClick: () => navigate(`/lists/${list.id}`),
         });
       });
@@ -1202,10 +1218,11 @@ export default function Home() {
                 type="button"
                 className="hp-fav-edit"
                 onClick={() => setShowFavEdit(true)}
-                aria-label="Edit favourites"
-                title="Edit favourites"
+                aria-label="Customise favourites"
+                title="Customise favourites"
               >
-                <Pencil size={14} />
+                <Pencil size={13} />
+                <span>Customise</span>
               </button>
             }
           >

@@ -290,22 +290,6 @@ export const getBookEntryByHardcoverId = async (hardcoverId) => {
   return entryToBookObject((data && data[0]) || null);
 };
 
-// Search book entries by title or author (case-insensitive substring match).
-export const searchBookEntries = async (query, limit = 100) => {
-  const term = (query || "").trim();
-  if (!term) return [];
-  const pattern = `%${term}%`;
-  const { data, error } = await supabase
-    .from("media_entries")
-    .select("*")
-    .eq("media_type", "book")
-    .or(`title.ilike.${pattern},creator.ilike.${pattern}`)
-    .order("title", { ascending: true })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []).map(entryToBookObject);
-};
-
 // Look up a single book entry by the path portion of its Goodreads link
 // (everything after "goodreads.com/"). Used by the book details page, where
 // that path is the route identifier.
@@ -320,17 +304,6 @@ export const getBookEntryByGoodreadsPath = async (path) => {
     .limit(1);
   if (error) throw error;
   return entryToBookObject((data && data[0]) || null);
-};
-
-// Return every book entry.
-export const getAllBookEntries = async () => {
-  const { data, error } = await supabase
-    .from("media_entries")
-    .select("*")
-    .eq("media_type", "book")
-    .order("title", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(entryToBookObject);
 };
 
 /* ---------- book logs ---------- */
@@ -386,18 +359,6 @@ export const createBookTbr = async (bookTbr) => {
 export const deleteBookTbr = async (tbrId) => {
   const { error } = await supabase.from("user_saves").delete().eq("id", tbrId);
   if (error) throw error;
-};
-
-export const updateBookTbr = async (tbrId, updates) => {
-  const row = {};
-  if ("book_id" in updates) row.entry_id = updates.book_id;
-  const { data, error } = await supabase
-    .from("user_saves")
-    .update(row)
-    .eq("id", tbrId)
-    .select("*, entry:media_entries(*)");
-  if (error) throw error;
-  return toBookTbrRow(data[0]);
 };
 
 /* ---------- book ratings ---------- */

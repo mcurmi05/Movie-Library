@@ -1,12 +1,6 @@
 import { useStorygraphRating } from "./StorygraphRatingsContext";
 import "./StorygraphInfo.css";
-
-function formatCount(value) {
-  if (!value) return null;
-  if (value >= 1000000) return `(${(value / 1000000).toFixed(1)}M)`;
-  if (value >= 1000) return `(${(value / 1000).toFixed(0)}K)`;
-  return `(${value})`;
-}
+import { formatCountParens } from "../../../utils/formatCount";
 
 export default function StorygraphInfo({ book, live = false }) {
   const hardcoverId =
@@ -52,7 +46,7 @@ export default function StorygraphInfo({ book, live = false }) {
           : isLoading
             ? ""
             : "No ratings yet"}{" "}
-        {formatCount(data?.ratingCount)}
+        {formatCountParens(data?.ratingCount)}
       </p>
     </a>
   );

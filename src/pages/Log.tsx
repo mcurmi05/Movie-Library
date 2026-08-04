@@ -84,6 +84,17 @@ function Log() {
   const [addedFrom, setAddedFrom] = useState(location.state?.addedFrom || "");
   const [addedTo, setAddedTo] = useState(location.state?.addedTo || "");
   const [genreFilter, setGenreFilter] = useState(location.state?.genreFilter || "all");
+  // Rewatch/reread filter. all | rewatch | first.
+  const [repeatFilter, setRepeatFilter] = useState(
+    location.state?.repeatFilter || "all",
+  );
+  // Collapse every log's note text. Persisted so it survives navigation.
+  const [hideNotes, setHideNotes] = useState(
+    () => localStorage.getItem("log-hide-notes") === "true",
+  );
+  useEffect(() => {
+    localStorage.setItem("log-hide-notes", String(hideNotes));
+  }, [hideNotes]);
   const pag = usePagination(
     [
       debouncedSearch,
@@ -92,6 +103,7 @@ function Log() {
       mediaTypeFilter,
       noteFilter,
       dateFilter,
+      repeatFilter,
       sortKey,
       sortDir,
       yearFrom,
@@ -107,6 +119,7 @@ function Log() {
       (s.genreFilter && s.genreFilter !== "all") ||
       (s.noteFilter && s.noteFilter !== "all") ||
       (s.dateFilter && s.dateFilter !== "all") ||
+      (s.repeatFilter && s.repeatFilter !== "all") ||
       s.yearFrom ||
       s.yearTo ||
       s.addedFrom ||
@@ -121,6 +134,7 @@ function Log() {
     (genreFilter !== "all" ? 1 : 0) +
     (noteFilter !== "all" ? 1 : 0) +
     (dateFilter !== "all" ? 1 : 0) +
+    (repeatFilter !== "all" ? 1 : 0) +
     (yearFrom || yearTo ? 1 : 0) +
     (addedFrom || addedTo ? 1 : 0) +
     (sortKey !== "date" || sortDir !== "desc" ? 1 : 0);
@@ -284,6 +298,51 @@ function Log() {
     return new Date(bookLog.created_at);
   };
 
+  // Rewatch/reread detection: within one title's logs the earliest is the
+  // original watch, every later one is a repeat. Computed over the unfiltered
+  // logs so filtering to "rewatches" can't promote a later log to "first".
+  const repeatIdSet = (rows, keyOf, dateOf) => {
+    const byKey = new Map();
+    rows.forEach((row) => {
+      const k = keyOf(row);
+      if (!k) return;
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(row);
+    });
+    const repeats = new Set();
+    byKey.forEach((group) => {
+      if (group.length < 2) return;
+      group
+        .slice()
+        .sort((a, b) => dateOf(a) - dateOf(b))
+        .slice(1)
+        .forEach((row) => repeats.add(row.id));
+    });
+    return repeats;
+  };
+
+  const movieRepeatIds = repeatIdSet(
+    userLogs,
+    (l) =>
+      l.movie_object?.tmdb_id != null
+        ? `${l.movie_object.media_type}:${l.movie_object.tmdb_id}`
+        : l.imdb_movie_id || null,
+    getMostRecentDate,
+  );
+  const bookRepeatIds = repeatIdSet(
+    bookLogs,
+    (b) => {
+      const info = getBookInfo(b);
+      return info.title
+        ? `${info.title}|${info.author || ""}`.toLowerCase()
+        : null;
+    },
+    getMostRecentBookDate,
+  );
+  const repeatMatchesFilter = (isRepeat) =>
+    repeatFilter === "all" ||
+    (repeatFilter === "rewatch" ? isRepeat : !isRepeat);
+
   // Filter book logs (only relevant when books should be shown)
   const filteredBookLogs = (needsBookData && genreFilter === "all")
     ? bookLogs
@@ -305,6 +364,7 @@ function Log() {
             if (Number(rating) !== Number(ratingFilter)) return false;
           }
           if (!noteMatchesFilter(bookLog.log)) return false;
+          if (!repeatMatchesFilter(bookRepeatIds.has(bookLog.id))) return false;
           if (dateFilter !== "all") {
             const unknown = bookDateUnknown(bookLog);
             if (dateFilter === "has" && unknown) return false;
@@ -368,6 +428,7 @@ function Log() {
             if (!genres.includes(genreFilter)) return false;
           }
           if (!noteMatchesFilter(log.log)) return false;
+          if (!repeatMatchesFilter(movieRepeatIds.has(log.id))) return false;
           if (dateFilter !== "all") {
             const unknown = movieDateUnknown(log);
             if (dateFilter === "has" && unknown) return false;
@@ -553,6 +614,7 @@ function Log() {
             setGenreFilter("all");
             setNoteFilter("all");
             setDateFilter("all");
+            setRepeatFilter("all");
             setYearFrom("");
             setYearTo("");
             setAddedFrom("");
@@ -587,6 +649,14 @@ function Log() {
             <option value="all">All Dates</option>
             <option value="has">Has date</option>
             <option value="none">No date</option>
+          </select>
+          <select
+            value={repeatFilter}
+            onChange={(e) => setRepeatFilter(e.target.value)}
+          >
+            <option value="all">First & repeat watches</option>
+            <option value="rewatch">Rewatches only</option>
+            <option value="first">First watches only</option>
           </select>
           <select
             value={genreFilter}
@@ -639,6 +709,13 @@ function Log() {
         >
           <img src="/images/watchlist-navbar.png" alt="Go to Watchlist" />
         </button>
+        <button
+          className={`toolbar-text-btn${hideNotes ? " toolbar-text-btn--on" : ""}`}
+          onClick={() => setHideNotes((v) => !v)}
+          title={hideNotes ? "Show log notes" : "Hide log notes"}
+        >
+          {hideNotes ? "Show notes" : "Hide notes"}
+        </button>
         <span className="toolbar-count">{displayCount}</span>
       </div>
       <PaginationControls pag={pag} totalCount={displayCount} />
@@ -664,6 +741,7 @@ function Log() {
                     movie_end_date={item.data.movie_end_date}
                     movie={item.data.movie_object}
                     logtext={item.data.log}
+                    hideNotes={hideNotes}
                   />
                 </div>
               ) : (
@@ -671,7 +749,7 @@ function Log() {
                   key={item.id}
                   className="list-row"
                 >
-                  <BookLogCard bookLog={item.data} />
+                  <BookLogCard bookLog={item.data} hideNotes={hideNotes} />
                 </div>
               ),
             )}
@@ -689,7 +767,7 @@ function Log() {
           )}
           <div className="list-col" style={{ gap: "1rem" }}>
             {filteredBookLogs.slice(pageStart, pageEnd).map((bookLog) => (
-              <BookLogCard key={bookLog.id} bookLog={bookLog} />
+              <BookLogCard key={bookLog.id} bookLog={bookLog} hideNotes={hideNotes} />
             ))}
           </div>
         </>
@@ -715,6 +793,7 @@ function Log() {
                     movie_end_date={log.movie_end_date}
                     movie={log.movie_object}
                     logtext={log.log}
+                    hideNotes={hideNotes}
                   />
                 </div>
               ) : null,

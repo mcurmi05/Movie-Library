@@ -79,33 +79,10 @@
   font-weight: 500;
 }
 
-/*media type select reuses the toolbar look*/
-.mediatype-selector {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--app-border-strong);
-  border-radius: var(--app-radius-sm);
-  font-weight: 400;
-  text-align: center;
-  background-color: var(--surface);
-  color: var(--text);
-  font-size: 0.85rem;
-  outline: none;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: background-color 140ms ease, border-color 140ms ease;
-}
-
 @media (hover: hover) and (pointer: fine) {
   .mediatype-selector:hover {
     background-color: var(--surface-hover);
   }
-}
-
-.mediatype-selector:focus-visible {
-  outline: 2px solid rgba(229, 9, 20, 0.6);
-  outline-offset: 2px;
 }
 
 /*container for featured + rest of list*/
@@ -292,17 +269,6 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.45;
-}
-
-/*---- section divider ----*/
-.trending-section-label {
-  margin: 6px 0 2px;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-weight: 600;
-  padding-left: 4px;
 }
 
 /*---- compact list rows (#4-100) ----*/

@@ -377,14 +377,13 @@ export const UserLogsProvider = ({ children }) => {
         try {
           setUserLogsLoaded(false);
           const logs = await getUserLogs(user);
-          console.log(logs);
           setUserLogs(logs);
           setUserLogsLoaded(true);
         } catch (err) {
           // Mark loaded even on failure so pages gated on this flag (home,
           // magic lists) don't hang forever on one bad fetch.
           setUserLogsLoaded(true);
-          console.log(err);
+          console.error(err);
         }
       }
     };

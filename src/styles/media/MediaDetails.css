@@ -74,6 +74,8 @@
 .media-details {
     max-width: 70%;
     width: 70%;
+    margin-left: auto;
+    margin-right: auto;
     position: relative;
     z-index: 1;
     /* Push content below the visible part of the banner; the poster's lower half

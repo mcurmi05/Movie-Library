@@ -33,7 +33,7 @@ const modalStyle = {
   fontWeight: "bold",
 };
 
-const BookLogCard = ({ bookLog }) => {
+const BookLogCard = ({ bookLog, hideNotes = false }) => {
   const { deleteBookLog, updateBookLog } = useBookLogs();
   const { rateBook, findRatingForBook } = useBookRatings();
   const navigate = useNavigate();
@@ -73,7 +73,6 @@ const BookLogCard = ({ bookLog }) => {
         await updateBookLog(bookLog.id, { log: text });
         setSaving(false);
         setTextEdited(false);
-        console.log("Updated book log text");
       } catch (error) {
         setSaving(false);
         console.error("Error updating book log:", error);
@@ -235,7 +234,7 @@ const BookLogCard = ({ bookLog }) => {
 
   // Inline "add note" next to the dates when no note exists yet.
   const noteEmpty = !editingNote && !(text && text.trim());
-  const addNoteBtn = noteEmpty ? (
+  const addNoteBtn = noteEmpty && !hideNotes ? (
     <button
       type="button"
       className="log-note-add"
@@ -510,7 +509,7 @@ const BookLogCard = ({ bookLog }) => {
           </div>
         </div>
 
-        {(editingNote || (text && text.trim())) && (
+        {!hideNotes && (editingNote || (text && text.trim())) && (
         <div className="book-log-text" style={{ position: "relative" }}>
           <textarea
             ref={textareaRef}

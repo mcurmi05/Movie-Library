@@ -338,7 +338,9 @@ export default function Discovery() {
 
   return (
     <div className="dv-page">
-      <h1 className="dv-title">Discovery</h1>
+      <h1 className="dv-title">
+        Discovery <span className="dv-beta">BETA</span>
+      </h1>
 
       <div className="dv-panel">
         <div className="dv-label">Because I liked...</div>
@@ -570,6 +572,11 @@ export default function Discovery() {
                 />
                 {m._imdb && (
                   <span className="dv-result-badge">
+                    <img
+                      src="/images/imdbicon.png"
+                      className="dv-result-badge-icon"
+                      alt="IMDb"
+                    />
                     {Number(m._imdb.rating).toFixed(1)}
                   </span>
                 )}

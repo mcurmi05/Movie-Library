@@ -70,6 +70,20 @@ export function newMagicRule() {
 
 const norm = (s) => String(s || "").toLowerCase().trim();
 
+// Text rules accept a comma-separated list of alternatives, any of which is a
+// match: genre contains "sci-fi, science fiction" catches both spellings
+// without needing two OR'd rules (which would also change the AND/OR grouping
+// of everything around them).
+export function ruleAlternatives(value) {
+  const parts = String(value || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return parts.length ? parts : [String(value || "")];
+}
+
+const anyAlternative = (value, test) => ruleAlternatives(value).some(test);
+
 // Director/actor rules picked from the person dropdown carry a person_id and
 // match precisely; legacy free-text rules fall back to name-contains.
 function personMatches(people, rule) {
@@ -131,7 +145,7 @@ function ruleMatches(entry, rule) {
             : entry.year === Number(value));
       break;
     case "title":
-      hit = norm(entry.title).includes(norm(value));
+      hit = anyAlternative(value, (v) => norm(entry.title).includes(norm(v)));
       break;
     case "director":
       hit = personMatches(entry.directors, rule);
@@ -140,10 +154,14 @@ function ruleMatches(entry, rule) {
       hit = personMatches(entry.cast, rule);
       break;
     case "author":
-      hit = !!entry.author && norm(entry.author).includes(norm(value));
+      hit =
+        !!entry.author &&
+        anyAlternative(value, (v) => norm(entry.author).includes(norm(v)));
       break;
     case "genre":
-      hit = entry.genres.some((g) => norm(g).includes(norm(value)));
+      hit = anyAlternative(value, (v) =>
+        entry.genres.some((g) => norm(g).includes(norm(v))),
+      );
       break;
     default:
       hit = false;
@@ -478,6 +496,8 @@ export function describeRule(rule) {
   const valueLabel =
     meta.kind === "select"
       ? (meta.options.find((o) => o.value === rule.value)?.label ?? rule.value)
-      : rule.value;
+      : meta.kind === "text"
+        ? ruleAlternatives(rule.value).join(" or ")
+        : rule.value;
   return `${rule.not ? "NOT " : ""}${meta.label}${opLabel} ${valueLabel}`;
 }

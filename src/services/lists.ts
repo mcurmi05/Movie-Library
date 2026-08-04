@@ -175,6 +175,23 @@ export async function addMediaToList(listId, snapshot) {
   return data;
 }
 
+// Persist a new manual order. `orderedIds` is the full list of item ids in the
+// order they should appear; only rows whose position actually moved are
+// written, and those go out in parallel.
+export async function reorderListItems(orderedIds, currentPositions) {
+  const writes = [];
+  orderedIds.forEach((id, i) => {
+    if (currentPositions?.get(id) === i) return;
+    writes.push(
+      supabase.from("list_items").update({ position: i }).eq("id", id),
+    );
+  });
+  if (!writes.length) return;
+  const results = await Promise.all(writes);
+  const failed = results.find((r) => r.error);
+  if (failed) throw failed.error;
+}
+
 export async function removeListItem(itemId) {
   const { error } = await supabase
     .from("list_items")

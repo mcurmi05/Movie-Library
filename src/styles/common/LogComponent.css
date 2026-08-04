@@ -55,11 +55,6 @@
   opacity: 0.6;
 }
 
-.date-picker-log {
-  position: absolute;
-  right: 100px;
-}
-
 .seasons-container {
   width: 96%;
   box-sizing: border-box;
@@ -191,6 +186,21 @@
 }
 .dnf-badge:hover {
   background: #e23030;
+}
+
+/* Shown next to the Seasons header when every season TMDB lists is logged
+   and finished. */
+.series-complete-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
 }
 
 /* Optional note: pencil-to-add shown only when no note written yet */

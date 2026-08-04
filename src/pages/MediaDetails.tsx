@@ -12,6 +12,8 @@ import LetterboxdInfo from "../components/media/LetterboxdInfo";
 import MediaGenres from "../components/media/MediaGenres";
 import MovieRatingStar from "../components/media/MovieRatingStar";
 import CastList from "../components/media/CastList";
+import RatingHistogram from "../components/media/RatingHistogram";
+import ExternalReviews from "../components/media/ExternalReviews";
 import ScrollStrip from "../components/layout/ScrollStrip";
 import EpisodeModal from "../components/media/EpisodeModal";
 import AddLog from "../components/media/AddLog";
@@ -87,7 +89,7 @@ function MediaDetails() {
         setMovie(movie);
       } catch (err) {
         setError("Failed to load movie details");
-        console.log(err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -543,6 +545,13 @@ function MediaDetails() {
               ))}
             </div>
           )}
+
+        <RatingHistogram imdbId={movie.id} />
+        <ExternalReviews
+          imdbId={movie.id}
+          tmdbId={movie.tmdb_id}
+          mediaType={movie.media_type}
+        />
 
         {recommendations.length > 0 && (
           <div className="md-recs-section">
