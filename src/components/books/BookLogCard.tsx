@@ -1,5 +1,5 @@
 import { Pencil } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useBookLogs } from "../../contexts/UserBookLogsContext";
 import { useBookRatings } from "../../contexts/UserBookRatingsContext";
 import { format } from "date-fns";
@@ -52,6 +52,16 @@ const BookLogCard = ({ bookLog, hideNotes = false }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const debounceTimeout = useRef(null);
   const textareaRef = useRef(null);
+
+  // Grow the note box to its content. A callback ref, not an effect on `text`:
+  // hiding the notes unmounts the box, and bringing it back mounts a fresh one
+  // at the CSS height with the text unchanged, so an effect never re-runs.
+  const fitNote = useCallback((el) => {
+    textareaRef.current = el;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -512,7 +522,7 @@ const BookLogCard = ({ bookLog, hideNotes = false }) => {
         {!hideNotes && (editingNote || (text && text.trim())) && (
         <div className="book-log-text" style={{ position: "relative" }}>
           <textarea
-            ref={textareaRef}
+            ref={fitNote}
             className="log-input"
             value={text}
             autoFocus={editingNote}
