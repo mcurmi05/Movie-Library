@@ -19,9 +19,16 @@ export function useDragOrder(ids, onCommit) {
 
   orderRef.current = order;
 
-  // Follow the source list whenever a drag isn't in flight.
+  // Follow the source list whenever a drag isn't in flight. Compared by value,
+  // not by reference: callers rebuild `ids` as the page re-renders, and
+  // adopting every new array would set state on each render forever.
   useEffect(() => {
-    if (draggingId == null) setOrder(ids);
+    if (draggingId != null) return;
+    setOrder((prev) =>
+      prev.length === ids.length && prev.every((v, i) => v === ids[i])
+        ? prev
+        : ids,
+    );
   }, [ids, draggingId]);
 
   const rowsInDom = () => {

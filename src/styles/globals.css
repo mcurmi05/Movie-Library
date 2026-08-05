@@ -39,6 +39,14 @@
     color: inherit;
     cursor: pointer;
   }
+
+  /* Preflight would drop list markers; without it the shadcn menus (which are
+     real <ul>s with padding reset to 0) show their bullets hanging off the
+     edge of the panel. Scoped to those lists so legacy pages keep theirs. */
+  [data-slot="sidebar-menu"],
+  [data-slot="sidebar-menu-sub"] {
+    list-style: none;
+  }
 }
 
 @custom-variant dark (&:is(.dark *));

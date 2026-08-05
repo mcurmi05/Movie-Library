@@ -14,6 +14,7 @@ import { Spinner } from "../layout/Loader";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { makeNavHandlers } from "../../utils/navClick";
 
 const SEARCH_MODES = [
   { value: "all", label: "All" },
@@ -173,19 +174,34 @@ export default function SearchBar() {
     );
   };
 
+  const routeFor = (item) =>
+    item.person_id != null
+      ? `/person/${item.person_id}`
+      : item.hardcover_id != null
+        ? `/bookdetails/hardcover/${item.hardcover_id}`
+        : `/mediadetails/${item.media_type}/${item.tmdb_id}`;
+
+  // Books hand the already-loaded record to the details page so it can render
+  // before its own fetch lands; the other routes rebuild from the URL alone.
+  const stateFor = (item) =>
+    item.hardcover_id != null ? { state: { book: item } } : undefined;
+
   const handleDropdownClick = (item) => {
     setShowDropdown(false);
-    if (item.person_id != null) {
-      navigate(`/person/${item.person_id}`);
-      return;
-    }
-    if (item.hardcover_id != null) {
-      navigate(`/bookdetails/hardcover/${item.hardcover_id}`, {
-        state: { book: item },
-      });
-      return;
-    }
-    navigate(`/mediadetails/${item.media_type}/${item.tmdb_id}`);
+    navigate(routeFor(item), stateFor(item));
+  };
+
+  // Mouse navigation for a result row: middle click and Cmd/Ctrl click open the
+  // destination in a new tab instead, like a real link would.
+  const rowNavProps = (item) => {
+    const handlers = makeNavHandlers(navigate, routeFor(item), stateFor(item));
+    return {
+      ...handlers,
+      onClick: (e) => {
+        if (!e.metaKey && !e.ctrlKey) setShowDropdown(false);
+        handlers.onClick(e);
+      },
+    };
   };
 
   const handleInputChange = (e) => {
@@ -303,7 +319,7 @@ export default function SearchBar() {
                       data-slot="search-result"
                       data-search-active={active}
                       className={rowClass}
-                      onClick={() => handleDropdownClick(item)}
+                      {...rowNavProps(item)}
                     >
                       {item.profile ? (
                         <img
@@ -338,7 +354,7 @@ export default function SearchBar() {
                       data-slot="search-result"
                       data-search-active={active}
                       className={rowClass}
-                      onClick={() => handleDropdownClick(item)}
+                      {...rowNavProps(item)}
                     >
                       <img
                         src={
@@ -374,7 +390,7 @@ export default function SearchBar() {
                     data-slot="search-result"
                     data-search-active={active}
                     className={rowClass}
-                    onClick={() => handleDropdownClick(item)}
+                    {...rowNavProps(item)}
                   >
                     <img
                       src={

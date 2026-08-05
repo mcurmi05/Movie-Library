@@ -23,23 +23,25 @@ async function requestJson<T>(url: string): Promise<T> {
   return body;
 }
 
-export const getPopularMovies = async () => {
+// A failed proxy call answers with an { error } object, not a list. Returning
+// that would cache it as the trending data and break every caller that expects
+// an array, so only an actual array counts as a result.
+const getTrending = async (action: string) => {
   try {
-    const response = await fetch(`${API}?action=trending-movies`);
-    return await response.json();
+    const response = await fetch(`${API}?action=${action}`);
+    const body = await response.json();
+    if (!response.ok || !Array.isArray(body)) {
+      throw new Error(body?.error || `Request failed (${response.status})`);
+    }
+    return body;
   } catch (error) {
     console.error(error);
   }
 };
 
-export const getPopularTV = async () => {
-  try {
-    const response = await fetch(`${API}?action=trending-tv`);
-    return await response.json();
-  } catch (error) {
-    console.error(error);
-  }
-};
+export const getPopularMovies = () => getTrending("trending-movies");
+
+export const getPopularTV = () => getTrending("trending-tv");
 
 export const searchMovies = async (
   query: string,

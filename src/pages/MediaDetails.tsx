@@ -546,7 +546,11 @@ function MediaDetails() {
             </div>
           )}
 
-        <RatingHistogram imdbId={movie.id} />
+        <RatingHistogram
+          imdbId={movie.id}
+          tmdbId={movie.tmdb_id}
+          mediaType={movie.media_type}
+        />
         <ExternalReviews
           imdbId={movie.id}
           tmdbId={movie.tmdb_id}

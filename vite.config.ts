@@ -24,7 +24,14 @@ const devApi = () => ({
             res.end(JSON.stringify(payload))
           },
         }
-        await handler(req, proxy)
+        // Node-style handlers write through `proxy`; edge ones return a
+        // Response instead, so pipe that back out.
+        const result = await handler(req, proxy)
+        if (result instanceof Response && !res.writableEnded) {
+          res.statusCode = result.status
+          result.headers.forEach((v, k) => res.setHeader(k, v))
+          res.end(await result.text())
+        }
       } catch (err) {
         res.statusCode = 500
         res.setHeader('Content-Type', 'application/json')

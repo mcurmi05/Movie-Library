@@ -3,7 +3,7 @@
 //
 //   ?action=histogram&imdbId=tt0111161
 //     -> { histogram: [{ rating, votes }], total, average }
-//   ?action=reviews&imdbId=tt0111161&first=5&after=<cursor>
+//   ?action=reviews&imdbId=tt0111161&first=5&after=<cursor>&sort=votes&rating=10
 //     -> { reviews: [...], cursor, hasMore, total }
 //
 // Nothing is cached in our database: reviews change constantly and the
@@ -37,14 +37,26 @@ const HISTOGRAM_QUERY = `
   }
 `;
 
+// IMDb has no "sort by up-votes" - TOTAL_VOTES (up + down) is the closest it
+// offers, and HELPFULNESS_SCORE is the ratio its own site defaults to.
+const SORTS = {
+  helpful: { by: "HELPFULNESS_SCORE", order: "DESC" },
+  votes: { by: "TOTAL_VOTES", order: "DESC" },
+  newest: { by: "SUBMISSION_DATE", order: "DESC" },
+  highest: { by: "USER_RATING", order: "DESC" },
+  lowest: { by: "USER_RATING", order: "ASC" },
+};
+
 const REVIEWS_QUERY = `
-  query Reviews($id: ID!, $first: Int!, $after: ID) {
+  query Reviews(
+    $id: ID!
+    $first: Int!
+    $after: ID
+    $sort: ReviewsSort
+    $filter: ReviewsFilter
+  ) {
     title(id: $id) {
-      reviews(
-        first: $first
-        after: $after
-        sort: { by: HELPFULNESS_SCORE, order: DESC }
-      ) {
+      reviews(first: $first, after: $after, sort: $sort, filter: $filter) {
         total
         pageInfo { hasNextPage endCursor }
         edges {
@@ -79,8 +91,14 @@ async function histogram(imdbId) {
   };
 }
 
-async function reviews(imdbId, first, after) {
-  const data = await gql(REVIEWS_QUERY, { id: imdbId, first, after });
+async function reviews(imdbId, { first, after, sort, rating }) {
+  const data = await gql(REVIEWS_QUERY, {
+    id: imdbId,
+    first,
+    after,
+    sort: SORTS[sort] || SORTS.helpful,
+    filter: rating ? { authorRating: rating } : undefined,
+  });
   const conn = data?.title?.reviews;
   if (!conn) return null;
   return {
@@ -119,9 +137,16 @@ export default async function handler(req, res) {
     }
 
     if (q.action === "reviews") {
-      const first = Math.min(Math.max(Number(q.first) || 5, 1), 25);
-      const after = q.after ? String(q.after) : undefined;
-      const out = await reviews(imdbId, first, after);
+      const ratingFilter = Number(q.rating);
+      const out = await reviews(imdbId, {
+        first: Math.min(Math.max(Number(q.first) || 5, 1), 25),
+        after: q.after ? String(q.after) : undefined,
+        sort: String(q.sort || "helpful"),
+        rating:
+          ratingFilter >= 1 && ratingFilter <= 10
+            ? Math.round(ratingFilter)
+            : null,
+      });
       if (!out) return res.status(404).json({ error: "No reviews found" });
       res.setHeader("Cache-Control", "no-store");
       return res.status(200).json(out);

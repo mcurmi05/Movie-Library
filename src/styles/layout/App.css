@@ -11,6 +11,10 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  /* Flex items default to min-width:auto, so a wide row (the cast strip) stops
+     the content column shrinking and it overflows past the sidebar instead of
+     centring in the space left over. */
+  min-width: 0;
 }
 
 /* clear the fixed mobile tab bar (breakpoint matches Tailwind md) */

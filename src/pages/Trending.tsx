@@ -160,6 +160,12 @@ function Trending() {
       try {
         const data = type === "movies" ? await getPopularMovies() : await getPopularTV();
         if (cancelled) return;
+        // A failed fetch returns undefined; caching it would mark the list
+        // loaded-but-empty and stop anything retrying.
+        if (!data) {
+          setError(`Failed to load ${type}`);
+          return;
+        }
         type === "movies" ? cachePopularMovies(data) : cachePopularTV(data);
       } catch (err) {
         if (!cancelled) setError(`Failed to load ${type}: ${err}`);

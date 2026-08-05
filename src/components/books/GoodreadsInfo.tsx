@@ -1,6 +1,7 @@
 import "../../styles/books/GoodreadsInfo.css";
 import { useGoodreadsRating } from "../../contexts/GoodreadsRatingsContext";
 import { goodreadsId } from "../../utils/goodreads";
+import { formatCountParens } from "../../utils/formatCount";
 
 // Live Goodreads rating (native 0–5 scale), served from the daily-synced
 // `goodreads_ratings` cache keyed by the numeric Goodreads book id. Pass `live`

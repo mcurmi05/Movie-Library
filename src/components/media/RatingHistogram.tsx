@@ -1,44 +1,86 @@
 import { useEffect, useState } from "react";
-import { getImdbHistogram } from "../../services/externalReviews";
+import {
+  getImdbHistogram,
+  getLetterboxdHistogram,
+} from "../../services/externalReviews";
 import "../../styles/media/ExternalReviews.css";
 
-// IMDb's 1–10 vote breakdown. Bars are scaled against the busiest bucket so
-// the shape of the distribution reads at a glance; hovering (or tapping, on
-// touch) a bar gives the exact vote count and share.
+// Vote breakdowns from IMDb (1–10) and Letterboxd (½–5 stars). Bars are scaled
+// against the busiest bucket so the shape of the distribution reads at a
+// glance; hovering (or tapping, on touch) a bar gives the exact vote count and
+// share.
 //
-// Letterboxd has the same chart on its site but serves it from an endpoint
-// that's behind a bot challenge, so only IMDb is shown here.
-function RatingHistogram({ imdbId }) {
-  const [data, setData] = useState(null);
+// Letterboxd serves its chart from an endpoint behind a bot challenge, so that
+// half can fail where the rest of the page works - when it does, its tab is
+// simply not offered.
+function RatingHistogram({ imdbId, tmdbId, mediaType }) {
+  const [imdb, setImdb] = useState(null);
+  const [lb, setLb] = useState(null);
+  const [source, setSource] = useState("imdb");
   const [active, setActive] = useState(null);
 
   useEffect(() => {
-    if (!imdbId) return;
     let cancelled = false;
-    setData(null);
+    setImdb(null);
+    if (!imdbId) return;
     getImdbHistogram(imdbId)
-      .then((res) => !cancelled && setData(res))
-      .catch(() => !cancelled && setData(null));
+      .then((res) => !cancelled && setImdb(res))
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [imdbId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setLb(null);
+    if (mediaType !== "movie" || tmdbId == null) return;
+    getLetterboxdHistogram(tmdbId)
+      .then((res) => !cancelled && setLb(res))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [tmdbId, mediaType]);
+
+  useEffect(() => {
+    setActive(null);
+  }, [source]);
+
+  const data = source === "letterboxd" ? lb : imdb;
+  if (!imdb?.histogram?.length && !lb?.histogram?.length) return null;
   if (!data?.histogram?.length) return null;
 
+  const isLb = source === "letterboxd";
   const max = Math.max(...data.histogram.map((b) => b.votes));
   const total =
     data.total || data.histogram.reduce((sum, b) => sum + b.votes, 0);
   const shown = data.histogram.find((b) => b.rating === active);
+  const label = (rating) => (isLb ? `★ ${rating}` : `${rating}/10`);
 
   return (
-    <div className="rating-dist">
+    <div className={`rating-dist${isLb ? " is-letterboxd" : ""}`}>
       <div className="rating-dist-head">
-        <img src="/images/imdbicon.png" className="rating-dist-icon" alt="IMDb" />
         <span className="rating-dist-title">Rating distribution</span>
+        {imdb && lb && (
+          <div className="xr-tabs">
+            <button
+              className={`xr-tab${!isLb ? " is-active" : ""}`}
+              onClick={() => setSource("imdb")}
+            >
+              IMDb
+            </button>
+            <button
+              className={`xr-tab${isLb ? " is-active" : ""}`}
+              onClick={() => setSource("letterboxd")}
+            >
+              Letterboxd
+            </button>
+          </div>
+        )}
         <span className="rating-dist-readout">
           {shown
-            ? `${shown.rating}/10 · ${shown.votes.toLocaleString()} votes · ` +
+            ? `${label(shown.rating)} · ${shown.votes.toLocaleString()} votes · ` +
               `${((shown.votes / total) * 100).toFixed(1)}%`
             : `${total.toLocaleString()} votes`}
         </span>
@@ -55,7 +97,7 @@ function RatingHistogram({ imdbId }) {
             onMouseEnter={() => setActive(bucket.rating)}
             onFocus={() => setActive(bucket.rating)}
             onClick={() => setActive(bucket.rating)}
-            aria-label={`${bucket.rating} out of 10: ${bucket.votes.toLocaleString()} votes`}
+            aria-label={`${label(bucket.rating)}: ${bucket.votes.toLocaleString()} votes`}
           >
             <span
               className="rating-dist-fill"

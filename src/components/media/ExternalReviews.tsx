@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getImdbReviews,
   getLetterboxdReviews,
@@ -7,10 +7,22 @@ import "../../styles/media/ExternalReviews.css";
 
 const PAGE = 5;
 
+const IMDB_SORTS = [
+  { value: "helpful", label: "Most helpful" },
+  { value: "votes", label: "Most votes" },
+  { value: "newest", label: "Newest" },
+  { value: "highest", label: "Highest rated" },
+  { value: "lowest", label: "Lowest rated" },
+];
+
+const IMDB_RATINGS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+const LB_RATINGS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5];
+
 // Reviews from IMDb and Letterboxd, fetched live (never cached - they change
-// too often to be worth a table). IMDb pages through a cursor; Letterboxd only
-// gives us its twelve popular reviews at once, so "load more" just reveals the
-// next few of those.
+// too often to be worth a table). IMDb pages through a cursor for as long as it
+// has more; Letterboxd only hands over the twelve reviews on the film page
+// (everything deeper is behind a bot challenge), so once those run out we link
+// out to the site instead.
 
 function ReviewCard({ review, source }) {
   const [expanded, setExpanded] = useState(false);
@@ -66,6 +78,8 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
   // Letterboxd is film-only, so TV shows just get the IMDb tab.
   const hasLetterboxd = mediaType === "movie" && tmdbId != null;
   const [source, setSource] = useState(imdbId ? "imdb" : "letterboxd");
+  const [sort, setSort] = useState("helpful");
+  const [rating, setRating] = useState("");
 
   const [imdb, setImdb] = useState(null); // { reviews, cursor, hasMore }
   const [lb, setLb] = useState(null); // full list, revealed in slices
@@ -73,11 +87,32 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Rating filters are per-scale, so switching tabs drops the current one.
+  useEffect(() => {
+    setRating("");
+  }, [source]);
+
   useEffect(() => {
     setImdb(null);
     setLb(null);
     setLbShown(PAGE);
   }, [imdbId, tmdbId]);
+
+  // Sort and filter are server-side on IMDb, so a change means a fresh page.
+  useEffect(() => {
+    setImdb(null);
+  }, [sort, rating]);
+
+  const loadImdb = useCallback(
+    (after) =>
+      getImdbReviews(imdbId, {
+        first: PAGE,
+        after,
+        sort,
+        rating: Number(rating) || null,
+      }),
+    [imdbId, sort, rating],
+  );
 
   // First page of whichever tab is open, fetched only once it's actually shown.
   useEffect(() => {
@@ -87,11 +122,13 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
     setError(null);
     const request =
       source === "imdb"
-        ? getImdbReviews(imdbId, { first: PAGE }).then(
-            (page) => !cancelled && setImdb(page),
-          )
+        ? loadImdb().then((page) => !cancelled && setImdb(page))
         : getLetterboxdReviews(tmdbId).then(
-            (reviews) => !cancelled && setLb(reviews),
+            // Letterboxd's own order is "popular", which is close to but not
+            // exactly likes; sort it properly here.
+            (reviews) =>
+              !cancelled &&
+              setLb([...reviews].sort((a, b) => (b.likes || 0) - (a.likes || 0))),
           );
     request
       .catch(() => !cancelled && setError("Couldn't load reviews."))
@@ -99,7 +136,7 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
     return () => {
       cancelled = true;
     };
-  }, [source, imdbId, tmdbId, hasLetterboxd, imdb, lb]);
+  }, [source, imdbId, tmdbId, hasLetterboxd, imdb, lb, loadImdb]);
 
   const loadMore = async () => {
     if (source === "letterboxd") {
@@ -108,10 +145,7 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
     }
     setLoading(true);
     try {
-      const page = await getImdbReviews(imdbId, {
-        first: PAGE,
-        after: imdb.cursor,
-      });
+      const page = await loadImdb(imdb.cursor);
       setImdb((prev) => ({
         ...page,
         reviews: [...prev.reviews, ...page.reviews],
@@ -125,12 +159,16 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
 
   if (!imdbId && !hasLetterboxd) return null;
 
-  const reviews =
-    source === "imdb"
-      ? imdb?.reviews || []
-      : (lb || []).slice(0, lbShown);
-  const hasMore =
-    source === "imdb" ? !!imdb?.hasMore : (lb?.length || 0) > lbShown;
+  const isLb = source === "letterboxd";
+  const filteredLb = (lb || []).filter(
+    (r) => !rating || r.rating === Number(rating),
+  );
+  const reviews = isLb ? filteredLb.slice(0, lbShown) : imdb?.reviews || [];
+  const hasMore = isLb ? filteredLb.length > lbShown : !!imdb?.hasMore;
+  // Where to send anyone who wants to keep scrolling past what we can show.
+  const allReviewsUrl = isLb
+    ? lb?.[0]?.slug && `https://letterboxd.com/film/${lb[0].slug}/reviews/by/activity/`
+    : imdbId && `https://www.imdb.com/title/${imdbId}/reviews/`;
 
   return (
     <div className="xr-section">
@@ -139,13 +177,13 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
         {imdbId && hasLetterboxd && (
           <div className="xr-tabs">
             <button
-              className={`xr-tab${source === "imdb" ? " is-active" : ""}`}
+              className={`xr-tab${!isLb ? " is-active" : ""}`}
               onClick={() => setSource("imdb")}
             >
               IMDb
             </button>
             <button
-              className={`xr-tab${source === "letterboxd" ? " is-active" : ""}`}
+              className={`xr-tab${isLb ? " is-active" : ""}`}
               onClick={() => setSource("letterboxd")}
             >
               Letterboxd
@@ -154,9 +192,41 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
         )}
       </div>
 
+      <div className="xr-controls">
+        {!isLb && (
+          <select
+            className="xr-select"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label="Sort reviews"
+          >
+            {IMDB_SORTS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
+        <select
+          className="xr-select"
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+          aria-label="Filter reviews by rating"
+        >
+          <option value="">All ratings</option>
+          {(isLb ? LB_RATINGS : IMDB_RATINGS).map((value) => (
+            <option key={value} value={value}>
+              {isLb ? `★ ${value}` : `${value}/10`}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {error && <p className="xr-empty">{error}</p>}
       {!error && !reviews.length && (
-        <p className="xr-empty">{loading ? "Loading reviews…" : "No reviews yet."}</p>
+        <p className="xr-empty">
+          {loading ? "Loading reviews…" : "No reviews match that filter."}
+        </p>
       )}
 
       <div className="xr-list">
@@ -165,11 +235,23 @@ function ExternalReviews({ imdbId, tmdbId, mediaType }) {
         ))}
       </div>
 
-      {hasMore && (
-        <button className="xr-load" onClick={loadMore} disabled={loading}>
-          {loading ? "Loading…" : "Load more reviews"}
-        </button>
-      )}
+      <div className="xr-foot">
+        {hasMore && (
+          <button className="xr-load" onClick={loadMore} disabled={loading}>
+            {loading ? "Loading…" : "Load more reviews"}
+          </button>
+        )}
+        {!hasMore && reviews.length > 0 && allReviewsUrl && (
+          <a
+            className="xr-load"
+            href={allReviewsUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Continue on {isLb ? "Letterboxd" : "IMDb"}
+          </a>
+        )}
+      </div>
     </div>
   );
 }

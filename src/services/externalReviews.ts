@@ -1,5 +1,5 @@
-// Live IMDb / Letterboxd extras for the media details page: the IMDb rating
-// breakdown and user reviews from both sites. None of this is cached in our
+// Live IMDb / Letterboxd extras for the media details page: rating
+// distributions and user reviews from both sites. None of this is cached in our
 // own tables - it changes constantly and is only ever needed for the one title
 // currently on screen.
 
@@ -15,11 +15,13 @@ export type ExternalReview = {
   date?: string | null;
 };
 
-export type ImdbHistogram = {
+export type RatingDistribution = {
   histogram: { rating: number; votes: number }[];
   total: number | null;
   average: number | null;
 };
+
+export type ReviewSort = "helpful" | "votes" | "newest" | "highest" | "lowest";
 
 export type ReviewPage = {
   reviews: ExternalReview[];
@@ -37,21 +39,43 @@ async function requestJson(url: string) {
 
 export async function getImdbHistogram(
   imdbId: string,
-): Promise<ImdbHistogram> {
+): Promise<RatingDistribution> {
   return requestJson(
     `/api/imdb?action=histogram&imdbId=${encodeURIComponent(imdbId)}`,
   );
 }
 
+// Letterboxd's distribution comes from an edge function; it can fail where the
+// rest of the Letterboxd scraping works (see api/letterboxd-histogram.ts).
+export async function getLetterboxdHistogram(
+  tmdbId: number,
+): Promise<RatingDistribution> {
+  return requestJson(`/api/letterboxd-histogram?tmdb_id=${tmdbId}`);
+}
+
 export async function getImdbReviews(
   imdbId: string,
-  { first = 5, after }: { first?: number; after?: string | null } = {},
+  {
+    first = 5,
+    after,
+    sort = "helpful",
+    rating,
+  }: {
+    first?: number;
+    after?: string | null;
+    sort?: ReviewSort;
+    rating?: number | null;
+  } = {},
 ): Promise<ReviewPage> {
-  const cursor = after ? `&after=${encodeURIComponent(after)}` : "";
-  return requestJson(
-    `/api/imdb?action=reviews&imdbId=${encodeURIComponent(imdbId)}` +
-      `&first=${first}${cursor}`,
-  );
+  const params = new URLSearchParams({
+    action: "reviews",
+    imdbId,
+    first: String(first),
+    sort,
+  });
+  if (after) params.set("after", after);
+  if (rating) params.set("rating", String(rating));
+  return requestJson(`/api/imdb?${params}`);
 }
 
 // Letterboxd only exposes its twelve popular reviews to us (everything else is

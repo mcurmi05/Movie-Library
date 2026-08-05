@@ -1,5 +1,5 @@
-/* IMDb rating distribution + IMDb/Letterboxd reviews on the media details
-   page. Both live in the same section, so they share this file. */
+/* IMDb/Letterboxd rating distributions + reviews on the media details page.
+   Both live in the same section, so they share this file. */
 
 .rating-dist {
   margin-top: 30px;
@@ -10,11 +10,6 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
-}
-
-.rating-dist-icon {
-  height: 16px;
-  width: auto;
 }
 
 .rating-dist-title {
@@ -62,6 +57,11 @@
 .rating-dist-bar:hover .rating-dist-fill,
 .rating-dist-bar.is-active .rating-dist-fill {
   background: #f5c518; /* IMDb yellow */
+}
+
+.rating-dist.is-letterboxd .rating-dist-bar:hover .rating-dist-fill,
+.rating-dist.is-letterboxd .rating-dist-bar.is-active .rating-dist-fill {
+  background: #00e054; /* Letterboxd green */
 }
 
 .rating-dist-label {
@@ -114,10 +114,46 @@
   color: var(--foreground);
 }
 
+.xr-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.xr-select {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+/* There is no cap on how many reviews can be loaded, so the list scrolls in
+   place once it outgrows the viewport rather than pushing the rest of the page
+   ever further down. */
 .xr-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 75vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.xr-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.xr-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.xr-foot {
+  display: flex;
+  gap: 8px;
 }
 
 .xr-card {
@@ -205,6 +241,7 @@
   background: none;
   color: var(--foreground);
   cursor: pointer;
+  text-decoration: none;
 }
 
 .xr-load:hover:not(:disabled) {

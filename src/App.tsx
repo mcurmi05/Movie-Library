@@ -75,7 +75,7 @@ function App() {
                     <ScrollToTop />
                     <SidebarProvider>
                       <AppSidebar />
-                      <SidebarInset className="bg-transparent">
+                      <SidebarInset className="min-w-0 bg-transparent">
                         <SiteHeader />
                         <main className="main-content">
                           <Routes>

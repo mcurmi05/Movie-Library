@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 /* eslint-disable react-refresh/only-export-components */
 
 const PopularMoviesCacheContext = createContext();
@@ -17,15 +17,17 @@ export const PopularMoviesCacheProvider = ({ children }) => {
   const [popularTV, setPopularTV] = useState(null);
   const [popularTVLoaded, setPopularTVLoaded] = useState(false);
 
-  const cachePopularMovies = (movies) => {
+  // Stable identities: callers pass these as effect dependencies, and a fresh
+  // function each render re-fires the fetch on every re-render of the page.
+  const cachePopularMovies = useCallback((movies) => {
     setPopularMovies(movies);
     setPopularMoviesLoaded(true);
-  };
+  }, []);
 
-  const cachePopularTV = (tv) => {
+  const cachePopularTV = useCallback((tv) => {
     setPopularTV(tv);
     setPopularTVLoaded(true);
-  };
+  }, []);
 
   return (
     <PopularMoviesCacheContext.Provider value={{
