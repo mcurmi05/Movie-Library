@@ -43,8 +43,6 @@ const SORTS = {
   helpful: { by: "HELPFULNESS_SCORE", order: "DESC" },
   votes: { by: "TOTAL_VOTES", order: "DESC" },
   newest: { by: "SUBMISSION_DATE", order: "DESC" },
-  highest: { by: "USER_RATING", order: "DESC" },
-  lowest: { by: "USER_RATING", order: "ASC" },
 };
 
 const REVIEWS_QUERY = `

@@ -545,11 +545,10 @@ function Ratings() {
       </button>
     ) : null;
 
-  const draggedRankRows = rankDragEnabled
-    ? rankDrag.order
-        .map((id) => rankedRows.find((row) => rankRowId(row) === id))
-        .filter(Boolean)
-    : rankedRows.slice(pageStart, pageEnd);
+  // Rows keep their source order for the whole drag - the hook slides them
+  // with transforms - so only the rank number follows the live preview order.
+  const draggedRankRows = rankedRows.slice(pageStart, pageEnd);
+  const rankRowProps = (id) => (rankDragEnabled ? rankDrag.rowProps(id) : null);
 
   if (isLoading) return <Loader />;
 
@@ -746,7 +745,7 @@ function Ratings() {
               <div
                 key={bookLog.id}
                 className={rankRowClass(bookLog.id)}
-                data-drag-id={rankDragEnabled ? bookLog.id : undefined}
+                {...rankRowProps(bookLog.id)}
               >
                 {rankGrip(bookLog.id)}
                 <div className="div-wrapper-rating-testing">
@@ -766,9 +765,7 @@ function Ratings() {
               <div
                 key={rating.id || rating.movie_entry_id}
                 className={rankRowClass(rating.movie_entry_id)}
-                data-drag-id={
-                  rankDragEnabled ? rating.movie_entry_id : undefined
-                }
+                {...rankRowProps(rating.movie_entry_id)}
               >
                 {rankGrip(rating.movie_entry_id)}
                 <div className="div-wrapper-rating-testing">

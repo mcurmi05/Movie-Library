@@ -11,8 +11,6 @@ const IMDB_SORTS = [
   { value: "helpful", label: "Most helpful" },
   { value: "votes", label: "Most votes" },
   { value: "newest", label: "Newest" },
-  { value: "highest", label: "Highest rated" },
-  { value: "lowest", label: "Lowest rated" },
 ];
 
 const IMDB_RATINGS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];

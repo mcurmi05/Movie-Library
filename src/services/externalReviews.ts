@@ -21,7 +21,7 @@ export type RatingDistribution = {
   average: number | null;
 };
 
-export type ReviewSort = "helpful" | "votes" | "newest" | "highest" | "lowest";
+export type ReviewSort = "helpful" | "votes" | "newest";
 
 export type ReviewPage = {
   reviews: ExternalReview[];

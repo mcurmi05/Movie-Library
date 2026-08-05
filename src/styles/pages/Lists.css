@@ -668,8 +668,11 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Lifted off the page so it's obvious which row is under the pointer. */
 .list-row.lv-row-dragging {
-  opacity: 0.7;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  cursor: grabbing;
 }
 
 .list-row.lv-row-dragging .lv-drag-handle {
@@ -696,6 +699,40 @@
   outline: none;
   transition: background-color 150ms ease, border-color 150ms ease,
     transform 160ms var(--ease-out);
+}
+
+/* Says why a ranked list has no drag handles, with a one-click way out. */
+.lv-rank-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.6));
+}
+
+.lv-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--brand, #e50914);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Toolbar button that carries a real checkbox instead of a pressed state. */
+.lv-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  user-select: none;
+}
+
+.lv-check input {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  accent-color: var(--brand, #e50914);
+  cursor: pointer;
 }
 
 .lv-btn:hover:not(:disabled) {

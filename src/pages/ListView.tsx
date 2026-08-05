@@ -73,6 +73,28 @@ import "../styles/common/LogComponent.css";
 import "../styles/search/Toolbar.css";
 import "../styles/pages/Lists.css";
 
+// How the list was last sorted and filtered, per list, remembered between
+// visits. Ranked lists are the reason: their drag handles only show in List
+// Order, so landing back on the default sort would hide them every time.
+const viewKey = (listId) => `list-view:${listId}`;
+
+const readView = (listId) => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(viewKey(listId)));
+    return saved?.sortKey ? saved : null;
+  } catch {
+    return null;
+  }
+};
+
+const saveView = (listId, view) => {
+  try {
+    localStorage.setItem(viewKey(listId), JSON.stringify(view));
+  } catch {
+    /* private mode or a full quota; the view just won't persist */
+  }
+};
+
 // The ✕ that owners get on every row, slotted in with the other row actions.
 function RemoveButton({ onRemove, removing }) {
   return (
@@ -349,6 +371,13 @@ export default function ListView() {
 
   const isOwner = isAuthenticated && list && user?.id === list.owner_id;
 
+  // Keyed on the loaded list rather than the route id, so the restore above
+  // has already run before anything is written back.
+  useEffect(() => {
+    if (!list) return;
+    saveView(list.id, { sortKey, sortDir, typeFilter });
+  }, [list, sortKey, sortDir, typeFilter]);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -366,9 +395,18 @@ export default function ListView() {
           getListSaveCounts([data.id])
             .then((m) => active && setSaveCount(m.get(data.id) || 0))
             .catch(() => {});
-          // Magic lists have no meaningful hand-picked order (syncs just
-          // append), so default their view to release date.
-          if (data.magic) {
+          // How this list was last looked at wins over any default - coming
+          // back to a ranked list should land in List Order with the drag
+          // handles already there.
+          const saved = readView(data.id);
+          if (saved) {
+            setSortKey(saved.sortKey);
+            setSortDir(saved.sortDir);
+            setTypeFilter(saved.typeFilter);
+          } else if (data.magic && !data.ranked) {
+            // Magic lists have no meaningful hand-picked order (syncs just
+            // append), so default their view to release date - unless the list
+            // is ranked, where the hand-picked order is the whole point.
             setSortKey("year");
             setSortDir("desc");
           }
@@ -648,6 +686,16 @@ export default function ListView() {
 
   const toggleRanked = async () => {
     const next = !ranked;
+    // Dragging only works in stored order with nothing filtered out, and a
+    // ranked list is there to be dragged - so switch the view to match instead
+    // of leaving the handles mysteriously absent. Magic lists in particular
+    // load sorted by release date.
+    if (next) {
+      setSortKey("position");
+      setSortDir("asc");
+      setTypeFilter("all");
+      setItemSearch("");
+    }
     setList((prev) => (prev ? { ...prev, ranked: next } : prev));
     try {
       await updateList(list.id, { ranked: next });
@@ -697,11 +745,13 @@ export default function ListView() {
   );
 
   const dragOrder = useDragOrder(visibleIds, commitOrder);
-  const orderedItems = canReorder
-    ? dragOrder.order
-        .map((id) => visibleItems.find((it) => it.id === id))
-        .filter(Boolean)
-    : visibleItems;
+  // Rows render in source order throughout a drag - the hook moves them with
+  // transforms - so only the rank numbers follow the live preview order.
+  const rankIndex = (item, index) => {
+    if (!canReorder) return index;
+    const i = dragOrder.order.indexOf(item.id);
+    return i === -1 ? index : i;
+  };
 
   // Media keys of everything already in the list, for "Added ✓" states.
   const existingKeys = useMemo(() => {
@@ -1163,17 +1213,21 @@ export default function ListView() {
               >
                 + Add items
               </button>
-              <button
-                className={`lv-btn${ranked ? " lv-btn-active" : ""}`}
-                onClick={toggleRanked}
+              <label
+                className={`lv-btn lv-check${ranked ? " lv-btn-active" : ""}`}
                 title={
                   ranked
                     ? "Turn off ranking (hides the numbers and drag handles)"
                     : "Number this list 1..n and drag items to rank them"
                 }
               >
-                {ranked ? "Ranked ✓" : "Ranked"}
-              </button>
+                <input
+                  type="checkbox"
+                  checked={ranked}
+                  onChange={toggleRanked}
+                />
+                Ranked
+              </label>
               <button
                 className="lv-btn lv-btn-danger"
                 onClick={() => setConfirmingDelete(true)}
@@ -1415,13 +1469,31 @@ export default function ListView() {
         </div>
       )}
 
+      {isOwner && ranked && !canReorder && visibleItems.length > 1 && (
+        <div className="lv-rank-hint">
+          Drag handles show in List Order with no filters applied.{" "}
+          <button
+            type="button"
+            className="lv-link-btn"
+            onClick={() => {
+              setSortKey("position");
+              setSortDir("asc");
+              setTypeFilter("all");
+              setItemSearch("");
+            }}
+          >
+            Switch
+          </button>
+        </div>
+      )}
+
       {list.items.length === 0 ? (
         <div className="empty-msg">This list is empty.</div>
       ) : visibleItems.length === 0 ? (
         <div className="empty-msg">No items match this filter.</div>
       ) : (
         <div className="list-col" ref={dragOrder.containerRef}>
-          {orderedItems.map((item, index) => {
+          {visibleItems.map((item, index) => {
             const removeProps = {
               isOwner,
               onRemove: () => handleRemoveItem(item.id),
@@ -1444,15 +1516,12 @@ export default function ListView() {
             // Rank numbers follow the displayed order, so they stay 1..n even
             // while the list is sorted or filtered some other way.
             const rankBadge = ranked ? (
-              <span className="lv-rank">{index + 1}</span>
+              <span className="lv-rank">{rankIndex(item, index) + 1}</span>
             ) : null;
+            const dragProps = canReorder ? dragOrder.rowProps(item.id) : null;
             if (item.media_type === "book") {
               return (
-                <div
-                  className={rowClass}
-                  key={item.id}
-                  data-drag-id={canReorder ? item.id : undefined}
-                >
+                <div className={rowClass} key={item.id} {...dragProps}>
                   {rankBadge}
                   {grip}
                   <BookListRow
@@ -1464,11 +1533,7 @@ export default function ListView() {
             }
             const full = movieDetails.get(item.id);
             return (
-              <div
-                className={rowClass}
-                key={item.id}
-                data-drag-id={canReorder ? item.id : undefined}
-              >
+              <div className={rowClass} key={item.id} {...dragProps}>
                 {rankBadge}
                 {grip}
                 {full ? (

@@ -71,8 +71,11 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Lifted off the page so it's obvious which row is under the pointer. */
 .list-row.rk-row-dragging {
-  opacity: 0.7;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+  cursor: grabbing;
 }
 
 .list-row.rk-row-dragging .rk-drag-handle {
