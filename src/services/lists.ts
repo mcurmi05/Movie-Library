@@ -1,4 +1,5 @@
 import { supabase } from "./supabase-client";
+import { fetchAllPages } from "./pageRows";
 
 // Shareable media lists. Each list_items row stores a self-contained snapshot
 // (item_data) of the movie/TV/book so a list renders for anonymous visitors
@@ -78,25 +79,24 @@ export async function getSavedLists(userId) {
 }
 
 // The first few item snapshots of each list, for the cover previews on the
-// Lists landing page. One query for the whole set; trimmed per list here.
+// Lists landing page. One small query per list: PostgREST can't cap rows per
+// group, so a single query would have to pull every item of every list.
 export async function getListItemPreviews(listIds, perList = 4) {
   if (!listIds.length) return new Map();
-  const { data, error } = await supabase
-    .from("list_items")
-    .select("list_id, media_type, item_data")
-    .in("list_id", listIds)
-    .order("position", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  const map = new Map();
-  (data ?? []).forEach((row) => {
-    const arr = map.get(row.list_id) || [];
-    if (arr.length < perList) {
-      arr.push(row);
-      map.set(row.list_id, arr);
-    }
-  });
-  return map;
+  const results = await Promise.all(
+    listIds.map(async (listId) => {
+      const { data, error } = await supabase
+        .from("list_items")
+        .select("list_id, media_type, item_data")
+        .eq("list_id", listId)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true })
+        .limit(perList);
+      if (error) throw error;
+      return [listId, data ?? []];
+    }),
+  );
+  return new Map(results.filter(([, rows]) => rows.length));
 }
 
 // A single list plus its items, ordered for display. Public — works for
@@ -110,15 +110,18 @@ export async function getListWithItems(listId) {
   if (error) throw error;
   if (!list) return null;
 
-  const { data: items, error: itemsErr } = await supabase
-    .from("list_items")
-    .select("*")
-    .eq("list_id", listId)
-    .order("position", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (itemsErr) throw itemsErr;
+  const items = await fetchAllPages(() =>
+    supabase
+      .from("list_items")
+      .select("*")
+      .eq("list_id", listId)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true })
+      // Tiebreaker, so rows can't shuffle between pages and get skipped.
+      .order("id", { ascending: true }),
+  );
 
-  return { ...list, items: items ?? [] };
+  return { ...list, items };
 }
 
 export async function createList(ownerId, { title, description, ownerName }) {

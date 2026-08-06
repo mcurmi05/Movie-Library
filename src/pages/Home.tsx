@@ -17,24 +17,14 @@ import AddToList from "../components/common/AddToList";
 import BookLogCard from "../components/books/BookLogCard";
 import { SignIn } from "./SignIn";
 import { bookDetailsRouteForBook } from "../utils/goodreads";
+import { stripSeries } from "../utils/bookInfo";
+import { isTV } from "../utils/mediaFilters";
 import { getListsActivity } from "../services/lists";
 import { PRESS_HANDLERS } from "../utils/pressHandlers";
 import { getDisplayName, getAvatarUrl } from "../utils/profile";
 import "../styles/pages/Home.css";
 
 /* ---------- helpers ---------- */
-
-function isTV(mo) {
-  if (!mo) return false;
-  const t = (mo.type || "").toLowerCase();
-  const tt = (mo.titleType || "").toLowerCase();
-  return t.includes("tv") || tt.includes("tv") || !!mo.episodes;
-}
-
-function stripSeries(title) {
-  const m = (title || "").match(/^(.*?)\s*\(([^()]+?)[,\s]*#([^()]+?)\)\s*$/);
-  return m ? m[1].trim() : title || "";
-}
 
 // Whole years between a past date and today. Only used for "On This Day", where
 // the two share a month and day, so the year difference is the whole story.

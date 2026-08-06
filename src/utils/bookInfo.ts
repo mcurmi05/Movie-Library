@@ -1,3 +1,10 @@
+// Book titles carry "(Series, #1)" suffixes; searches and headings read better
+// without them.
+export function stripSeries(title) {
+  const m = (title || "").match(/^(.*?)\s*\(([^()]+?)[,\s]*#([^()]+?)\)\s*$/);
+  return m ? m[1].trim() : title || "";
+}
+
 // Returns the canonical book metadata for a row from book_logs, book_tbr,
 // or book_ratings. Prefers the joined book_entries column (the source of truth)
 // and falls back to the legacy columns on the row itself for safety during

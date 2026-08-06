@@ -2,17 +2,7 @@ import "../../styles/media/EpisodeModal.css";
 import { useEffect } from "react";
 import { Dialog } from "../common/ReactDayPicker";
 import { toLocalDateString } from "../../utils/localDate";
-
-function formatEpisodeDate(d) {
-  if (!d) return null;
-  const parsed = new Date(d);
-  if (Number.isNaN(parsed.getTime())) return d;
-  return parsed.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatEpisodeDate } from "../../utils/localDate";
 
 // Shared episode detail modal used by both the MediaDetails page and the Log
 // page. Shows the episode info and, when editable, a watched toggle plus an

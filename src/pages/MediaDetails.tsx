@@ -29,17 +29,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getWatchStatus, saveWatchStatus } from "../services/watchStatus";
 import Loader from "../components/layout/Loader";
 import PeopleLinks from "../components/common/PeopleLinks";
-
-function formatEpisodeDate(d) {
-  if (!d) return null;
-  const parsed = new Date(d);
-  if (Number.isNaN(parsed.getTime())) return d;
-  return parsed.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatEpisodeDate } from "../utils/localDate";
 
 function MediaDetails() {
   const { mediaType, tmdbId } = useParams();

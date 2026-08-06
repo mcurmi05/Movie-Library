@@ -4,17 +4,7 @@ import { Dialog } from "../common/ReactDayPicker";
 import { toLocalDateString } from "../../utils/localDate";
 import ScrollStrip from "../layout/ScrollStrip";
 import EpisodeModal from "./EpisodeModal";
-
-function formatEpisodeDate(d) {
-  if (!d) return null;
-  const parsed = new Date(d);
-  if (Number.isNaN(parsed.getTime())) return d;
-  return parsed.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatEpisodeDate } from "../../utils/localDate";
 
 // Expanded per-episode list for one season on the Log page. Watch state and the
 // optional per-episode watched date live in the separate `watch_status` table,

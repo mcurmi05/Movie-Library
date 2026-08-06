@@ -20,6 +20,7 @@ import {
   searchPeopleFIRSTFIVEONLY,
   combineSearchResults,
 } from "../../services/api";
+import { stripSeries } from "../../utils/bookInfo";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSearch } from "../../contexts/SearchContext";
 import { useCovers } from "../../contexts/UserCoversContext";
@@ -63,13 +64,6 @@ const libraryItems = [
 
 function matches(title: string, query: string) {
   return title.toLowerCase().includes(query.trim().toLowerCase());
-}
-
-// Book titles carry "(Series, #1)" suffixes; the log search matches better
-// without them (same trick the home page uses).
-function stripSeries(title) {
-  const m = (title || "").match(/^(.*?)\s*\(([^()]+?)[,\s]*#([^()]+?)\)\s*$/);
-  return m ? m[1].trim() : title || "";
 }
 
 export default function CommandPalette() {

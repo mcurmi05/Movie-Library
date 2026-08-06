@@ -3,6 +3,7 @@
 // per-media-type era: rows come back looking like the old logs/ratings/
 // watchlist/book_* tables via mediaEntryAdapters, so consumers are untouched.
 import { supabase } from "./supabase-client";
+import { fetchAllPages } from "./pageRows";
 import { movieRowToMovieObject } from "./movieMetadata";
 import {
   entryToMovieRow,
@@ -23,19 +24,6 @@ const ENTRY_JOIN = "*, entry:media_entries!inner(*)";
 
 const movieObjectOf = (row) =>
   row?.entry ? movieRowToMovieObject(entryToMovieRow(row.entry)) : null;
-
-// PostgREST caps a response at 1000 rows, so anything that fetches a whole
-// library has to page through. Keeps going until a short page comes back.
-const PAGE = 1000;
-const fetchAllPages = async (build) => {
-  const rows = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await build().range(from, from + PAGE - 1);
-    if (error) throw error;
-    rows.push(...(data ?? []));
-    if (!data || data.length < PAGE) return rows;
-  }
-};
 
 // Movie/TV rows for a user from one of the unified activity tables.
 const getScreenRows = (table, userId) =>

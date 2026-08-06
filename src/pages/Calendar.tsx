@@ -5,6 +5,8 @@ import { useLogs } from "../contexts/UserLogsContext";
 import { useBookLogs } from "../contexts/UserBookLogsContext";
 import { useCovers } from "../contexts/UserCoversContext";
 import { bookDetailsRouteForBook } from "../utils/goodreads";
+import { stripSeries } from "../utils/bookInfo";
+import { isTV } from "../utils/mediaFilters";
 import { SignIn } from "./SignIn";
 import Loader from "../components/layout/Loader";
 import "../styles/search/Toolbar.css";
@@ -21,18 +23,6 @@ const MONTHS_SHORT = [
 ];
 const VIEWS = ["year", "month", "week"];
 const MEDIA_LABEL = { movie: "Movie", tv: "TV", book: "Book" };
-
-function isTV(mo) {
-  if (!mo) return false;
-  const t = (mo.type || "").toLowerCase();
-  const tt = (mo.titleType || "").toLowerCase();
-  return t.includes("tv") || tt.includes("tv") || !!mo.episodes;
-}
-
-function stripSeries(title) {
-  const m = (title || "").match(/^(.*?)\s*\(([^()]+?)[,\s]*#([^()]+?)\)\s*$/);
-  return m ? m[1].trim() : title || "";
-}
 
 // Local-date key so events land on the same calendar day the rest of the app
 // shows them on (mirrors the app's plain `new Date(str)` handling).
