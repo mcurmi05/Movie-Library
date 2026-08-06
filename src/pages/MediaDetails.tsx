@@ -14,6 +14,7 @@ import MovieRatingStar from "../components/media/MovieRatingStar";
 import CastList from "../components/media/CastList";
 import RatingHistogram from "../components/media/RatingHistogram";
 import ExternalReviews from "../components/media/ExternalReviews";
+import RatingDetails from "../components/common/RatingDetails";
 import ScrollStrip from "../components/layout/ScrollStrip";
 import EpisodeModal from "../components/media/EpisodeModal";
 import AddLog from "../components/media/AddLog";
@@ -23,6 +24,7 @@ import AddToList from "../components/common/AddToList";
 import { useRatings } from "../contexts/UserRatingsContext";
 import { useCovers } from "../contexts/UserCoversContext";
 import { getRatingForMovie } from "../services/ratingsfromtable";
+import { getMyListsWithMedia } from "../services/lists";
 import { useAuth } from "../contexts/AuthContext";
 import { getWatchStatus, saveWatchStatus } from "../services/watchStatus";
 import Loader from "../components/layout/Loader";
@@ -53,7 +55,11 @@ function MediaDetails() {
   const [lightboxArt, setLightboxArt] = useState(null);
   const [showPosterEdit, setShowPosterEdit] = useState(false);
   const [watchStatus, setWatchStatus] = useState({});
-  const { userRatings } = useRatings();
+  // Shared by the rating histogram and the reviews section below it.
+  const [reviewSource, setReviewSource] = useState("imdb");
+  // The viewer's own lists this title already appears on.
+  const [inLists, setInLists] = useState([]);
+  const { userRatings, deleteRatingHistoryEvent } = useRatings();
   const { coverFor } = useCovers();
   const { user } = useAuth();
 
@@ -115,6 +121,26 @@ function MediaDetails() {
       live = false;
     };
   }, [mediaType, tmdbId]);
+
+  // Which of the user's own lists this title is already on.
+  useEffect(() => {
+    if (!user || tmdbId == null) {
+      setInLists([]);
+      return;
+    }
+    let active = true;
+    getMyListsWithMedia(user.id, {
+      media_type: mediaType,
+      item_data: { tmdb_id: tmdbId },
+    })
+      .then((rows) => {
+        if (active) setInLists(rows);
+      })
+      .catch((err) => console.error("Failed to load lists for title:", err));
+    return () => {
+      active = false;
+    };
+  }, [user, mediaType, tmdbId]);
 
   // Load this user's watch status for the title once we have its movies row id.
   useEffect(() => {
@@ -368,6 +394,39 @@ function MediaDetails() {
                 </>
               )}
             </div>
+            {/* Same "Rated: ..." line and history the Ratings page shows. */}
+            {(() => {
+              const rated = getRatingForMovie(userRatings, movie);
+              if (!rated) return null;
+              return (
+                <RatingDetails
+                  title={movie.primaryTitle}
+                  createdAt={rated.created_at}
+                  updatedAt={rated.updated_at}
+                  previousRating={rated.previous_rating}
+                  dateUnknown={rated.date_unknown}
+                  history={rated.rating_history}
+                  onDeleteEvent={(idx) =>
+                    deleteRatingHistoryEvent(rated.movie_entry_id, idx)
+                  }
+                />
+              );
+            })()}
+            {inLists.length > 0 && (
+              <div className="media-details-in-lists">
+                <span className="media-details-in-lists-label">In</span>
+                {inLists.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    className="media-details-list-chip"
+                    onClick={() => navigate(`/lists/${l.id}`)}
+                  >
+                    {l.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           {movie.media_type === "movie" ? (
             <div className="director-and-writer">
@@ -546,15 +605,20 @@ function MediaDetails() {
             </div>
           )}
 
+        {/* One IMDb/Letterboxd choice drives the chart and the reviews below it. */}
         <RatingHistogram
           imdbId={movie.id}
           tmdbId={movie.tmdb_id}
           mediaType={movie.media_type}
+          source={reviewSource}
+          onSourceChange={setReviewSource}
         />
         <ExternalReviews
           imdbId={movie.id}
           tmdbId={movie.tmdb_id}
           mediaType={movie.media_type}
+          source={reviewSource}
+          onSourceChange={setReviewSource}
         />
 
         {recommendations.length > 0 && (

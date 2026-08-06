@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  ChevronDown,
+  Folder,
+  FolderPlus,
+  GripVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCovers } from "../contexts/UserCoversContext";
 import { getDisplayName } from "../utils/profile";
@@ -11,6 +19,12 @@ import {
   createList,
   setListMagic,
   bulkAddListItems,
+  getListFolders,
+  createListFolder,
+  renameListFolder,
+  deleteListFolder,
+  getListPlacements,
+  setListPlacements,
 } from "../services/lists";
 import MagicListModal from "../components/common/MagicListModal";
 import { SignIn } from "./SignIn";
@@ -37,14 +51,48 @@ function timeAgo(value) {
   return `${Math.floor(days / 365)}y ago`;
 }
 
+const shortDate = (value) =>
+  value
+    ? new Date(value).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
+
 const SORT_OPTIONS = [
+  { value: "manual", label: "Custom order" },
   { value: "recent", label: "Most recent" },
   { value: "title", label: "Title (A–Z)" },
   { value: "author", label: "Author (A–Z)" },
   { value: "items", label: "Most items" },
 ];
 
-function ListCard({ list, previews, saved, saveCount = 0 }) {
+// The drop zone under the pointer. Rects are hit-tested by hand rather than
+// with elementFromPoint, which would only ever return the card being dragged.
+// Cards sit inside folders, so the innermost match wins.
+function dropTargetAt(x, y) {
+  let hit = null;
+  document.querySelectorAll("[data-drop]").forEach((el) => {
+    const rect = el.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom)
+      return;
+    const key = el.getAttribute("data-drop");
+    if (!hit || key.startsWith("card:")) hit = { key, rect };
+  });
+  return hit;
+}
+
+function ListCard({
+  list,
+  previews,
+  saved,
+  saveCount = 0,
+  dragging = false,
+  isDropTarget = false,
+  offset = null,
+  onGripDown,
+}) {
   const { coverForTmdb, coverForHardcover } = useCovers();
   const count = itemCount(list);
 
@@ -57,7 +105,29 @@ function ListCard({ list, previews, saved, saveCount = 0 }) {
         it.item_data?.primaryImage;
 
   return (
-    <Link to={`/lists/${list.id}`} className="list-card">
+    <Link
+      to={`/lists/${list.id}`}
+      data-drop={`card:${list.id}`}
+      className={`list-card${dragging ? " list-card-dragging" : ""}${
+        isDropTarget ? " list-card-drop" : ""
+      }`}
+      style={
+        dragging && offset
+          ? { transform: `translate(${offset.x}px, ${offset.y}px)` }
+          : undefined
+      }
+    >
+      <button
+        type="button"
+        className="list-card-grip"
+        onPointerDown={onGripDown}
+        // The card is a link; a grip press must not follow it.
+        onClick={(e) => e.preventDefault()}
+        title="Drag to reorder, or onto a folder to file it"
+        aria-label="Drag list"
+      >
+        <GripVertical size={14} />
+      </button>
       <div className="list-card-covers">
         {count === 0 ? (
           <div className="list-card-covers-blank">
@@ -147,6 +217,9 @@ function ListCard({ list, previews, saved, saveCount = 0 }) {
         <span className="list-card-updated">
           updated {timeAgo(list.updated_at)}
         </span>
+        <span className="list-card-created">
+          created {shortDate(list.created_at)}
+        </span>
       </div>
     </Link>
   );
@@ -164,7 +237,23 @@ export default function Lists() {
   const [searchTerm, setSearchTerm] = useState("");
   const [ownerFilter, setOwnerFilter] = useState("all"); // "all" | "mine" | "saved"
   const [authorFilter, setAuthorFilter] = useState("all");
-  const [sortKey, setSortKey] = useState("recent");
+  const [sortKey, setSortKey] = useState("manual");
+
+  // Folders and where each list sits, both per-viewer.
+  const [folders, setFolders] = useState([]);
+  const [placements, setPlacements] = useState(new Map());
+  const [collapsed, setCollapsed] = useState(() => new Set());
+  const [showFolderCreate, setShowFolderCreate] = useState(false);
+  const [folderName, setFolderName] = useState("");
+  const [renamingFolder, setRenamingFolder] = useState(null);
+  const [deletingFolder, setDeletingFolder] = useState(null);
+
+  // Live drag state. The pointer bookkeeping lives in a ref so the move
+  // handler doesn't re-subscribe on every frame.
+  const dragRef = useRef(null);
+  const [dragId, setDragId] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dropKey, setDropKey] = useState(null);
 
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
@@ -180,13 +269,19 @@ export default function Lists() {
     (async () => {
       setDataLoading(true);
       try {
-        const [mine, saved] = await Promise.all([
+        const [mine, saved, folderRows, placementMap] = await Promise.all([
           getMyLists(user.id),
           getSavedLists(user.id),
+          // The folder tables are optional until the migration is run, so a
+          // failure here leaves the page working as a flat list.
+          getListFolders(user.id).catch(() => []),
+          getListPlacements(user.id).catch(() => new Map()),
         ]);
         if (!active) return;
         setMyLists(mine);
         setSavedLists(saved);
+        setFolders(folderRows);
+        setPlacements(placementMap);
         const ids = [...new Set([...mine, ...saved].map((l) => l.id))];
         const [prev, counts] = await Promise.all([
           getListItemPreviews(ids),
@@ -266,6 +361,186 @@ export default function Lists() {
     });
   }, [allLists, ownerFilter, authorFilter, searchTerm, sortKey, savedIds, user]);
 
+  /* ---------- folders ---------- */
+
+  // Lists split by the folder they've been filed into, null being the root.
+  // Everything arrives in the chosen sort order; "Custom order" then applies
+  // the dragged positions, leaving anything never dragged where it was.
+  const grouped = useMemo(() => {
+    const map = new Map();
+    map.set(null, []);
+    folders.forEach((f) => map.set(f.id, []));
+    visibleLists.forEach((l) => {
+      const folderId = placements.get(l.id)?.folder_id ?? null;
+      (map.get(folderId) ?? map.get(null)).push(l);
+    });
+    if (sortKey === "manual") {
+      map.forEach((arr) =>
+        arr.sort((a, b) => {
+          const pa = placements.get(a.id)?.position;
+          const pb = placements.get(b.id)?.position;
+          if (pa == null && pb == null) return 0;
+          if (pa == null) return 1;
+          if (pb == null) return -1;
+          return pa - pb;
+        }),
+      );
+    }
+    return map;
+  }, [visibleLists, folders, placements, sortKey]);
+
+  // Move a list into `folderId` at `index` (end of the folder when null), then
+  // renumber both the folder it landed in and the one it came from.
+  const moveList = useCallback(
+    (id, folderId, index) => {
+      const from = placements.get(id)?.folder_id ?? null;
+      const dest = (grouped.get(folderId) || [])
+        .map((l) => l.id)
+        .filter((x) => x !== id);
+      const at = index == null ? dest.length : Math.min(Math.max(index, 0), dest.length);
+      dest.splice(at, 0, id);
+
+      const rows = dest.map((listId, i) => ({ listId, folderId, position: i }));
+      if (from !== folderId) {
+        (grouped.get(from) || [])
+          .map((l) => l.id)
+          .filter((x) => x !== id)
+          .forEach((listId, i) =>
+            rows.push({ listId, folderId: from, position: i }),
+          );
+      }
+
+      setPlacements((prev) => {
+        const next = new Map(prev);
+        rows.forEach((r) =>
+          next.set(r.listId, { folder_id: r.folderId, position: r.position }),
+        );
+        return next;
+      });
+      // A manual move is meaningless under any other sort, so adopt it.
+      setSortKey("manual");
+      setListPlacements(user.id, rows).catch((err) =>
+        console.error("Failed to save list order:", err),
+      );
+    },
+    [grouped, placements, user],
+  );
+
+  const startDrag = (id) => (e) => {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    dragRef.current = { id, startX: e.clientX, startY: e.clientY };
+    setDragId(id);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    if (dragId == null) return;
+    const move = (e) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      e.preventDefault();
+      setDragOffset({ x: e.clientX - drag.startX, y: e.clientY - drag.startY });
+      setDropKey(dropTargetAt(e.clientX, e.clientY)?.key ?? null);
+    };
+    const up = (e) => {
+      const drag = dragRef.current;
+      dragRef.current = null;
+      setDragId(null);
+      setDropKey(null);
+      if (!drag) return;
+      const target = dropTargetAt(e.clientX, e.clientY);
+      if (!target) return;
+      const [kind, value] = target.key.split(":");
+      if (kind === "card") {
+        if (value === drag.id) return;
+        const overFolder = placements.get(value)?.folder_id ?? null;
+        const dest = (grouped.get(overFolder) || [])
+          .map((l) => l.id)
+          .filter((x) => x !== drag.id);
+        const idx = dest.indexOf(value);
+        // Past the card's midpoint means the list is being dropped after it.
+        moveList(
+          drag.id,
+          overFolder,
+          idx === -1
+            ? dest.length
+            : e.clientX > target.rect.left + target.rect.width / 2
+              ? idx + 1
+              : idx,
+        );
+      } else if (kind === "folder") {
+        moveList(drag.id, value, null);
+      } else {
+        moveList(drag.id, null, null);
+      }
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    // Stop a touch drag scrolling the page and a mouse drag selecting text.
+    const prevTouch = document.body.style.touchAction;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.touchAction = "none";
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      document.body.style.touchAction = prevTouch;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [dragId, grouped, placements, moveList]);
+
+  const handleCreateFolder = async (e) => {
+    e.preventDefault();
+    const name = folderName.trim();
+    if (!name) return;
+    try {
+      const folder = await createListFolder(user.id, name, folders.length);
+      setFolders((prev) => [...prev, folder]);
+      setFolderName("");
+      setShowFolderCreate(false);
+    } catch (err) {
+      console.error("Failed to create folder:", err);
+    }
+  };
+
+  const handleRenameFolder = async (folderId, name) => {
+    setRenamingFolder(null);
+    const trimmed = name.trim();
+    const current = folders.find((f) => f.id === folderId);
+    if (!trimmed || trimmed === current?.name) return;
+    setFolders((prev) =>
+      prev.map((f) => (f.id === folderId ? { ...f, name: trimmed } : f)),
+    );
+    try {
+      await renameListFolder(folderId, trimmed);
+    } catch (err) {
+      console.error("Failed to rename folder:", err);
+    }
+  };
+
+  // Deleting a folder empties it rather than deleting its lists: the placement
+  // rows' folder_id is nulled by the FK, dropping them back to the root.
+  const handleDeleteFolder = async (folderId) => {
+    setDeletingFolder(null);
+    setFolders((prev) => prev.filter((f) => f.id !== folderId));
+    setPlacements((prev) => {
+      const next = new Map(prev);
+      next.forEach((v, k) => {
+        if (v.folder_id === folderId) next.set(k, { ...v, folder_id: null });
+      });
+      return next;
+    });
+    try {
+      await deleteListFolder(folderId);
+    } catch (err) {
+      console.error("Failed to delete folder:", err);
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!title.trim() || creating) return;
@@ -326,6 +601,20 @@ export default function Lists() {
   if (loading) return <Loader />;
   if (!isAuthenticated) return <SignIn />;
 
+  const renderCard = (list) => (
+    <ListCard
+      key={list.id}
+      list={list}
+      previews={previews.get(list.id) || []}
+      saved={savedIds.has(list.id)}
+      saveCount={saveCounts.get(list.id) || 0}
+      dragging={dragId === list.id}
+      isDropTarget={dropKey === `card:${list.id}`}
+      offset={dragId === list.id ? dragOffset : null}
+      onGripDown={startDrag(list.id)}
+    />
+  );
+
   return (
     <div className="page-stack">
       <div className="lists-header">
@@ -336,6 +625,13 @@ export default function Lists() {
             onClick={() => setShowMagic(true)}
           >
             ✨ Magic list
+          </button>
+          <button
+            className="lists-create-btn lists-folder-btn"
+            onClick={() => setShowFolderCreate(true)}
+          >
+            <FolderPlus size={15} />
+            New folder
           </button>
           <button className="lists-create-btn" onClick={() => setShowCreate(true)}>
             + New list
@@ -429,17 +725,109 @@ export default function Lists() {
           {visibleLists.length === 0 ? (
             <p className="lists-empty">No lists match this filter.</p>
           ) : (
-            <div className="lists-grid">
-              {visibleLists.map((list) => (
-                <ListCard
-                  key={list.id}
-                  list={list}
-                  previews={previews.get(list.id) || []}
-                  saved={savedIds.has(list.id)}
-                  saveCount={saveCounts.get(list.id) || 0}
-                />
-              ))}
-            </div>
+            <>
+              {/* loose lists - also the target for dragging one back out of a
+                  folder, so the band stays even when it's empty */}
+              <div
+                data-drop="root"
+                className={`lists-root${
+                  dropKey === "root" ? " lists-drop-over" : ""
+                }`}
+              >
+                {(grouped.get(null) || []).length === 0 ? (
+                  <p className="lists-root-empty">
+                    Drag a list here to take it out of its folder.
+                  </p>
+                ) : (
+                  <div className="lists-grid">
+                    {(grouped.get(null) || []).map((list) => renderCard(list))}
+                  </div>
+                )}
+              </div>
+
+              {folders.map((folder) => {
+                const inFolder = grouped.get(folder.id) || [];
+                const open = !collapsed.has(folder.id);
+                return (
+                  <section
+                    key={folder.id}
+                    data-drop={`folder:${folder.id}`}
+                    className={`lists-folder${
+                      dropKey === `folder:${folder.id}` ? " lists-drop-over" : ""
+                    }`}
+                  >
+                    <div className="lists-folder-head">
+                      <button
+                        type="button"
+                        className={`lists-folder-toggle${open ? " open" : ""}`}
+                        onClick={() =>
+                          setCollapsed((prev) => {
+                            const next = new Set(prev);
+                            next.has(folder.id)
+                              ? next.delete(folder.id)
+                              : next.add(folder.id);
+                            return next;
+                          })
+                        }
+                        aria-expanded={open}
+                        aria-label={open ? "Collapse folder" : "Expand folder"}
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                      <Folder size={16} className="lists-folder-icon" />
+                      {renamingFolder === folder.id ? (
+                        <input
+                          className="lists-folder-rename"
+                          defaultValue={folder.name}
+                          autoFocus
+                          onBlur={(e) =>
+                            handleRenameFolder(folder.id, e.target.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.target.blur();
+                            if (e.key === "Escape") setRenamingFolder(null);
+                          }}
+                        />
+                      ) : (
+                        <span className="lists-folder-name">{folder.name}</span>
+                      )}
+                      <span className="toolbar-count">{inFolder.length}</span>
+                      <span className="lists-folder-date">
+                        created {shortDate(folder.created_at)}
+                      </span>
+                      <button
+                        type="button"
+                        className="lists-folder-action"
+                        onClick={() => setRenamingFolder(folder.id)}
+                        title="Rename folder"
+                        aria-label="Rename folder"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="lists-folder-action"
+                        onClick={() => setDeletingFolder(folder)}
+                        title="Delete folder"
+                        aria-label="Delete folder"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    {open &&
+                      (inFolder.length === 0 ? (
+                        <p className="lists-root-empty">
+                          Empty. Drag a list onto this folder to file it.
+                        </p>
+                      ) : (
+                        <div className="lists-grid">
+                          {inFolder.map((list) => renderCard(list))}
+                        </div>
+                      ))}
+                  </section>
+                );
+              })}
+            </>
           )}
         </>
       )}
@@ -451,6 +839,77 @@ export default function Lists() {
           onClose={() => setShowMagic(false)}
           onSubmit={handleCreateMagic}
         />
+      )}
+
+      {showFolderCreate && (
+        <div
+          className="lists-modal-overlay"
+          onClick={() => setShowFolderCreate(false)}
+        >
+          <div className="lists-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lists-modal-head">
+              <h3>New folder</h3>
+              <button
+                className="lists-modal-close"
+                onClick={() => setShowFolderCreate(false)}
+                aria-label="Close"
+              >
+                {String.fromCharCode(0x2715)}
+              </button>
+            </div>
+            <form className="lists-create-form" onSubmit={handleCreateFolder}>
+              <input
+                type="text"
+                placeholder="Folder name"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                maxLength={60}
+                autoFocus
+              />
+              <button type="submit" disabled={!folderName.trim()}>
+                Create folder
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deletingFolder && (
+        <div
+          className="lists-modal-overlay"
+          onClick={() => setDeletingFolder(null)}
+        >
+          <div className="lists-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lists-modal-head">
+              <h3>Delete folder</h3>
+              <button
+                className="lists-modal-close"
+                onClick={() => setDeletingFolder(null)}
+                aria-label="Close"
+              >
+                {String.fromCharCode(0x2715)}
+              </button>
+            </div>
+            <p className="lists-modal-text">
+              Delete “{deletingFolder.name}”? The lists inside it move back out
+              to the top level, nothing is deleted.
+            </p>
+            <div className="lists-modal-actions">
+              <button
+                className="lists-create-btn"
+                onClick={() => setDeletingFolder(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="lists-create-btn lists-danger-btn"
+                onClick={() => handleDeleteFolder(deletingFolder.id)}
+              >
+                Delete folder
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showCreate && (

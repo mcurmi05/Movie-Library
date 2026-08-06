@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "@mui/material/Modal";
 import Box from "@mui/material/Box";
+import { toLocalDateString } from "../../utils/localDate";
 
 const modalStyle = {
   position: "absolute",
@@ -17,6 +18,19 @@ const modalStyle = {
   p: 3,
   borderRadius: 2,
 };
+
+// Gap between two rating changes made on the same day, phrased relative to the
+// one before it ("30 mins later"). Only ever spans a single day, so hours is
+// the coarsest unit needed.
+function gapLabel(ms) {
+  const mins = Math.round(ms / 60000);
+  if (mins < 1) return "moments later";
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} later`;
+  const hours = Math.round(mins / 60);
+  return `${hours} hour${hours === 1 ? "" : "s"} later`;
+}
+
+const dayKey = (iso) => (iso ? toLocalDateString(new Date(iso)) : null);
 
 const confirmBtnStyle = {
   border: "none",
@@ -53,6 +67,15 @@ export default function RatingHistoryModal({
       day: "numeric",
     });
 
+  // Sorted newest first, so the change before this one in time sits at i + 1.
+  // A gap is only shown when both landed on the same day, which is exactly when
+  // the date alone can't tell two entries apart.
+  const gaps = events.map((e, i) => {
+    const prev = events[i + 1];
+    if (!e.at || !prev?.at || dayKey(e.at) !== dayKey(prev.at)) return null;
+    return gapLabel(new Date(e.at) - new Date(prev.at));
+  });
+
   const handleClose = () => {
     setConfirmIdx(null);
     onClose();
@@ -88,7 +111,17 @@ export default function RatingHistoryModal({
               >
                 <span style={{ color: "#ccc", fontSize: "0.92rem" }}>
                   {e.at ? fmt(e.at) : "Unknown date"}
-                  {i === events.length - 1 ? " (first rated)" : ""}
+                  {gaps[i] && (
+                    <span
+                      style={{
+                        color: "#888",
+                        fontSize: "0.82rem",
+                        marginLeft: 6,
+                      }}
+                    >
+                      {gaps[i]}
+                    </span>
+                  )}
                 </span>
                 <span
                   style={{

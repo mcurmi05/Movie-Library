@@ -1,0 +1,28 @@
+/* "Rated: ..." line on the media/book details pages, matching the muted date
+   line the Ratings page shows on each row. */
+.rating-details {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #888;
+  font-size: 0.88rem;
+}
+
+.rating-details-prev {
+  color: #6f6f6f;
+}
+
+.rating-details-history {
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  outline: none;
+}
+
+.rating-details-history:hover {
+  color: #ccc;
+}

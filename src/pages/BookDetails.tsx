@@ -17,6 +17,7 @@ import { useBookRatings } from "../contexts/UserBookRatingsContext";
 import { useCovers } from "../contexts/UserCoversContext";
 import PosterEditModal from "../components/media/PosterEditModal";
 import BookRatingStar from "../components/books/BookRatingStar";
+import RatingDetails from "../components/common/RatingDetails";
 import AddBookWatchlist from "../components/books/AddBookWatchlist";
 import AddBookLogButton from "../components/books/AddBookLogButton";
 import AddToList from "../components/common/AddToList";
@@ -86,7 +87,7 @@ export default function BookDetails() {
   const legacyGoodreadsUrl = isHardcover
     ? null
     : goodreadsUrlFromPath(splat);
-  const { findRatingForBook } = useBookRatings();
+  const { findRatingForBook, deleteBookRatingHistoryEvent } = useBookRatings();
 
   const [dbEntry, setDbEntry] = useState(null);
   const [remoteBook, setRemoteBook] = useState(seedBook);
@@ -322,9 +323,24 @@ export default function BookDetails() {
     return <div className="error">Couldn't load this book.</div>;
   }
 
+  // Same "Rated: ..." line and history the Ratings page shows on each row.
+  const bookRating = bookObj ? findRatingForBook(bookObj) : null;
+
   const actionsElement = bookObj ? (
     <div className="bd-actions">
       <BookRatingStar book={bookObj} />
+      {bookRating && (
+        <RatingDetails
+          title={bookObj.title}
+          createdAt={bookRating.created_at}
+          updatedAt={bookRating.updated_at}
+          previousRating={bookRating.previous_rating}
+          history={bookRating.rating_history}
+          onDeleteEvent={(idx) =>
+            deleteBookRatingHistoryEvent(bookRating.id, idx)
+          }
+        />
+      )}
       <div className="bd-action-buttons">
         <AddBookWatchlist book={bookObj} />
         <AddBookLogButton book={bookObj} />

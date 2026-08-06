@@ -1,12 +1,18 @@
 /* Shared list paging control (count + page-size selector + prev/next arrows). */
+/* Breathing room on both sides so the top copy doesn't crowd the first row and
+   the bottom copy doesn't crowd the last. */
 .pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 18px;
+  margin: 18px 0 22px;
   color: #aaa;
   font-size: 0.9rem;
+}
+
+.pagination-bottom {
+  margin: 26px 0 18px;
 }
 
 .pagination select {

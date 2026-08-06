@@ -10,16 +10,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Smooth press feedback for the page's clickable controls — stat tiles,
-   recent-activity rows and the on-this-day card. (Posters and the toggle
-   button have their own press rules.) */
+/* Smooth press feedback for the page's clickable controls — stat tiles and
+   recent-activity rows. (Posters and the toggle button have their own press
+   rules.) */
 .hp-stat,
-.hp-feed-item,
-.hp-otd {
+.hp-feed-item {
   transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-.hp-stat:active,
-.hp-otd:active {
+.hp-stat:active {
   transform: scale(0.97);
 }
 /* Match the Trending list's press-in: pointer-driven is-pressed (reliable on
@@ -577,8 +575,13 @@
   text-transform: none;
   vertical-align: middle;
 }
+/* Half-step columns render a blank label, which would otherwise collapse to
+   zero height and drop those bars below the whole-number ones - reserve one
+   line either way so every bar shares a baseline. */
 .hp-chart-x {
   font-size: 0.6rem;
+  line-height: 1;
+  min-height: 1em;
   color: var(--muted-foreground);
   margin-top: 6px;
 }
@@ -728,36 +731,12 @@
 }
 
 /* ---- on this day ---- */
+/* Wraps the shared log/ratings card, which brings its own layout. */
 .hp-otd {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 14px;
-}
-.hp-otd-poster {
-  width: 64px;
-  height: 96px;
-  border-radius: 5px;
-  overflow: hidden;
-  background: var(--muted);
-  flex-shrink: 0;
-}
-.hp-otd-poster img {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.hp-otd-title {
-  font-size: 1rem;
-  font-weight: 600;
-}
-.hp-otd-line {
-  font-size: 0.82rem;
-  color: var(--muted-foreground);
-  margin-top: 3px;
+  padding: 14px 14px 4px;
 }
 
 /* ---- responsive ---- */
@@ -1005,6 +984,47 @@
   margin-bottom: 14px;
   font-size: 0.72rem;
 }
+/* ---- ratings distribution range editor ---- */
+.hp-dist-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.hp-dist-range label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--muted-foreground);
+}
+.hp-dist-range select {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.hp-dist-dash {
+  color: var(--muted-foreground);
+  padding-bottom: 8px;
+}
+.hp-dist-reset {
+  margin-top: 16px;
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.hp-dist-reset:hover {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+
 .hp-fav-hint {
   color: var(--muted-foreground);
   font-size: 0.9rem;

@@ -12,11 +12,13 @@ import "../../styles/media/ExternalReviews.css";
 //
 // Letterboxd serves its chart from an endpoint behind a bot challenge, so that
 // half can fail where the rest of the page works - when it does, its tab is
-// simply not offered.
-function RatingHistogram({ imdbId, tmdbId, mediaType }) {
+// simply not offered and the IMDb chart stays on screen.
+//
+// `source` is owned by the page and shared with the reviews section below, so
+// one tab click switches both.
+function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) {
   const [imdb, setImdb] = useState(null);
   const [lb, setLb] = useState(null);
-  const [source, setSource] = useState("imdb");
   const [active, setActive] = useState(null);
 
   useEffect(() => {
@@ -47,11 +49,15 @@ function RatingHistogram({ imdbId, tmdbId, mediaType }) {
     setActive(null);
   }, [source]);
 
-  const data = source === "letterboxd" ? lb : imdb;
-  if (!imdb?.histogram?.length && !lb?.histogram?.length) return null;
-  if (!data?.histogram?.length) return null;
+  const hasImdb = !!imdb?.histogram?.length;
+  const hasLb = !!lb?.histogram?.length;
+  if (!hasImdb && !hasLb) return null;
 
-  const isLb = source === "letterboxd";
+  // Honour the shared tab, but never blank the chart out because the other
+  // half of the page can offer a source this one couldn't fetch.
+  const isLb = source === "letterboxd" ? hasLb : !hasImdb;
+  const data = isLb ? lb : imdb;
+
   const max = Math.max(...data.histogram.map((b) => b.votes));
   const total =
     data.total || data.histogram.reduce((sum, b) => sum + b.votes, 0);
@@ -62,17 +68,17 @@ function RatingHistogram({ imdbId, tmdbId, mediaType }) {
     <div className={`rating-dist${isLb ? " is-letterboxd" : ""}`}>
       <div className="rating-dist-head">
         <span className="rating-dist-title">Rating distribution</span>
-        {imdb && lb && (
+        {hasImdb && hasLb && (
           <div className="xr-tabs">
             <button
               className={`xr-tab${!isLb ? " is-active" : ""}`}
-              onClick={() => setSource("imdb")}
+              onClick={() => onSourceChange("imdb")}
             >
               IMDb
             </button>
             <button
               className={`xr-tab${isLb ? " is-active" : ""}`}
-              onClick={() => setSource("letterboxd")}
+              onClick={() => onSourceChange("letterboxd")}
             >
               Letterboxd
             </button>

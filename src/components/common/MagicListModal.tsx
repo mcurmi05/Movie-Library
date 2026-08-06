@@ -11,6 +11,10 @@ import {
   GLOBAL_SEED_FIELDS,
   fieldMeta,
   newMagicRule,
+  newMagicGroup,
+  isGroup,
+  magicTree,
+  magicRules,
   computeMagicSnapshots,
   computeGlobalSnapshots,
   validateGlobalRules,
@@ -263,6 +267,288 @@ async function fetchAuthorOptions(term) {
   return out;
 }
 
+/* ---------- rule tree editing ---------- */
+
+const newRoot = (withRule = 1) => ({
+  type: "group",
+  combinator: "and",
+  children: withRule ? [newMagicRule()] : [],
+});
+
+const nodeAt = (node, path) =>
+  path.reduce((n, i) => n?.children?.[i], node);
+
+// Replace the node at `path` (child indices from the root) with fn(node).
+function updateAt(node, path, fn) {
+  if (!path.length) return fn(node);
+  const [i, ...rest] = path;
+  return {
+    ...node,
+    children: node.children.map((c, ci) =>
+      ci === i ? updateAt(c, rest, fn) : c,
+    ),
+  };
+}
+
+function removeAt(node, path) {
+  const [i, ...rest] = path;
+  if (!rest.length) {
+    return { ...node, children: node.children.filter((_, ci) => ci !== i) };
+  }
+  return {
+    ...node,
+    children: node.children.map((c, ci) => (ci === i ? removeAt(c, rest) : c)),
+  };
+}
+
+// Drop rules with no value, and any group left empty by that.
+function pruneTree(node) {
+  if (isGroup(node)) {
+    const children = (node.children || []).map(pruneTree).filter(Boolean);
+    return children.length ? { ...node, children } : null;
+  }
+  const meta = fieldMeta(node.field);
+  const filled =
+    meta.kind === "select" ? !!node.value : String(node.value).trim() !== "";
+  return filled ? node : null;
+}
+
+// Old lists stored ops these fields no longer offer; pin them to the current
+// one so an existing list opens on a valid selection.
+function fixLegacyOps(node) {
+  if (isGroup(node)) {
+    return { ...node, children: (node.children || []).map(fixLegacyOps) };
+  }
+  return {
+    ...node,
+    ...(node.field === "director" || node.field === "author"
+      ? { op: "is" }
+      : node.field === "actor"
+        ? { op: "contains" }
+        : node.field === "source"
+          ? { op: "in" }
+          : {}),
+  };
+}
+
+// One rule: NOT, field, operator, value, remove. `path` is where it lives in
+// the tree, which is all any edit needs.
+function RuleRow({ rule, path, root, scope, actions }) {
+  const meta = fieldMeta(rule.field);
+  // What the rules certain to hold alongside this one still allow;
+  // incompatible fields/type values gray out instead of erroring.
+  const allowedKinds = allowedKindsForRule(root, path);
+  const kindSuffix = (field) => {
+    const kinds = FIELD_KINDS[field];
+    if (!kinds || kinds.some((k) => allowedKinds.has(k))) return "";
+    return ` (only for ${kinds.map((k) => KIND_LABELS[k]).join(" & ")})`;
+  };
+  return (
+    <div
+      className={`magic-rule${meta.ops.length > 1 ? "" : " magic-rule-noop"}`}
+    >
+      <button
+        type="button"
+        className={`magic-not${rule.not ? " magic-not-on" : ""}`}
+        onClick={() => actions.setRule(path, { not: !rule.not })}
+        disabled={scope === "global" && GLOBAL_SEED_FIELDS.has(rule.field)}
+        title={
+          scope === "global" && GLOBAL_SEED_FIELDS.has(rule.field)
+            ? "Director, actor and author rules anchor a global search and can't be negated"
+            : rule.not
+              ? "Rule is negated"
+              : "Negate rule"
+        }
+      >
+        NOT
+      </button>
+      <select
+        value={rule.field}
+        onChange={(e) => actions.changeField(path, e.target.value)}
+      >
+        {MAGIC_FIELDS.map((f) => {
+          const globalBlocked =
+            scope === "global" && !GLOBAL_FIELDS.has(f.value);
+          const suffix = globalBlocked
+            ? " (library only)"
+            : kindSuffix(f.value);
+          return (
+            <option
+              key={f.value}
+              value={f.value}
+              disabled={globalBlocked || suffix !== ""}
+            >
+              {f.label}
+              {suffix}
+            </option>
+          );
+        })}
+      </select>
+      {meta.ops.length > 1 && (
+        <select
+          className="magic-op"
+          value={rule.op}
+          onChange={(e) => actions.setRule(path, { op: e.target.value })}
+        >
+          {meta.ops.map((op) => (
+            <option key={op} value={op}>
+              {MAGIC_OPS[op]}
+            </option>
+          ))}
+        </select>
+      )}
+      {meta.kind === "person" ? (
+        <button
+          type="button"
+          className={`magic-value magic-person-select${rule.value ? "" : " magic-person-select-empty"}`}
+          onClick={() => actions.setPersonPickPath(path)}
+          title={rule.value ? "Change person" : "Select a person"}
+        >
+          {rule.value ? (
+            <>
+              <img
+                className="magic-person-thumb"
+                src={rule.person_image || "/images/placeholderimage.jpg"}
+                alt=""
+                loading="lazy"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/images/placeholderimage.jpg";
+                }}
+              />
+              <span className="magic-person-name">{rule.value}</span>
+            </>
+          ) : (
+            "Select person..."
+          )}
+        </button>
+      ) : meta.kind === "author" ? (
+        <SuggestPicker
+          rule={rule}
+          onPick={(patch) => actions.setRule(path, patch)}
+          fetchOptions={fetchAuthorOptions}
+          placeholder="Search an author..."
+        />
+      ) : meta.kind === "select" ? (
+        <select
+          className="magic-value"
+          value={rule.value}
+          onChange={(e) => actions.setRule(path, { value: e.target.value })}
+        >
+          {meta.options.map((o) => {
+            const blocked =
+              rule.field === "type" && !rule.not && !allowedKinds.has(o.value);
+            return (
+              <option key={o.value} value={o.value} disabled={blocked}>
+                {o.label}
+                {blocked ? " (conflicts with other rules)" : ""}
+              </option>
+            );
+          })}
+        </select>
+      ) : (
+        <input
+          className="magic-value"
+          type={meta.kind === "number" ? "number" : "text"}
+          step={meta.step}
+          min={meta.min}
+          max={meta.max}
+          placeholder={
+            meta.kind === "number" ? "0" : "e.g. Sci-Fi, Science Fiction"
+          }
+          title={
+            meta.kind === "text"
+              ? "Separate alternatives with commas to match any of them"
+              : undefined
+          }
+          value={rule.value}
+          onChange={(e) => actions.setRule(path, { value: e.target.value })}
+        />
+      )}
+      <button
+        type="button"
+        className="magic-rule-remove"
+        onClick={() => actions.remove(path)}
+        aria-label="Remove rule"
+      >
+        {String.fromCharCode(0x2715)}
+      </button>
+    </div>
+  );
+}
+
+// A group and everything under it. Nesting these is what makes
+// "A AND (B OR C)" possible: each box carries its own ALL/ANY choice, and the
+// indentation shows what it applies to.
+function GroupEditor({ node, path, root, scope, depth, actions }) {
+  const any = node.combinator === "or";
+  return (
+    <div className={`magic-group${depth ? " magic-group-nested" : ""}`}>
+      <div className="magic-group-head">
+        <button
+          type="button"
+          className={`magic-join${any ? " magic-join-or" : ""}`}
+          onClick={() =>
+            actions.setCombinator(path, any ? "and" : "or")
+          }
+          title="Whether everything in this group has to match, or just one of them"
+        >
+          {any ? "MATCH ANY" : "MATCH ALL"}
+        </button>
+        <span className="magic-group-hint">of the following</span>
+        {depth > 0 && (
+          <button
+            type="button"
+            className="magic-rule-remove magic-group-remove"
+            onClick={() => actions.remove(path)}
+            aria-label="Remove group"
+          >
+            {String.fromCharCode(0x2715)}
+          </button>
+        )}
+      </div>
+      {node.children.map((child, i) =>
+        isGroup(child) ? (
+          <GroupEditor
+            key={i}
+            node={child}
+            path={[...path, i]}
+            root={root}
+            scope={scope}
+            depth={depth + 1}
+            actions={actions}
+          />
+        ) : (
+          <RuleRow
+            key={i}
+            rule={child}
+            path={[...path, i]}
+            root={root}
+            scope={scope}
+            actions={actions}
+          />
+        ),
+      )}
+      <div className="magic-group-actions">
+        <button
+          type="button"
+          className="magic-add-rule"
+          onClick={() => actions.addRule(path)}
+        >
+          + Add rule
+        </button>
+        <button
+          type="button"
+          className="magic-add-rule magic-add-group"
+          onClick={() => actions.addGroup(path)}
+        >
+          + Add group
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function MagicListModal({
   mode = "create",
   initialMagic = null,
@@ -278,32 +564,21 @@ export default function MagicListModal({
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [scope, setScope] = useState(initialMagic?.scope || "library");
-  // Index of the rule whose director/actor is being picked in the modal.
-  const [personPickIdx, setPersonPickIdx] = useState(null);
-  // Older lists chained every rule with one top-level combinator; seed each
-  // rule's join from it so editing them keeps the same meaning.
-  const [rules, setRules] = useState(() =>
-    initialMagic?.rules?.length
-      ? initialMagic.rules.map((r) => ({
-          join: initialMagic.combinator || "and",
-          ...r,
-          ...(r.field === "director" || r.field === "author"
-            ? { op: "is" }
-            : r.field === "actor"
-              ? { op: "contains" }
-              : r.field === "source"
-                ? { op: "in" }
-                : {}),
-        }))
-      : [newMagicRule()],
+  // Path (child indices from the root) of the rule whose director/actor is
+  // being picked in the modal.
+  const [personPickPath, setPersonPickPath] = useState(null);
+  const [root, setRoot] = useState(() =>
+    initialMagic ? fixLegacyOps(magicTree(initialMagic)) : newRoot(),
   );
 
-  const setRule = (idx, patch) =>
-    setRules((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+  const patchAt = (path, fn) => setRoot((prev) => updateAt(prev, path, fn));
 
-  const changeField = (idx, field) => {
+  const setRule = (path, patch) =>
+    patchAt(path, (rule) => ({ ...rule, ...patch }));
+
+  const changeField = (path, field) => {
     const meta = fieldMeta(field);
-    setRule(idx, {
+    setRule(path, {
       field,
       op: meta.ops[0],
       value: meta.kind === "select" ? meta.options[0].value : "",
@@ -311,21 +586,43 @@ export default function MagicListModal({
     });
   };
 
-  // Rules missing a value can't match anything — leave them out of both the
-  // preview and what gets saved.
+  // Everything the group editor can do to the tree, handed down as one object
+  // so the recursion doesn't need a dozen props.
+  const actions = {
+    setRule,
+    changeField,
+    setCombinator: (path, combinator) =>
+      patchAt(path, (group) => ({ ...group, combinator })),
+    addRule: (path) =>
+      patchAt(path, (group) => ({
+        ...group,
+        children: [...group.children, newMagicRule()],
+      })),
+    addGroup: (path) =>
+      patchAt(path, (group) => ({
+        ...group,
+        children: [
+          ...group.children,
+          newMagicGroup(group.combinator === "and" ? "or" : "and"),
+        ],
+      })),
+    remove: (path) => setRoot((prev) => removeAt(prev, path)),
+    personPickPath,
+    setPersonPickPath,
+  };
+
+  // Rules missing a value can't match anything, and a group left empty by that
+  // pruning would drag a whole AND section down with it — leave both out of
+  // the preview and out of what gets saved.
+  const prunedRoot = useMemo(() => pruneTree(root) || newRoot(0), [root]);
   const validRules = useMemo(
-    () =>
-      rules.filter((r) => {
-        const meta = fieldMeta(r.field);
-        if (meta.kind === "select") return !!r.value;
-        return String(r.value).trim() !== "";
-      }),
-    [rules],
+    () => magicRules({ root: prunedRoot }),
+    [prunedRoot],
   );
 
   const magic = useMemo(
-    () => ({ scope, rules: validRules }),
-    [scope, validRules],
+    () => ({ scope, root: prunedRoot }),
+    [scope, prunedRoot],
   );
 
   // Impossible AND sections (e.g. "type is book AND director contains X")
@@ -474,188 +771,15 @@ export default function MagicListModal({
           </div>
 
           <div className="magic-rules">
-            {rules.map((rule, idx) => {
-              const meta = fieldMeta(rule.field);
-              // What the rest of this rule's AND section still allows;
-              // incompatible fields/type values gray out instead of erroring.
-              const allowedKinds = allowedKindsForRule({ rules }, idx);
-              const kindSuffix = (field) => {
-                const kinds = FIELD_KINDS[field];
-                if (!kinds || kinds.some((k) => allowedKinds.has(k))) return "";
-                return ` (only for ${kinds.map((k) => KIND_LABELS[k]).join(" & ")})`;
-              };
-              return (
-                <div
-                  className={`magic-rule${meta.ops.length > 1 ? "" : " magic-rule-noop"}`}
-                  key={idx}
-                >
-                  {idx === 0 ? (
-                    <span className="magic-join magic-join-first" />
-                  ) : (
-                    <button
-                      type="button"
-                      className={`magic-join${rule.join === "or" ? " magic-join-or" : ""}`}
-                      onClick={() =>
-                        setRule(idx, {
-                          join: rule.join === "or" ? "and" : "or",
-                        })
-                      }
-                      title="How this rule chains to the one above. AND binds tighter than OR: A AND B OR C means (A AND B) OR C"
-                    >
-                      {rule.join === "or" ? "OR" : "AND"}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className={`magic-not${rule.not ? " magic-not-on" : ""}`}
-                    onClick={() => setRule(idx, { not: !rule.not })}
-                    disabled={
-                      scope === "global" && GLOBAL_SEED_FIELDS.has(rule.field)
-                    }
-                    title={
-                      scope === "global" && GLOBAL_SEED_FIELDS.has(rule.field)
-                        ? "Director, actor and author rules anchor a global search and can't be negated"
-                        : rule.not
-                          ? "Rule is negated"
-                          : "Negate rule"
-                    }
-                  >
-                    NOT
-                  </button>
-                  <select
-                    value={rule.field}
-                    onChange={(e) => changeField(idx, e.target.value)}
-                  >
-                    {MAGIC_FIELDS.map((f) => {
-                      const globalBlocked =
-                        scope === "global" && !GLOBAL_FIELDS.has(f.value);
-                      const suffix = globalBlocked
-                        ? " (library only)"
-                        : kindSuffix(f.value);
-                      return (
-                        <option
-                          key={f.value}
-                          value={f.value}
-                          disabled={globalBlocked || suffix !== ""}
-                        >
-                          {f.label}
-                          {suffix}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {meta.ops.length > 1 && (
-                    <select
-                      className="magic-op"
-                      value={rule.op}
-                      onChange={(e) => setRule(idx, { op: e.target.value })}
-                    >
-                      {meta.ops.map((op) => (
-                        <option key={op} value={op}>
-                          {MAGIC_OPS[op]}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {meta.kind === "person" ? (
-                    <button
-                      type="button"
-                      className={`magic-value magic-person-select${rule.value ? "" : " magic-person-select-empty"}`}
-                      onClick={() => setPersonPickIdx(idx)}
-                      title={rule.value ? "Change person" : "Select a person"}
-                    >
-                      {rule.value ? (
-                        <>
-                          <img
-                            className="magic-person-thumb"
-                            src={rule.person_image || "/images/placeholderimage.jpg"}
-                            alt=""
-                            loading="lazy"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/images/placeholderimage.jpg";
-                            }}
-                          />
-                          <span className="magic-person-name">{rule.value}</span>
-                        </>
-                      ) : (
-                        "Select person..."
-                      )}
-                    </button>
-                  ) : meta.kind === "author" ? (
-                    <SuggestPicker
-                      rule={rule}
-                      onPick={(patch) => setRule(idx, patch)}
-                      fetchOptions={fetchAuthorOptions}
-                      placeholder="Search an author..."
-                    />
-                  ) : meta.kind === "select" ? (
-                    <select
-                      className="magic-value"
-                      value={rule.value}
-                      onChange={(e) => setRule(idx, { value: e.target.value })}
-                    >
-                      {meta.options.map((o) => {
-                        const blocked =
-                          rule.field === "type" &&
-                          !rule.not &&
-                          !allowedKinds.has(o.value);
-                        return (
-                          <option
-                            key={o.value}
-                            value={o.value}
-                            disabled={blocked}
-                          >
-                            {o.label}
-                            {blocked ? " (conflicts with other rules)" : ""}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  ) : (
-                    <input
-                      className="magic-value"
-                      type={meta.kind === "number" ? "number" : "text"}
-                      step={meta.step}
-                      min={meta.min}
-                      max={meta.max}
-                      placeholder={
-                        meta.kind === "number"
-                          ? "0"
-                          : "e.g. Sci-Fi, Science Fiction"
-                      }
-                      title={
-                        meta.kind === "text"
-                          ? "Separate alternatives with commas to match any of them"
-                          : undefined
-                      }
-                      value={rule.value}
-                      onChange={(e) => setRule(idx, { value: e.target.value })}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    className="magic-rule-remove"
-                    onClick={() =>
-                      setRules((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                    disabled={rules.length === 1}
-                    aria-label="Remove rule"
-                  >
-                    {String.fromCharCode(0x2715)}
-                  </button>
-                </div>
-              );
-            })}
+            <GroupEditor
+              node={root}
+              path={[]}
+              root={root}
+              scope={scope}
+              depth={0}
+              actions={actions}
+            />
           </div>
-
-          <button
-            type="button"
-            className="magic-add-rule"
-            onClick={() => setRules((prev) => [...prev, newMagicRule()])}
-          >
-            + Add rule
-          </button>
 
           <div className="magic-preview">
             {rulesError ? (
@@ -707,18 +831,18 @@ export default function MagicListModal({
             )}
           </div>
 
-          {personPickIdx != null && (
+          {personPickPath && (
             <PersonPickModal
               title={
-                fieldMeta(rules[personPickIdx]?.field).value === "actor"
+                fieldMeta(nodeAt(root, personPickPath)?.field).value === "actor"
                   ? "Pick a cast member"
                   : "Pick a director / creator"
               }
               onPick={(patch) => {
-                setRule(personPickIdx, patch);
-                setPersonPickIdx(null);
+                setRule(personPickPath, patch);
+                setPersonPickPath(null);
               }}
-              onClose={() => setPersonPickIdx(null)}
+              onClose={() => setPersonPickPath(null)}
             />
           )}
 

@@ -274,6 +274,46 @@ export async function listsContainingMedia(listIds, snapshot) {
   return new Set((data ?? []).map((row) => row.list_id));
 }
 
+// The viewer's own lists that already hold this media item, for the "In your
+// lists" line on a details page. One query - the join back to lists is what
+// keeps other people's lists out.
+export async function getMyListsWithMedia(userId, snapshot) {
+  let query = supabase
+    .from("list_items")
+    .select("lists!inner(id, title)")
+    .eq("lists.owner_id", userId);
+
+  if (snapshot.media_type === "book") {
+    if (snapshot.item_data.hardcover_id) {
+      query = query.eq(
+        "item_data->>hardcover_id",
+        String(snapshot.item_data.hardcover_id),
+      );
+    } else if (snapshot.item_data.goodreads_link) {
+      query = query.eq(
+        "item_data->>goodreads_link",
+        snapshot.item_data.goodreads_link,
+      );
+    } else {
+      return [];
+    }
+  } else {
+    if (snapshot.item_data.tmdb_id == null) return [];
+    query = query
+      .eq("media_type", snapshot.media_type)
+      .eq("item_data->>tmdb_id", String(snapshot.item_data.tmdb_id));
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  // A list could hold the same title twice; show it once.
+  const seen = new Map();
+  (data ?? []).forEach((row) => {
+    if (row.lists) seen.set(row.lists.id, row.lists);
+  });
+  return Array.from(seen.values());
+}
+
 // The user's lists with their items, used to build the home-page activity feed
 // (list created + items added events).
 export async function getListsActivity(userId) {
@@ -283,6 +323,82 @@ export async function getListsActivity(userId) {
     .eq("owner_id", userId);
   if (error) throw error;
   return data ?? [];
+}
+
+/* ---------- folders & placement ---------- */
+
+// Folders are per-user, and so is placement: the Lists page also shows lists
+// saved from other people, which the viewer can't write to, so where a list
+// sits is stored against the viewer instead of the list.
+
+export async function getListFolders(userId) {
+  const { data, error } = await supabase
+    .from("list_folders")
+    .select("*")
+    .eq("user_id", userId)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createListFolder(userId, name, position = 0) {
+  const { data, error } = await supabase
+    .from("list_folders")
+    .insert({ user_id: userId, name, position })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function renameListFolder(folderId, name) {
+  const { error } = await supabase
+    .from("list_folders")
+    .update({ name })
+    .eq("id", folderId);
+  if (error) throw error;
+}
+
+// The folder's lists aren't deleted with it: the placement rows' folder_id is
+// nulled by the FK, dropping those lists back to the root.
+export async function deleteListFolder(folderId) {
+  const { error } = await supabase
+    .from("list_folders")
+    .delete()
+    .eq("id", folderId);
+  if (error) throw error;
+}
+
+// list_id -> { folder_id, position } for everything the user has filed.
+export async function getListPlacements(userId) {
+  const { data, error } = await supabase
+    .from("list_placements")
+    .select("list_id, folder_id, position")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return new Map(
+    (data ?? []).map((r) => [
+      r.list_id,
+      { folder_id: r.folder_id, position: r.position },
+    ]),
+  );
+}
+
+// Upsert placement for a batch of lists in one round trip. `rows` is
+// [{ listId, folderId, position }].
+export async function setListPlacements(userId, rows) {
+  if (!rows.length) return;
+  const { error } = await supabase.from("list_placements").upsert(
+    rows.map((r) => ({
+      user_id: userId,
+      list_id: r.listId,
+      folder_id: r.folderId ?? null,
+      position: r.position,
+    })),
+    { onConflict: "user_id,list_id" },
+  );
+  if (error) throw error;
 }
 
 /* ---------- saving others' lists ---------- */

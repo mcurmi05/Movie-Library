@@ -39,7 +39,7 @@ export default function PaginationControls({ pag, totalCount, position = "top" }
   };
 
   return (
-    <div className="pagination">
+    <div className={`pagination${position === "bottom" ? " pagination-bottom" : ""}`}>
       {totalPages > 1 && (
         <nav className="pagination-nav" aria-label="Pagination">
           <button

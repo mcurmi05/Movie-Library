@@ -16,8 +16,7 @@ import MediaDetails from "./pages/MediaDetails";
 import Person from "./pages/Person";
 import BookDetails from "./pages/BookDetails";
 import { SignIn } from "./pages/SignIn";
-import { supabase } from "./services/supabase-client";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserRatingsProvider } from "./contexts/UserRatingsContext";
 import Ratings from "./pages/Ratings";
@@ -45,17 +44,6 @@ function ScrollToTop() {
 }
 
 function App() {
-  const [session, setSession] = useState(null);
-
-  const fetchSession = async () => {
-    const currentSession = await supabase.auth.getSession();
-    setSession(currentSession.data.session);
-  };
-
-  useEffect(() => {
-    fetchSession();
-  }, []);
-
   return (
     <div className="app-shell">
       <AuthProvider>

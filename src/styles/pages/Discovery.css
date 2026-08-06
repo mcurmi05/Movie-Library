@@ -257,6 +257,13 @@
   border-radius: 6px;
   padding: 2px 6px;
 }
+/* Letterboxd sits under the IMDb badge rather than beside it, so a title with
+   both still leaves the poster readable. */
+.dv-result-badge-lb {
+  top: auto;
+  bottom: 6px;
+  color: #00e054;
+}
 .dv-result-badge-icon {
   width: 22px;
   height: auto;
@@ -270,10 +277,15 @@
   height: 22px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.8);
-  color: var(--brand, #e23030);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.dv-result-flag img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  display: block;
 }
 .dv-seen-title {
   font-size: 1rem;

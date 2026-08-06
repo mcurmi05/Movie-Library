@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import { ArrowRight, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useRatings } from "../contexts/UserRatingsContext";
@@ -12,6 +12,9 @@ import { useBookTbr } from "../contexts/UserBookTbrContext";
 import { useCache } from "../contexts/PopularMoviesCacheContext";
 import { getPopularMovies, getPopularTV } from "../services/api";
 import EditFavouritesModal from "../components/home/EditFavouritesModal";
+import ListComponent from "../components/common/ListComponent";
+import AddToList from "../components/common/AddToList";
+import BookLogCard from "../components/books/BookLogCard";
 import { SignIn } from "./SignIn";
 import { bookDetailsRouteForBook } from "../utils/goodreads";
 import { getListsActivity } from "../services/lists";
@@ -31,6 +34,13 @@ function isTV(mo) {
 function stripSeries(title) {
   const m = (title || "").match(/^(.*?)\s*\(([^()]+?)[,\s]*#([^()]+?)\)\s*$/);
   return m ? m[1].trim() : title || "";
+}
+
+// Whole years between a past date and today. Only used for "On This Day", where
+// the two share a month and day, so the year difference is the whole story.
+function yearsAgo(date) {
+  const n = new Date().getFullYear() - date.getFullYear();
+  return `${n} year${n === 1 ? "" : "s"} ago`;
 }
 
 function timeAgo(value) {
@@ -115,6 +125,11 @@ const byRank = (a, b) =>
 function Spinner({ className = "" }) {
   return <span className={`hp-spinner ${className}`.trim()} aria-hidden="true" />;
 }
+
+// Every rating the distribution chart can bucket: 1..10 in half steps.
+const RATING_STEPS = Array.from({ length: 19 }, (_, i) => 1 + i * 0.5);
+
+const DEFAULT_DIST_RANGE = { from: 1, to: 10 };
 
 function Section({ label, hint, children, panel, className = "", action }) {
   return (
@@ -360,6 +375,28 @@ export default function Home() {
     localStorage.setItem("hp-show-list-adds", String(showListAdds));
   }, [showListAdds]);
 
+  // Which slice of the 1-10 scale the distribution chart draws. Anyone who only
+  // ever rates 6 and up gets a chart that isn't mostly empty air.
+  const [showDistEdit, setShowDistEdit] = useState(false);
+  const [distRange, setDistRange] = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("hp-dist-range"));
+      if (
+        RATING_STEPS.includes(raw?.from) &&
+        RATING_STEPS.includes(raw?.to) &&
+        raw.from < raw.to
+      ) {
+        return raw;
+      }
+    } catch {
+      /* nothing stored, or stored junk - fall through to the default */
+    }
+    return DEFAULT_DIST_RANGE;
+  });
+  useEffect(() => {
+    localStorage.setItem("hp-dist-range", JSON.stringify(distRange));
+  }, [distRange]);
+
   /* ---------- tile builders ---------- */
 
   const movieTile = useCallback(
@@ -545,9 +582,18 @@ export default function Home() {
       if (idx != null) book[idx]++;
     });
     const total = film.map((f, i) => f + tv[i] + book[i]);
-    const max = Math.max(1, ...total.slice(2));
-    return { film, tv, book, total, max };
+    return { film, tv, book, total };
   }, [userRatings, bookRatings]);
+
+  // The visible slice of the chart, scaled against its own busiest bucket so a
+  // narrowed range still uses the full height.
+  const distSteps = RATING_STEPS.filter(
+    (r) => r >= distRange.from && r <= distRange.to,
+  );
+  const distMax = Math.max(1, ...distSteps.map((r) => dist.total[r * 2]));
+  // With only a couple of whole numbers on screen there's room to label every
+  // half step; across the full scale that would be unreadable.
+  const labelEveryStep = distRange.to - distRange.from <= 3;
 
   /* ---------- decade breakdown: by release year, rated vs logged ---------- */
 
@@ -834,38 +880,25 @@ export default function Home() {
       if (dt.getMonth() === m && dt.getDate() === d && dt.getFullYear() < y)
         hits.push({ dt, ...build(dt) });
     };
+    // The row itself is carried through, not a flattened tile: the card below
+    // is the same one the Log page renders, so it wants the whole record.
     userRatings.forEach((r) =>
-      check(r.created_at, (dt) => ({
-        cover:
-          coverForTmdb(r.movie_object?.media_type, r.movie_object?.tmdb_id) ||
-          r.movie_object?.primaryImage,
+      check(r.created_at, () => ({
+        kind: "screen",
+        rating: r,
         title: r.movie_object?.primaryTitle,
-        line: `You rated this ${r.rating}/10 in ${dt.getFullYear()}`,
-        fit: "cover",
-        onClick: () =>
-          r.movie_object?.tmdb_id != null &&
-          navigate(
-            `/mediadetails/${r.movie_object.media_type}/${r.movie_object.tmdb_id}`,
-          ),
       })),
     );
     bookLogs.forEach((l) =>
-      check(l.end_date, (dt) => ({
-        cover:
-          coverForHardcover(l.book_entries?.hardcover_id) ||
-          l.book_entries?.cover_image,
+      check(l.end_date, () => ({
+        kind: "book",
+        log: l,
         title: stripSeries(l.book_entries?.title),
-        line: `You finished this in ${dt.getFullYear()}`,
-        fit: "contain",
-        onClick: () => {
-          const route = bookDetailsRouteForBook(l.book_entries);
-          if (route) navigate(route, { state: { book: l.book_entries } });
-        },
       })),
     );
     hits.sort((a, b) => b.dt - a.dt);
     return hits[0] || null;
-  }, [userRatings, bookLogs, navigate, coverForTmdb, coverForHardcover]);
+  }, [userRatings, bookLogs]);
 
   /* ---------- recent strips ---------- */
 
@@ -1182,6 +1215,44 @@ export default function Home() {
         ))}
       </div>
 
+      {/* on this day - the same card the Log page shows, minus the note */}
+      {onThisDay && (
+        <Section
+          label="On This Day"
+          hint={yearsAgo(onThisDay.dt)}
+          action={
+            <button
+              type="button"
+              className="hp-fav-edit"
+              onClick={goLog(onThisDay.title)}
+            >
+              <span>Go to log</span>
+              <ArrowRight size={13} />
+            </button>
+          }
+        >
+          <div className="hp-otd">
+            {onThisDay.kind === "screen" ? (
+              <ListComponent
+                movie_object={onThisDay.rating.movie_object}
+                betweenSlot={
+                  <AddToList movie={onThisDay.rating.movie_object} />
+                }
+                ratingDate={onThisDay.rating.created_at}
+                ratingUpdatedDate={onThisDay.rating.updated_at}
+                ratingPreviousValue={onThisDay.rating.previous_rating}
+                ratingDateUnknown={onThisDay.rating.date_unknown}
+                posterEditable={onThisDay.rating.movie_object?.tmdb_id != null}
+                posterEntryId={onThisDay.rating.movie_entry_id}
+                ratingHistory={onThisDay.rating.rating_history}
+              />
+            ) : (
+              <BookLogCard bookLog={onThisDay.log} hideNotes />
+            )}
+          </div>
+        </Section>
+      )}
+
       <div className="hp-two-col">
         <div className="hp-col-left">
           {/* currently watching / reading */}
@@ -1358,10 +1429,30 @@ export default function Home() {
       </Section>
 
       {/* ratings distribution */}
-      <Section label="Ratings Distribution">
+      <Section
+        label="Ratings Distribution"
+        hint={
+          distRange.from === DEFAULT_DIST_RANGE.from &&
+          distRange.to === DEFAULT_DIST_RANGE.to
+            ? undefined
+            : `${distRange.from}–${distRange.to}`
+        }
+        action={
+          <button
+            type="button"
+            className="hp-fav-edit"
+            onClick={() => setShowDistEdit(true)}
+            aria-label="Customise rating range"
+            title="Customise rating range"
+          >
+            <Pencil size={13} />
+            <span>Customise</span>
+          </button>
+        }
+      >
         <div className="hp-chart">
           <div className="hp-chart-bars">
-            {Array.from({ length: 19 }, (_, i) => 1 + i * 0.5).map((rating) => {
+            {distSteps.map((rating) => {
               const idx = rating * 2;
               const total = dist.total[idx];
               const active = hoverRating === rating;
@@ -1411,16 +1502,15 @@ export default function Home() {
                     <div
                       className="hp-bar hp-bar-all"
                       style={{
-                        height: `${(total / dist.max) * 100}%`,
+                        height: `${(total / distMax) * 100}%`,
                         background: active
                           ? `hsl(${hue}, 70%, 58%)`
                           : `hsl(${hue}, 65%, 48%)`,
                       }}
                     />
                   </div>
-                  {/* 19 columns - only label whole numbers to avoid crowding */}
                   <div className="hp-chart-x">
-                    {Number.isInteger(rating) ? rating : ""}
+                    {labelEveryStep || Number.isInteger(rating) ? rating : ""}
                   </div>
                 </div>
               );
@@ -1527,35 +1617,6 @@ export default function Home() {
         <CoverStrip tiles={recentTbr} empty="TBR is empty." />
       </Section>
 
-      {/* on this day */}
-      {onThisDay && (
-        <Section label="On This Day">
-          <div
-            className="hp-otd"
-            onClick={onThisDay.onClick}
-            style={{ cursor: onThisDay.onClick ? "pointer" : "default" }}
-          >
-            <div className="hp-otd-poster">
-              <img
-                src={onThisDay.cover || "/images/placeholderimage.jpg"}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                style={{ objectFit: onThisDay.fit }}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/images/placeholderimage.jpg";
-                }}
-              />
-            </div>
-            <div className="hp-otd-text">
-              <div className="hp-otd-title">{onThisDay.title}</div>
-              <div className="hp-otd-line">{onThisDay.line}</div>
-            </div>
-          </div>
-        </Section>
-      )}
-
       {/* shows with a new season marked on the watchlist */}
       {newSeasonShows.length > 0 && (
         <Section label="New Seasons To Watch/Released/Coming Soon" panel>
@@ -1578,6 +1639,68 @@ export default function Home() {
           <div className="hp-sub-label">Books</div>
           <CoverStrip tiles={dnfBookLogs} empty="No DNFed books." />
         </Section>
+      )}
+
+      {/* ratings distribution range editor */}
+      {showDistEdit && (
+        <div
+          className="hp-rec-modal-backdrop"
+          onClick={() => setShowDistEdit(false)}
+          role="button"
+          tabIndex={-1}
+        >
+          <div className="hp-rec-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="hp-rec-close"
+              onClick={() => setShowDistEdit(false)}
+              aria-label="Close"
+            >
+              {String.fromCharCode(0x00d7)}
+            </button>
+            <div className="hp-fav-title">Ratings shown</div>
+            <div className="hp-dist-range">
+              <label>
+                From
+                <select
+                  value={distRange.from}
+                  onChange={(e) =>
+                    setDistRange((r) => ({ ...r, from: Number(e.target.value) }))
+                  }
+                >
+                  {RATING_STEPS.filter((r) => r < distRange.to).map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="hp-dist-dash">–</span>
+              <label>
+                To
+                <select
+                  value={distRange.to}
+                  onChange={(e) =>
+                    setDistRange((r) => ({ ...r, to: Number(e.target.value) }))
+                  }
+                >
+                  {RATING_STEPS.filter((r) => r > distRange.from).map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="hp-dist-reset"
+              onClick={() => setDistRange(DEFAULT_DIST_RANGE)}
+            >
+              Reset to 1–10
+            </button>
+          </div>
+        </div>
       )}
 
       {/* pick-your-own favourites editor */}

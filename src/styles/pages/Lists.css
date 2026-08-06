@@ -822,7 +822,14 @@
 .lv-magic-chip-group {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.35rem;
+}
+
+/* Brackets around a nested group, so "A AND (B OR C)" reads right. */
+.lv-magic-paren {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .lv-magic-join {
@@ -887,19 +894,56 @@
   gap: 0.45rem;
 }
 
-/* join | NOT | field | op | value | ✕ — the two flexible columns share
+/* NOT | field | op | value | ✕ — the two flexible columns share
    leftover space so long labels ("Director / creator") never get clipped. */
 .magic-rule {
   display: grid;
-  grid-template-columns: 46px auto minmax(0, 1.3fr) 86px minmax(0, 1fr) 26px;
+  grid-template-columns: auto minmax(0, 1.3fr) 86px minmax(0, 1fr) 26px;
   gap: 0.4rem;
   align-items: center;
 }
 
-/* AND/OR chain toggle at the start of each rule row (blank on the first). */
+/* A group box: its own ALL/ANY choice plus everything it applies to. */
+.magic-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* Nested groups are indented and outlined, so the shape of the logic is
+   visible without anyone having to read brackets. */
+.magic-group-nested {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 2px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.magic-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.magic-group-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.magic-form .magic-group-remove {
+  margin-left: auto;
+}
+
+.magic-group-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ALL/ANY toggle at the head of a group. */
 .magic-form .magic-join {
   height: 36px;
-  padding: 0;
+  padding: 0 10px;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -927,12 +971,6 @@
   background-color: rgba(240, 150, 40, 0.28);
 }
 
-.magic-form .magic-join-first {
-  background: none;
-  border: none;
-  cursor: default;
-}
-
 .magic-rule select,
 .magic-value {
   width: 100%;
@@ -942,24 +980,24 @@
 /* Fields whose only operator is folded into their label ("Cast contains")
    drop the op column entirely. */
 .magic-rule-noop {
-  grid-template-columns: 46px auto minmax(0, 1.1fr) minmax(0, 1.2fr) 26px;
+  grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1.2fr) 26px;
 }
 
 @media (max-width: 560px) {
-  /* stack: join+NOT+field on top, op+value+remove below */
+  /* stack: NOT+field on top, op+value+remove below */
   .magic-rule,
   .magic-rule-noop {
-    grid-template-columns: 44px auto minmax(0, 1fr) 26px;
+    grid-template-columns: auto minmax(0, 1fr) 26px;
   }
   .magic-rule > select:first-of-type {
-    grid-column: 3 / 5;
+    grid-column: 2 / 4;
   }
   .magic-op {
-    grid-column: 1 / 3;
+    grid-column: 1 / 2;
   }
   .magic-rule-noop > .magic-value,
   .magic-rule-noop > .magic-person {
-    grid-column: 1 / 4;
+    grid-column: 1 / 3;
   }
 }
 
@@ -1022,6 +1060,15 @@
 
 .magic-form .magic-add-rule:hover {
   border-color: rgba(255, 255, 255, 0.35);
+}
+
+.magic-form .magic-add-group {
+  color: #c4b0ff;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.magic-form .magic-add-group:hover {
+  border-color: rgba(139, 92, 246, 0.7);
 }
 
 .magic-preview {
@@ -1432,4 +1479,188 @@
   .lists-header-actions {
     position: static;
   }
+}
+
+/* ---------- folders (the file-explorer view) ---------- */
+
+.lists-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: #3a3a3a;
+}
+
+.lists-folder-btn:hover {
+  background-color: #4a4a4a;
+}
+
+/* Loose lists, and the place a list lands when dragged out of a folder. */
+.lists-root {
+  width: 100%;
+  border: 1px dashed transparent;
+  border-radius: 12px;
+  padding: 2px;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.lists-root-empty {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.45));
+}
+
+.lists-drop-over {
+  border-color: var(--app-accent);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.lists-folder {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.6rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.lists-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0.35rem 0.6rem;
+}
+
+.lists-folder-toggle,
+.lists-folder-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim, rgba(255, 255, 255, 0.55));
+  cursor: pointer;
+  outline: none;
+  transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.lists-folder-toggle:hover,
+.lists-folder-action:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Chevron points right when collapsed, down when open. */
+.lists-folder-toggle {
+  transform: rotate(-90deg);
+}
+
+.lists-folder-toggle.open {
+  transform: none;
+}
+
+.lists-folder-icon {
+  color: var(--text-dim, rgba(255, 255, 255, 0.6));
+  flex-shrink: 0;
+}
+
+.lists-folder-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.lists-folder-rename {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  background-color: #2a2929;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  outline: none;
+}
+
+.lists-folder-date {
+  margin-left: auto;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  color: var(--text-dim, rgba(255, 255, 255, 0.45));
+}
+
+/* ---------- dragging a list ---------- */
+
+.list-card {
+  position: relative;
+}
+
+.list-card-grip {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background-color: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: grab;
+  opacity: 0;
+  outline: none;
+  /* Touch drags only fire pointermove if the handle opts out of scrolling. */
+  touch-action: none;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.list-card:hover .list-card-grip,
+.list-card-dragging .list-card-grip {
+  opacity: 1;
+}
+
+.list-card-dragging {
+  z-index: 30;
+  cursor: grabbing;
+  opacity: 0.85;
+  pointer-events: none;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.list-card-drop {
+  border-color: var(--app-accent);
+}
+
+.list-card-created {
+  white-space: nowrap;
+}
+
+.lists-modal-text {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-dim, rgba(255, 255, 255, 0.7));
+}
+
+.lists-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.lists-modal-actions .lists-create-btn {
+  position: static;
+}
+
+.lists-danger-btn {
+  background-color: #b3261e;
+}
+
+.lists-danger-btn:hover {
+  background-color: #d3342b;
 }

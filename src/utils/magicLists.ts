@@ -1,12 +1,17 @@
 // Magic lists: rule-driven lists built from the user's own library (logged,
 // rated and watchlisted/TBR titles — never the whole TMDB/Hardcover catalog,
-// which keeps them bounded). Rules are stored on lists.magic as
-// { rules: [{ field, op, value, not, join: "and" | "or" }] } where `join`
-// chains each rule to the previous one (ignored on the first rule). AND binds
-// tighter than OR, so "A AND B OR C" reads as (A AND B) OR C. Evaluated
-// client-side against the universe built by useMagicLibrary.
-// (Older lists stored a single top-level `combinator` instead of per-rule
-// joins; entryMatches still honours it as the default join.)
+// which keeps them bounded). Evaluated client-side against the universe built
+// by useMagicLibrary.
+//
+// Rules are stored on lists.magic as a tree, so "A AND (B OR C)" is expressible
+// directly:
+//   { root: { type: "group", combinator: "and", children: [
+//       { field, op, value, not },
+//       { type: "group", combinator: "or", children: [rule, rule] },
+//   ] } }
+// Two older shapes are still read (see magicTree): a flat `rules` array whose
+// entries each carried a `join`, and, older still, one top-level `combinator`
+// for the whole list. Both meant OR-of-ANDs, which is what they convert to.
 
 import { movieToListItem, bookToListItem, mediaKey } from "../services/lists";
 import {
@@ -65,7 +70,49 @@ export function fieldMeta(field) {
 }
 
 export function newMagicRule() {
-  return { field: "type", op: "is", value: "movie", not: false, join: "and" };
+  return { field: "type", op: "is", value: "movie", not: false };
+}
+
+export function newMagicGroup(combinator = "or") {
+  return { type: "group", combinator, children: [newMagicRule()] };
+}
+
+export const isGroup = (node) => node?.type === "group";
+
+// The rule tree, whichever shape the list was saved in. Flat `rules` arrays
+// (with or without per-rule joins) always meant OR-of-ANDs, so they rebuild as
+// an OR of AND groups.
+export function magicTree(magic) {
+  if (magic?.root) return magic.root;
+  const rules = magic?.rules || [];
+  const fallback = magic?.combinator || "and";
+  const sections = [];
+  let current = [];
+  rules.forEach((r, i) => {
+    if (i > 0 && (r.join || fallback) === "or") {
+      sections.push(current);
+      current = [];
+    }
+    current.push(r);
+  });
+  if (current.length) sections.push(current);
+  if (sections.length === 1) {
+    return { type: "group", combinator: "and", children: sections[0] };
+  }
+  return {
+    type: "group",
+    combinator: "or",
+    children: sections.map((s) =>
+      s.length === 1 ? s[0] : { type: "group", combinator: "and", children: s },
+    ),
+  };
+}
+
+// Every rule in the tree, ignoring how they're grouped.
+export function magicRules(magic) {
+  const walk = (node) =>
+    isGroup(node) ? (node.children || []).flatMap(walk) : [node];
+  return walk(magicTree(magic));
 }
 
 const norm = (s) => String(s || "").toLowerCase().trim();
@@ -170,23 +217,23 @@ function ruleMatches(entry, rule) {
   return not ? !hit : hit;
 }
 
-// Split the rule chain on OR joins into groups of AND-ed rules, so AND binds
-// tighter than OR: "A AND B OR C" → (A AND B) OR C. A rule without its own
-// join falls back to the legacy top-level combinator (default "and").
+// The tree flattened to OR-of-ANDs: every group is a set of rules that must
+// all hold, and matching any one group is a match. Contradiction checks and
+// the global search both reason in this form. An AND of ORs multiplies out,
+// but rule counts here are a handful, so the expansion stays tiny.
 export function ruleGroups(magic) {
-  const rules = magic?.rules || [];
-  const fallback = magic?.combinator || "and";
-  const groups = [];
-  let current = [];
-  rules.forEach((r, i) => {
-    if (i > 0 && (r.join || fallback) === "or") {
-      groups.push(current);
-      current = [];
-    }
-    current.push(r);
-  });
-  if (current.length) groups.push(current);
-  return groups;
+  const expand = (node) => {
+    if (!isGroup(node)) return [[node]];
+    const parts = (node.children || []).map(expand).filter((p) => p.length);
+    if (!parts.length) return [];
+    if (node.combinator === "or") return parts.flat();
+    return parts.reduce(
+      (acc, alternatives) =>
+        acc.flatMap((so_far) => alternatives.map((alt) => [...so_far, ...alt])),
+      [[]],
+    );
+  };
+  return expand(magicTree(magic)).filter((g) => g.length);
 }
 
 export function entryMatches(entry, magic) {
@@ -244,24 +291,32 @@ export const FIELD_KINDS = {
 
 export const KIND_LABELS = { movie: "movies", tv: "TV shows", book: "books" };
 
-// The media kinds still possible for the rule at `index`, given the other
-// rules in its AND section. Drives the graying-out of field/type options so
-// contradictions can't be picked in the first place.
-export function allowedKindsForRule(magic, index) {
-  const rules = magic?.rules || [];
-  const fallback = magic?.combinator || "and";
-  let start = 0;
-  let end = rules.length;
-  rules.forEach((r, i) => {
-    if (i > 0 && (r.join || fallback) === "or") {
-      if (i <= index) start = i;
-      else end = Math.min(end, i);
+// Rules that always hold wherever this subtree does: a plain rule, or every
+// rule of an AND group of them. An OR branch guarantees nothing on its own.
+function certainRules(node) {
+  if (!isGroup(node)) return [node];
+  if (node.combinator === "or") return [];
+  return (node.children || []).flatMap(certainRules);
+}
+
+// The media kinds still possible for the rule at `path` (a list of child
+// indices from the root), given the rules that are certain to hold alongside
+// it. Drives the graying-out of field/type options so contradictions can't be
+// picked in the first place.
+export function allowedKindsForRule(root, path) {
+  const alongside = [];
+  let node = root;
+  for (const idx of path) {
+    if (isGroup(node) && node.combinator !== "or") {
+      (node.children || []).forEach((child, i) => {
+        if (i !== idx) alongside.push(...certainRules(child));
+      });
     }
-  });
+    node = node?.children?.[idx];
+    if (!node) break;
+  }
   let kinds = new Set(["movie", "tv", "book"]);
-  for (let i = start; i < end; i++) {
-    if (i === index) continue;
-    const r = rules[i];
+  for (const r of alongside) {
     if (r.field === "type") {
       if (r.not) {
         kinds.delete(r.value);
@@ -327,7 +382,7 @@ export const GLOBAL_MAX_ITEMS = 500;
 
 // Null when the rules are usable globally, else a message for the UI.
 export function validateGlobalRules(magic) {
-  const rules = magic?.rules || [];
+  const rules = magicRules(magic);
   const bad = rules.find((r) => !GLOBAL_FIELDS.has(r.field));
   if (bad) {
     return `"${fieldMeta(bad.field).label}" only works on library lists. Remove it or switch back to library scope.`;
@@ -347,7 +402,7 @@ export function validateGlobalRules(magic) {
     (g) => !g.some((r) => GLOBAL_SEED_FIELDS.has(r.field)),
   );
   if (anchorless) {
-    return "Each OR section of a global list needs a director, actor or author rule to anchor the search.";
+    return "Every OR branch of a global list needs a director, actor or author rule to anchor the search.";
   }
   return null;
 }

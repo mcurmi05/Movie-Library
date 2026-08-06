@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useRatings } from "../contexts/UserRatingsContext";
 import { useLogs } from "../contexts/UserLogsContext";
 import { useWatchlist } from "../contexts/UserWatchlistContext";
 import { useCovers } from "../contexts/UserCoversContext";
+import { useLetterboxdRating } from "../contexts/LetterboxdRatingsContext";
 import {
   searchMovies,
   getRecommendations,
@@ -85,6 +86,59 @@ function loadTemplate() {
   } catch {
     return { seeds: [], filters: { ...DEFAULT_FILTERS } };
   }
+}
+
+// One result poster with its rating badges. Letterboxd only covers movies, and
+// the provider coalesces every id asked for in the same tick into one query, so
+// a whole grid of these still costs a single request.
+function ResultCard({ m, onClick }) {
+  const lb = useLetterboxdRating(m.media_type === "movie" ? m.tmdb_id : null);
+  return (
+    <div className="dv-result" onClick={onClick}>
+      <div className="dv-result-poster">
+        <img
+          src={m.primaryImage || "/images/placeholderimage.jpg"}
+          alt={m.primaryTitle}
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/images/placeholderimage.jpg";
+          }}
+        />
+        {m._imdb && (
+          <span className="dv-result-badge">
+            <img
+              src="/images/imdbicon.png"
+              className="dv-result-badge-icon"
+              alt="IMDb"
+            />
+            {Number(m._imdb.rating).toFixed(1)}
+          </span>
+        )}
+        {lb?.rating != null && (
+          <span className="dv-result-badge dv-result-badge-lb">
+            <img
+              src="/images/letterboxdicon.png"
+              className="dv-result-badge-icon"
+              alt="Letterboxd"
+            />
+            {Number(lb.rating).toFixed(1)}
+          </span>
+        )}
+        {m._watchlisted && (
+          <span
+            className="dv-result-flag"
+            title="On your watchlist"
+            aria-label="On your watchlist"
+          >
+            <img src="/images/on-watchlist.png" alt="" />
+          </span>
+        )}
+      </div>
+      <span className="dv-result-title">{m.primaryTitle}</span>
+      <span className="dv-result-year">{m.startYear || ""}</span>
+    </div>
+  );
 }
 
 export default function Discovery() {
@@ -555,44 +609,11 @@ export default function Discovery() {
       {results !== null &&
         (() => {
           const card = (m) => (
-            <div
+            <ResultCard
               key={`${m.media_type}-${m.tmdb_id}`}
-              className="dv-result"
+              m={m}
               onClick={() => setRecInfo(m)}
-            >
-              <div className="dv-result-poster">
-                <img
-                  src={m.primaryImage || "/images/placeholderimage.jpg"}
-                  alt={m.primaryTitle}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/images/placeholderimage.jpg";
-                  }}
-                />
-                {m._imdb && (
-                  <span className="dv-result-badge">
-                    <img
-                      src="/images/imdbicon.png"
-                      className="dv-result-badge-icon"
-                      alt="IMDb"
-                    />
-                    {Number(m._imdb.rating).toFixed(1)}
-                  </span>
-                )}
-                {m._watchlisted && (
-                  <span
-                    className="dv-result-flag"
-                    title="On your watchlist"
-                    aria-label="On your watchlist"
-                  >
-                    <Bookmark size={13} />
-                  </span>
-                )}
-              </div>
-              <span className="dv-result-title">{m.primaryTitle}</span>
-              <span className="dv-result-year">{m.startYear || ""}</span>
-            </div>
+            />
           );
           return (
             <div className="dv-results">

@@ -40,6 +40,8 @@ import {
   computeGlobalSnapshots,
   diffMagicItems,
   describeRule,
+  magicTree,
+  isGroup,
 } from "../utils/magicLists";
 import { useMagicLibrary } from "../hooks/useMagicLibrary";
 import { useLogs } from "../contexts/UserLogsContext";
@@ -301,6 +303,33 @@ function AddResultRow({ result, added, busy, onAdd }) {
         {busy ? <Spinner /> : added ? "Added ✓" : "Add"}
       </span>
     </button>
+  );
+}
+
+// The list's rule tree as chips. A nested group is bracketed, so
+// "A AND (B OR C)" reads the way it was built.
+function MagicRuleChips({ node, depth }) {
+  if (!isGroup(node)) {
+    return <span className="lv-magic-chip">{describeRule(node)}</span>;
+  }
+  const join = node.combinator === "or" ? "OR" : "AND";
+  return (
+    <span className="lv-magic-chip-group">
+      {depth > 0 && <span className="lv-magic-paren">(</span>}
+      {(node.children || []).map((child, i) => (
+        <span key={i} className="lv-magic-chip-group">
+          {i > 0 && (
+            <span
+              className={`lv-magic-join${join === "OR" ? " lv-magic-join-or" : ""}`}
+            >
+              {join}
+            </span>
+          )}
+          <MagicRuleChips node={child} depth={depth + 1} />
+        </span>
+      ))}
+      {depth > 0 && <span className="lv-magic-paren">)</span>}
+    </span>
   );
 }
 
@@ -1146,21 +1175,7 @@ export default function ListView() {
               )}
             </div>
             <div className="lv-magic-rules">
-              {(list.magic.rules || []).map((r, i) => {
-                const join = (r.join || list.magic.combinator || "and").toUpperCase();
-                return (
-                  <span key={i} className="lv-magic-chip-group">
-                    {i > 0 && (
-                      <span
-                        className={`lv-magic-join${join === "OR" ? " lv-magic-join-or" : ""}`}
-                      >
-                        {join}
-                      </span>
-                    )}
-                    <span className="lv-magic-chip">{describeRule(r)}</span>
-                  </span>
-                );
-              })}
+              <MagicRuleChips node={magicTree(list.magic)} depth={0} />
             </div>
             {isOwner && (
               <div className="lv-magic-actions">

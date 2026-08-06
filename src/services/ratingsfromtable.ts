@@ -24,29 +24,44 @@ const ENTRY_JOIN = "*, entry:media_entries!inner(*)";
 const movieObjectOf = (row) =>
   row?.entry ? movieRowToMovieObject(entryToMovieRow(row.entry)) : null;
 
-// Movie/TV rows for a user from one of the unified activity tables.
-const getScreenRows = async (table, userId) => {
-  const { data, error } = await supabase
-    .from(table)
-    .select(ENTRY_JOIN)
-    .eq("user_id", userId)
-    .in("entry.media_type", ["movie", "tv"])
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+// PostgREST caps a response at 1000 rows, so anything that fetches a whole
+// library has to page through. Keeps going until a short page comes back.
+const PAGE = 1000;
+const fetchAllPages = async (build) => {
+  const rows = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE) return rows;
+  }
 };
 
+// Movie/TV rows for a user from one of the unified activity tables.
+const getScreenRows = (table, userId) =>
+  fetchAllPages(() =>
+    supabase
+      .from(table)
+      .select(ENTRY_JOIN)
+      .eq("user_id", userId)
+      .in("entry.media_type", ["movie", "tv"])
+      .order("created_at", { ascending: false })
+      // Tiebreaker, so rows can't shuffle between pages and get skipped.
+      .order("id", { ascending: false }),
+  );
+
 // Book rows for a user from one of the unified activity tables.
-const getBookRows = async (table, userId) => {
-  const { data, error } = await supabase
-    .from(table)
-    .select(ENTRY_JOIN)
-    .eq("user_id", userId)
-    .eq("entry.media_type", "book")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
-};
+const getBookRows = (table, userId) =>
+  fetchAllPages(() =>
+    supabase
+      .from(table)
+      .select(ENTRY_JOIN)
+      .eq("user_id", userId)
+      .eq("entry.media_type", "book")
+      .order("created_at", { ascending: false })
+      // Tiebreaker, so rows can't shuffle between pages and get skipped.
+      .order("id", { ascending: false }),
+  );
 
 /* ---------- ratings (movies / tv) ---------- */
 
