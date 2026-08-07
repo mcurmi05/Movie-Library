@@ -3,10 +3,11 @@
 // film page (resolved via Letterboxd's /tmdb/{id}/ redirect), upserts the
 // result into the `letterboxd_ratings` cache, and returns it.
 //
-// ?action=reviews returns the popular reviews off the same film page instead
-// (nothing cached). Letterboxd's own review and histogram endpoints sit behind
-// a bot challenge, so the film page is the only thing we can read - it carries
-// twelve popular reviews, which is all we can offer.
+// ?action=reviews&page=N returns reviews instead (nothing cached): page 1 is
+// the twelve popular reviews off the film page, later pages come off
+// /film/{slug}/reviews/by/activity/page/N/. Letterboxd's histogram endpoint and
+// the reviews listing sit behind a bot challenge that only some IPs get past,
+// so a blocked listing page is reported as hasMore: false.
 //
 // Ratings stay on Letterboxd's native 0–5 scale.
 
@@ -87,7 +88,8 @@ function parseReview(block, slug) {
   if (!link || !author) return null;
 
   // The body sits between the review div and the like/comment actions; the
-  // markup in between is <p> paragraphs plus the odd link.
+  // markup in between is <p> paragraphs plus the odd link. Paragraph ends and
+  // <br> both carry line breaks the writer put there, so keep them.
   const bodyAt = block.indexOf("js-review-body");
   const endAt = block.indexOf('<div class="viewing-actions"', bodyAt);
   const body = bodyAt === -1 || endAt === -1 ? "" : block.slice(bodyAt, endAt);
@@ -95,6 +97,7 @@ function parseReview(block, slug) {
     body
       .slice(body.indexOf(">") + 1)
       .replace(/<\/p>/g, "\n\n")
+      .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<[^>]+>/g, "")
       .trim(),
   ).replace(/\n{3,}/g, "\n\n");
@@ -114,7 +117,19 @@ function parseReview(block, slug) {
   };
 }
 
-async function scrapeReviews(tmdbId) {
+function parseReviews(html, slug) {
+  return html
+    .split('<article class="production-viewing')
+    .slice(1)
+    .map((block) => parseReview(block.slice(0, block.indexOf("</article>")), slug))
+    .filter(Boolean);
+}
+
+// Page 1 is the film page's popular reviews; anything past that comes off the
+// paginated reviews listing, which is ordered the same way. Cloudflare guards
+// the listing more tightly than the film page, so a blocked page is reported as
+// "no more reviews" and the UI just stops offering to load them.
+async function scrapeReviews(tmdbId, page) {
   const res = await fetch(`https://letterboxd.com/tmdb/${tmdbId}/`, {
     headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
     redirect: "follow",
@@ -122,12 +137,26 @@ async function scrapeReviews(tmdbId) {
   if (!res.ok || !res.url.includes("/film/")) return null;
 
   const slug = new URL(res.url).pathname.replace(/^\/film\//, "").replace(/\/$/, "");
-  const html = await res.text();
-  return html
-    .split('<div class="listitem js-listitem">')
-    .slice(1)
-    .map((block) => parseReview(block.slice(0, block.indexOf("</article>")), slug))
-    .filter(Boolean);
+  if (page <= 1) {
+    const reviews = parseReviews(await res.text(), slug);
+    return { reviews, hasMore: reviews.length > 0, slug };
+  }
+
+  const listing = await fetch(
+    `https://letterboxd.com/film/${slug}/reviews/by/activity/page/${page}/`,
+    {
+      headers: {
+        "User-Agent": UA,
+        "Accept-Language": "en-US,en;q=0.9",
+        Referer: `https://letterboxd.com/film/${slug}/`,
+      },
+    },
+  );
+  if (!listing.ok) return { reviews: [], hasMore: false, slug };
+
+  const html = await listing.text();
+  const reviews = parseReviews(html, slug);
+  return { reviews, hasMore: reviews.length > 0 && html.includes('class="next"'), slug };
 }
 
 async function cacheRow(row) {
@@ -162,10 +191,15 @@ export default async function handler(req, res) {
 
   try {
     if (action === "reviews") {
-      const reviews = await scrapeReviews(tmdbId);
-      if (!reviews) return res.status(404).json({ error: "Film not found" });
+      const page =
+        Number(
+          req.query?.page ||
+            (req.url && new URL(req.url, "http://x").searchParams.get("page")),
+        ) || 1;
+      const result = await scrapeReviews(tmdbId, page);
+      if (!result) return res.status(404).json({ error: "Film not found" });
       res.setHeader("Cache-Control", "no-store");
-      return res.status(200).json({ reviews });
+      return res.status(200).json(result);
     }
 
     const row = await scrapeRating(tmdbId);

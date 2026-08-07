@@ -217,7 +217,39 @@
 }
 
 .xr-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-variant-numeric: tabular-nums;
+}
+
+.xr-star {
+  width: 12px;
+  height: 12px;
+}
+
+/* Same recolour trick as .letterboxd-star: flatten the yellow star to black,
+   then tint it Letterboxd green (#00e054). */
+.xr-star.is-letterboxd {
+  filter: brightness(0) saturate(100%) invert(64%) sepia(72%) saturate(2200%)
+    hue-rotate(86deg) brightness(97%) contrast(101%);
+}
+
+.xr-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.xr-heart {
+  width: 12px;
+  height: 12px;
+  fill: #f5c518; /* IMDb yellow */
+}
+
+.xr-likes.is-letterboxd .xr-heart {
+  fill: #ff9010; /* Letterboxd like orange */
 }
 
 .xr-link {

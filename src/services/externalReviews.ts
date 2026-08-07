@@ -78,11 +78,19 @@ export async function getImdbReviews(
   return requestJson(`/api/imdb?${params}`);
 }
 
-// Letterboxd only exposes its twelve popular reviews to us (everything else is
-// behind a bot challenge), so this comes back as one page with no cursor.
+// Letterboxd pages by number rather than cursor: page 1 is the film page's
+// popular reviews, the rest come off the reviews listing. `hasMore` is false as
+// soon as a page comes back empty or blocked.
 export async function getLetterboxdReviews(
   tmdbId: number,
-): Promise<ExternalReview[]> {
-  const body = await requestJson(`/api/letterboxd?action=reviews&tmdb_id=${tmdbId}`);
-  return body.reviews || [];
+  page = 1,
+): Promise<{ reviews: ExternalReview[]; hasMore: boolean; slug: string | null }> {
+  const body = await requestJson(
+    `/api/letterboxd?action=reviews&tmdb_id=${tmdbId}&page=${page}`,
+  );
+  return {
+    reviews: body.reviews || [],
+    hasMore: !!body.hasMore,
+    slug: body.slug ?? null,
+  };
 }

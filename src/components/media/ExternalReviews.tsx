@@ -18,14 +18,18 @@ const LB_RATINGS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5];
 
 // Reviews from IMDb and Letterboxd, fetched live (never cached - they change
 // too often to be worth a table). IMDb pages through a cursor for as long as it
-// has more; Letterboxd only hands over the twelve reviews on the film page
-// (everything deeper is behind a bot challenge), so once those run out we link
-// out to the site instead.
+// has more; Letterboxd pages by number, starting with the twelve on the film
+// page and continuing through the reviews listing. If a listing page comes back
+// blocked we stop offering more and link out to the site instead.
+
+const sortByLikes = (reviews) =>
+  [...reviews].sort((a, b) => (b.likes || 0) - (a.likes || 0));
 
 function ReviewCard({ review, source }) {
   const [expanded, setExpanded] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const hidden = review.spoiler && !revealed;
+  const isLb = source === "letterboxd";
 
   return (
     <article className="xr-card">
@@ -33,13 +37,21 @@ function ReviewCard({ review, source }) {
         <span className="xr-author">{review.author}</span>
         {review.rating != null && (
           <span className="xr-rating">
-            {source === "letterboxd"
-              ? `★ ${review.rating}`
-              : `${review.rating}/10`}
+            <img
+              src="/images/staricon.png"
+              className={`xr-star${isLb ? " is-letterboxd" : ""}`}
+              alt=""
+            />
+            {isLb ? review.rating : `${review.rating}/10`}
           </span>
         )}
         {review.likes ? (
-          <span className="xr-likes">{review.likes.toLocaleString()} likes</span>
+          <span className={`xr-likes${isLb ? " is-letterboxd" : ""}`}>
+            <svg className="xr-heart" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20.7 3.9 12.6a5 5 0 0 1 7.1-7.1l1 1 1-1a5 5 0 0 1 7.1 7.1z" />
+            </svg>
+            {review.likes.toLocaleString()}
+          </span>
         ) : null}
         <a
           className="xr-link"
@@ -55,7 +67,7 @@ function ReviewCard({ review, source }) {
 
       {hidden ? (
         <button className="xr-spoiler" onClick={() => setRevealed(true)}>
-          This review contains spoilers — click to show
+          This review contains spoilers, click to show
         </button>
       ) : (
         <p className={`xr-text${expanded ? "" : " is-clamped"}`}>
@@ -92,7 +104,7 @@ function ExternalReviews({
   const [rating, setRating] = useState("");
 
   const [imdb, setImdb] = useState(null); // { reviews, cursor, hasMore }
-  const [lb, setLb] = useState(null); // full list, revealed in slices
+  const [lb, setLb] = useState(null); // { reviews, page, hasMore, slug }
   const [lbShown, setLbShown] = useState(PAGE);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -134,11 +146,16 @@ function ExternalReviews({
       source === "imdb"
         ? loadImdb().then((page) => !cancelled && setImdb(page))
         : getLetterboxdReviews(tmdbId).then(
-            // Letterboxd's own order is "popular", which is close to but not
-            // exactly likes; sort it properly here.
-            (reviews) =>
+            (page) =>
               !cancelled &&
-              setLb([...reviews].sort((a, b) => (b.likes || 0) - (a.likes || 0))),
+              setLb({
+                // Letterboxd's own order is "popular", which is close to but
+                // not exactly likes; sort it properly here.
+                reviews: sortByLikes(page.reviews),
+                page: 1,
+                hasMore: page.hasMore,
+                slug: page.slug,
+              }),
           );
     request
       .catch(() => !cancelled && setError("Couldn't load reviews."))
@@ -150,7 +167,34 @@ function ExternalReviews({
 
   const loadMore = async () => {
     if (source === "letterboxd") {
-      setLbShown((n) => n + PAGE);
+      // Reveal what is already loaded first; only go back to Letterboxd once
+      // the pool runs dry, so the button behaves the same either way.
+      if (lb.reviews.length > lbShown) {
+        setLbShown((n) => n + PAGE);
+        return;
+      }
+      setLoading(true);
+      try {
+        const next = await getLetterboxdReviews(tmdbId, lb.page + 1);
+        setLb((prev) => {
+          const seen = new Set(prev.reviews.map((r) => r.id));
+          return {
+            ...prev,
+            // Pages overlap when someone's review moves between them.
+            reviews: [
+              ...prev.reviews,
+              ...sortByLikes(next.reviews.filter((r) => !seen.has(r.id))),
+            ],
+            page: prev.page + 1,
+            hasMore: next.hasMore,
+          };
+        });
+        setLbShown((n) => n + PAGE);
+      } catch {
+        setError("Couldn't load more reviews.");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     setLoading(true);
@@ -170,14 +214,16 @@ function ExternalReviews({
   if (!imdbId && !hasLetterboxd) return null;
 
   const isLb = source === "letterboxd";
-  const filteredLb = (lb || []).filter(
+  const filteredLb = (lb?.reviews || []).filter(
     (r) => !rating || r.rating === Number(rating),
   );
   const reviews = isLb ? filteredLb.slice(0, lbShown) : imdb?.reviews || [];
-  const hasMore = isLb ? filteredLb.length > lbShown : !!imdb?.hasMore;
+  const hasMore = isLb
+    ? filteredLb.length > lbShown || !!lb?.hasMore
+    : !!imdb?.hasMore;
   // Where to send anyone who wants to keep scrolling past what we can show.
   const allReviewsUrl = isLb
-    ? lb?.[0]?.slug && `https://letterboxd.com/film/${lb[0].slug}/reviews/by/activity/`
+    ? lb?.slug && `https://letterboxd.com/film/${lb.slug}/reviews/by/activity/`
     : imdbId && `https://www.imdb.com/title/${imdbId}/reviews/`;
 
   return (
