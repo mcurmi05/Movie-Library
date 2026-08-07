@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronDown,
@@ -70,17 +77,29 @@ const SORT_OPTIONS = [
 
 // The drop zone under the pointer. Rects are hit-tested by hand rather than
 // with elementFromPoint, which would only ever return the card being dragged.
-// Cards sit inside folders, so the innermost match wins.
-function dropTargetAt(x, y) {
+// Cards sit inside folders, so the innermost match wins. The dragged card
+// still holds a slot in the grid as the gap it will drop into; hovering that
+// gap reports `self`, which leaves the pending drop where it already is
+// instead of flipping it to whatever band sits behind the gap.
+// `rects` holds each card's settled layout box: cards mid-reflow are part way
+// through an animation, and hit-testing where they are drawn rather than
+// where they belong would bounce the drop back and forth.
+function dropTargetAt(x, y, dragId, rects) {
   let hit = null;
+  let overSelf = false;
   document.querySelectorAll("[data-drop]").forEach((el) => {
-    const rect = el.getBoundingClientRect();
+    const rect =
+      rects.get(el.getAttribute("data-drop")) || el.getBoundingClientRect();
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom)
       return;
     const key = el.getAttribute("data-drop");
+    if (key === `card:${dragId}`) {
+      overSelf = true;
+      return;
+    }
     if (!hit || key.startsWith("card:")) hit = { key, rect };
   });
-  return hit;
+  return overSelf ? { self: true } : hit;
 }
 
 function ListCard({
@@ -89,9 +108,10 @@ function ListCard({
   saved,
   saveCount = 0,
   dragging = false,
-  isDropTarget = false,
-  offset = null,
+  ghost = false,
   onGripDown,
+  onCardDown,
+  onCardClick,
 }) {
   const { coverForTmdb, coverForHardcover } = useCovers();
   const count = itemCount(list);
@@ -107,15 +127,15 @@ function ListCard({
   return (
     <Link
       to={`/lists/${list.id}`}
-      data-drop={`card:${list.id}`}
-      className={`list-card${dragging ? " list-card-dragging" : ""}${
-        isDropTarget ? " list-card-drop" : ""
-      }`}
-      style={
-        dragging && offset
-          ? { transform: `translate(${offset.x}px, ${offset.y}px)` }
-          : undefined
-      }
+      // The floating copy is not a drop zone; only the slot it left behind is.
+      data-drop={ghost ? undefined : `card:${list.id}`}
+      className={`list-card${dragging ? " list-card-dragging" : ""}`}
+      onPointerDown={onCardDown}
+      onClick={onCardClick}
+      draggable={false}
+      // A press anywhere on the card is a list drag; the browser's own drag
+      // of the link and the poster images would fight it.
+      onDragStart={(e) => e.preventDefault()}
     >
       <button
         type="button"
@@ -179,6 +199,14 @@ function ListCard({
             {saveCount}
           </span>
         </p>
+        <span className="list-card-dates">
+          <span className="list-card-updated">
+            updated {timeAgo(list.updated_at)}
+          </span>
+          <span className="list-card-created">
+            created {shortDate(list.created_at)}
+          </span>
+        </span>
         {list.description && (
           <p className="list-card-desc">{list.description}</p>
         )}
@@ -214,12 +242,6 @@ function ListCard({
           </span>
         )}
         {saved && <span className="list-card-saved">Saved</span>}
-        <span className="list-card-updated">
-          updated {timeAgo(list.updated_at)}
-        </span>
-        <span className="list-card-created">
-          created {shortDate(list.created_at)}
-        </span>
       </div>
     </Link>
   );
@@ -252,8 +274,21 @@ export default function Lists() {
   // handler doesn't re-subscribe on every frame.
   const dragRef = useRef(null);
   const [dragId, setDragId] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [dropKey, setDropKey] = useState(null);
+  // Where the floating copy of the dragged card is drawn, and where the card
+  // would land if the pointer were released now.
+  // The floating copy: mounted from state, but moved by writing to the node
+  // directly, so following the pointer costs no re-render.
+  const [ghost, setGhost] = useState(null);
+  const ghostRef = useRef(null);
+  const settleTimerRef = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const previewRef = useRef(null);
+  // A press on a card that has not become a drag yet, and when the last drag
+  // finished, which decides whether the release counts as a click.
+  const pendingRef = useRef(null);
+  const draggedAtRef = useRef(0);
+  // Where every card sat on the last render, for the reflow animation.
+  const cardRectsRef = useRef(new Map());
 
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
@@ -389,6 +424,32 @@ export default function Lists() {
     return map;
   }, [visibleLists, folders, placements, sortKey]);
 
+  // What the grids draw mid-drag: the dragged list already sits in the slot
+  // it would land in, so the cards shifting around the pointer are the
+  // preview of the drop.
+  const previewGroups = useMemo(() => {
+    const dragged =
+      dragId != null && preview
+        ? visibleLists.find((l) => l.id === dragId)
+        : null;
+    if (!dragged) return grouped;
+    const next = new Map();
+    grouped.forEach((arr, key) =>
+      next.set(
+        key,
+        arr.filter((l) => l.id !== dragId),
+      ),
+    );
+    const dest = [...(next.get(preview.folderId) || [])];
+    const at =
+      preview.index == null
+        ? dest.length
+        : Math.min(Math.max(preview.index, 0), dest.length);
+    dest.splice(at, 0, dragged);
+    next.set(preview.folderId, dest);
+    return next;
+  }, [grouped, dragId, preview, visibleLists]);
+
   // Move a list into `folderId` at `index` (end of the folder when null), then
   // renumber both the folder it landed in and the one it came from.
   const moveList = useCallback(
@@ -426,59 +487,168 @@ export default function Lists() {
     [grouped, placements, user],
   );
 
+  // The floating copy keeps the grab point exactly under the pointer, so the
+  // cards reflowing underneath it never drag it off course.
+  const beginDrag = (id, x, y, rect) => {
+    dragRef.current = {
+      id,
+      grabX: x - rect.left,
+      grabY: y - rect.top,
+      width: rect.width,
+    };
+    // A drag started while the last one is still gliding home takes over.
+    clearTimeout(settleTimerRef.current);
+    setDragId(id);
+    setGhost({ id, left: rect.left, top: rect.top, width: rect.width });
+    previewRef.current = null;
+    setPreview(null);
+  };
+
+  const positionGhost = (left, top) => {
+    const el = ghostRef.current;
+    if (!el) return;
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+  };
+
   const startDrag = (id) => (e) => {
     if (e.button != null && e.button !== 0) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture?.(e.pointerId);
-    dragRef.current = { id, startX: e.clientX, startY: e.clientY };
-    setDragId(id);
-    setDragOffset({ x: 0, y: 0 });
+    beginDrag(
+      id,
+      e.clientX,
+      e.clientY,
+      e.currentTarget.closest(".list-card").getBoundingClientRect(),
+    );
+  };
+
+  // Pressing the card itself drags it too: a mouse starts once the pointer
+  // has moved a few pixels, a finger after a hold, so a tap still opens the
+  // list and a swipe still scrolls the page.
+  const clearPending = () => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    window.removeEventListener("pointermove", pending.onMove);
+    window.removeEventListener("pointerup", pending.onEnd);
+    window.removeEventListener("pointercancel", pending.onEnd);
+    pendingRef.current = null;
+  };
+
+  const startCardPress = (id) => (e) => {
+    if (e.button != null && e.button !== 0) return;
+    // The grip runs its own immediate drag.
+    if (e.target.closest?.(".list-card-grip")) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touch = e.pointerType !== "mouse";
+    const pending = {
+      id,
+      x: e.clientX,
+      y: e.clientY,
+      rect,
+      timer: null,
+      onMove: null,
+      onEnd: null,
+    };
+    pending.onMove = (ev) => {
+      const dist = Math.hypot(ev.clientX - pending.x, ev.clientY - pending.y);
+      if (touch) {
+        // Moving before the hold lands means they meant to scroll.
+        if (dist > 10) clearPending();
+      } else if (dist > 5) {
+        clearPending();
+        beginDrag(id, ev.clientX, ev.clientY, rect);
+      }
+    };
+    pending.onEnd = clearPending;
+    if (touch) {
+      pending.timer = setTimeout(() => {
+        clearPending();
+        beginDrag(id, pending.x, pending.y, rect);
+      }, 300);
+    }
+    window.addEventListener("pointermove", pending.onMove);
+    window.addEventListener("pointerup", pending.onEnd);
+    window.addEventListener("pointercancel", pending.onEnd);
+    pendingRef.current = pending;
+  };
+
+  // A drag ends on the card it was dropped on, whose link would otherwise
+  // open; the release is swallowed rather than followed.
+  const handleCardClick = (e) => {
+    if (Date.now() - draggedAtRef.current < 300) e.preventDefault();
   };
 
   useEffect(() => {
     if (dragId == null) return;
+    // Folder and slot the pointer is over, in the same shape moveList takes.
+    const placementFor = (target, dragId, x) => {
+      const [kind, value] = target.key.split(":");
+      if (kind === "card") {
+        const overFolder = placements.get(value)?.folder_id ?? null;
+        const dest = (grouped.get(overFolder) || [])
+          .map((l) => l.id)
+          .filter((x2) => x2 !== dragId);
+        const idx = dest.indexOf(value);
+        return {
+          folderId: overFolder,
+          // Past the card's midpoint means the list lands after it.
+          index:
+            idx === -1
+              ? dest.length
+              : x > target.rect.left + target.rect.width / 2
+                ? idx + 1
+                : idx,
+        };
+      }
+      return { folderId: kind === "folder" ? value : null, index: null };
+    };
+
     const move = (e) => {
       const drag = dragRef.current;
       if (!drag) return;
       e.preventDefault();
-      setDragOffset({ x: e.clientX - drag.startX, y: e.clientY - drag.startY });
-      setDropKey(dropTargetAt(e.clientX, e.clientY)?.key ?? null);
+      positionGhost(e.clientX - drag.grabX, e.clientY - drag.grabY);
+      const target = dropTargetAt(
+        e.clientX,
+        e.clientY,
+        drag.id,
+        cardRectsRef.current,
+      );
+      if (!target || target.self) return;
+      const next = placementFor(target, drag.id, e.clientX);
+      previewRef.current = next;
+      setPreview(next);
     };
-    const up = (e) => {
+    const up = () => {
       const drag = dragRef.current;
+      const landing = previewRef.current;
+      // The slot the preview left open is exactly where the card belongs, so
+      // the floating copy glides into it instead of blinking out mid-air.
+      const slot = drag && cardRectsRef.current.get(`card:${drag.id}`);
       dragRef.current = null;
+      previewRef.current = null;
+      draggedAtRef.current = Date.now();
       setDragId(null);
-      setDropKey(null);
-      if (!drag) return;
-      const target = dropTargetAt(e.clientX, e.clientY);
-      if (!target) return;
-      const [kind, value] = target.key.split(":");
-      if (kind === "card") {
-        if (value === drag.id) return;
-        const overFolder = placements.get(value)?.folder_id ?? null;
-        const dest = (grouped.get(overFolder) || [])
-          .map((l) => l.id)
-          .filter((x) => x !== drag.id);
-        const idx = dest.indexOf(value);
-        // Past the card's midpoint means the list is being dropped after it.
-        moveList(
-          drag.id,
-          overFolder,
-          idx === -1
-            ? dest.length
-            : e.clientX > target.rect.left + target.rect.width / 2
-              ? idx + 1
-              : idx,
-        );
-      } else if (kind === "folder") {
-        moveList(drag.id, value, null);
-      } else {
-        moveList(drag.id, null, null);
+      setPreview(null);
+      // The preview already shows where it goes, so the drop just commits it.
+      if (drag && landing) moveList(drag.id, landing.folderId, landing.index);
+      if (!slot) {
+        setGhost(null);
+        return;
       }
+      setGhost((prev) => prev && { ...prev, settling: true });
+      requestAnimationFrame(() => positionGhost(slot.left, slot.top));
+      settleTimerRef.current = setTimeout(() => setGhost(null), 200);
     };
+    // A hold-to-drag starts mid-gesture, so the page is still free to scroll
+    // under the finger until the touch stream itself is refused.
+    const blockScroll = (e) => e.preventDefault();
     window.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
+    window.addEventListener("touchmove", blockScroll, { passive: false });
     // Stop a touch drag scrolling the page and a mouse drag selecting text.
     const prevTouch = document.body.style.touchAction;
     const prevSelect = document.body.style.userSelect;
@@ -488,10 +658,45 @@ export default function Lists() {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
+      window.removeEventListener("touchmove", blockScroll);
       document.body.style.touchAction = prevTouch;
       document.body.style.userSelect = prevSelect;
     };
   }, [dragId, grouped, placements, moveList]);
+
+  // Cards jump straight to their new grid slot when the preview changes, so
+  // each one is put back where it was and animated across the gap.
+  useLayoutEffect(() => {
+    if (dragId == null) {
+      cardRectsRef.current = new Map();
+      return;
+    }
+    const seen = new Map();
+    const cards = [...document.querySelectorAll("[data-drop^='card:']")];
+    // Drop any animation still running first, so what gets measured is the
+    // real layout box and not a frame of the last move.
+    cards.forEach((el) => {
+      el.style.transition = "none";
+      el.style.transform = "";
+    });
+    cards.forEach((el) => {
+      const key = el.getAttribute("data-drop");
+      const rect = el.getBoundingClientRect();
+      seen.set(key, rect);
+      const was = cardRectsRef.current.get(key);
+      if (!was) return;
+      const dx = was.left - rect.left;
+      const dy = was.top - rect.top;
+      if (!dx && !dy) return;
+      el.style.transition = "none";
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 200ms var(--ease-out, ease)";
+        el.style.transform = "";
+      });
+    });
+    cardRectsRef.current = seen;
+  });
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
@@ -601,6 +806,10 @@ export default function Lists() {
   if (loading) return <Loader />;
   if (!isAuthenticated) return <SignIn />;
 
+  const draggedList = ghost
+    ? visibleLists.find((l) => l.id === ghost.id)
+    : null;
+
   const renderCard = (list) => (
     <ListCard
       key={list.id}
@@ -609,9 +818,9 @@ export default function Lists() {
       saved={savedIds.has(list.id)}
       saveCount={saveCounts.get(list.id) || 0}
       dragging={dragId === list.id}
-      isDropTarget={dropKey === `card:${list.id}`}
-      offset={dragId === list.id ? dragOffset : null}
       onGripDown={startDrag(list.id)}
+      onCardDown={startCardPress(list.id)}
+      onCardClick={handleCardClick}
     />
   );
 
@@ -731,29 +940,31 @@ export default function Lists() {
               <div
                 data-drop="root"
                 className={`lists-root${
-                  dropKey === "root" ? " lists-drop-over" : ""
+                  preview && preview.folderId === null ? " lists-drop-over" : ""
                 }`}
               >
-                {(grouped.get(null) || []).length === 0 ? (
+                {(previewGroups.get(null) || []).length === 0 ? (
                   <p className="lists-root-empty">
                     Drag a list here to take it out of its folder.
                   </p>
                 ) : (
                   <div className="lists-grid">
-                    {(grouped.get(null) || []).map((list) => renderCard(list))}
+                    {(previewGroups.get(null) || []).map((list) =>
+                      renderCard(list),
+                    )}
                   </div>
                 )}
               </div>
 
               {folders.map((folder) => {
-                const inFolder = grouped.get(folder.id) || [];
+                const inFolder = previewGroups.get(folder.id) || [];
                 const open = !collapsed.has(folder.id);
                 return (
                   <section
                     key={folder.id}
                     data-drop={`folder:${folder.id}`}
                     className={`lists-folder${
-                      dropKey === `folder:${folder.id}` ? " lists-drop-over" : ""
+                      preview?.folderId === folder.id ? " lists-drop-over" : ""
                     }`}
                   >
                     <div className="lists-folder-head">
@@ -830,6 +1041,22 @@ export default function Lists() {
             </>
           )}
         </>
+      )}
+
+      {draggedList && ghost && (
+        <div
+          ref={ghostRef}
+          className={`lists-drag-ghost${ghost.settling ? " is-settling" : ""}`}
+          style={{ left: ghost.left, top: ghost.top, width: ghost.width }}
+        >
+          <ListCard
+            list={draggedList}
+            previews={previews.get(draggedList.id) || []}
+            saved={savedIds.has(draggedList.id)}
+            saveCount={saveCounts.get(draggedList.id) || 0}
+            ghost
+          />
+        </div>
       )}
 
       {showMagic && (

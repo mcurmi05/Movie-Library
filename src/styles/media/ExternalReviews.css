@@ -64,6 +64,12 @@
   background: #00e054; /* Letterboxd green */
 }
 
+.rating-dist-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
 .rating-dist-label {
   font-size: 0.7rem;
   color: var(--muted-foreground);
@@ -140,6 +146,17 @@
   max-height: 75vh;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* On a phone the inner scroller swallows the gesture: it is nearly as tall as
+   the screen, and once it hits its end `contain` refuses to hand the scroll
+   back to the page. Reviews sit near the bottom anyway, so let them flow. */
+@media (max-width: 900px) {
+  .xr-list {
+    max-height: none;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
 }
 
 .xr-list::-webkit-scrollbar {

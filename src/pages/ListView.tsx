@@ -12,7 +12,10 @@ import {
   getMovieById,
   getBookByHardcoverId,
 } from "../services/api";
-import { findOrCreateBookEntry } from "../services/ratingsfromtable";
+import {
+  findOrCreateBookEntry,
+  getRatingForMovie,
+} from "../services/ratingsfromtable";
 import { getDisplayName } from "../utils/profile";
 import {
   getListWithItems,
@@ -74,6 +77,48 @@ import "../styles/pages/Rating.css";
 import "../styles/common/LogComponent.css";
 import "../styles/search/Toolbar.css";
 import "../styles/pages/Lists.css";
+
+// The progress bars, and which of them a list shows. A watchlist percentage
+// is noise on, say, a list of films you've already seen, so the owner picks.
+const STAT_ROWS = [
+  { key: "logged", label: "Logged" },
+  { key: "rated", label: "Rated" },
+  { key: "saved", label: "Watchlisted" },
+];
+
+const DEFAULT_STATS = { logged: true, rated: true, saved: true };
+
+// Poster view: the same grid the search page shows, with the caption under
+// each poster built from whichever details the list is set to carry.
+const POSTER_FIELDS = [
+  { key: "title", label: "Title" },
+  { key: "year", label: "Year" },
+  { key: "runtime", label: "Runtime" },
+  { key: "imdb", label: "IMDb rating" },
+  { key: "rating", label: "Your rating" },
+];
+
+const DEFAULT_VIEW = {
+  mode: "list",
+  fields: {
+    title: true,
+    year: true,
+    runtime: false,
+    imdb: false,
+    rating: false,
+  },
+};
+
+const mergeView = (stored) => ({
+  mode: stored?.mode === "poster" ? "poster" : "list",
+  fields: { ...DEFAULT_VIEW.fields, ...(stored?.fields || {}) },
+});
+
+const runtimeLabel = (minutes) => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h > 0 ? `${h}h` : ""}${h > 0 && m > 0 ? " " : ""}${m > 0 ? `${m}m` : ""}`;
+};
 
 // How the list was last sorted and filtered, per list, remembered between
 // visits. Ranked lists are the reason: their drag handles only show in List
@@ -333,6 +378,86 @@ function MagicRuleChips({ node, depth }) {
   );
 }
 
+// One poster in the grid view. Everything under the poster is optional: the
+// list decides which details are worth the space.
+function PosterTile({
+  item,
+  full,
+  fields,
+  rank,
+  imdbRating,
+  userRating,
+  isOwner,
+  onRemove,
+  removing,
+}) {
+  const navigate = useNavigate();
+  const { coverForTmdb, coverForHardcover } = useCovers();
+  const isBook = item.media_type === "book";
+  const d = full || item.item_data || {};
+  const b = isBook ? getBookInfo(d) : null;
+  const cover = isBook
+    ? coverForHardcover(b.hardcover_id) || b.cover_image
+    : coverForTmdb(d.media_type, d.tmdb_id) || d.primaryImage;
+  const title = isBook ? b.title : d.primaryTitle || d.title || "";
+  const year = isBook ? b.release_year : d.startYear;
+  const runtime = Number(d.runtimeMinutes);
+
+  const open = () => {
+    if (isBook) {
+      const route = bookDetailsRouteForBook(b);
+      if (route) navigate(route, { state: { book: d } });
+    } else if (d.tmdb_id != null) {
+      navigate(`/mediadetails/${d.media_type}/${d.tmdb_id}`);
+    }
+  };
+
+  const meta = [];
+  if (fields.year && year) meta.push(String(year));
+  if (fields.runtime && !isBook && Number.isFinite(runtime) && runtime > 0)
+    meta.push(runtimeLabel(runtime));
+  if (fields.imdb && imdbRating != null)
+    meta.push(`IMDb ${imdbRating.toFixed(1)}`);
+  if (fields.rating && userRating != null) meta.push(`★ ${userRating}`);
+
+  return (
+    <div className="lv-poster-tile">
+      {rank != null && <span className="lv-rank lv-poster-rank">{rank}</span>}
+      <div
+        className="lv-poster-img"
+        onClick={open}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && open()}
+        title={title}
+      >
+        <img
+          src={cover || "/images/placeholderimage.jpg"}
+          alt=""
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "/images/placeholderimage.jpg";
+          }}
+        />
+      </div>
+      {isOwner && (
+        <div className="lv-poster-remove">
+          <RemoveButton onRemove={onRemove} removing={removing} />
+        </div>
+      )}
+      {(fields.title || meta.length > 0) && (
+        <div className="lv-poster-caption">
+          {fields.title && <span className="lv-poster-title">{title}</span>}
+          {meta.length > 0 && (
+            <span className="lv-poster-meta">{meta.join(" · ")}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ListView() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -362,6 +487,10 @@ export default function ListView() {
   const [savingRename, setSavingRename] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  // Which progress bars the owner wants on this list. Nothing stored means
+  // all three, which is how every list behaved before the setting existed.
+  const [editStats, setEditStats] = useState(DEFAULT_STATS);
+  const [editView, setEditView] = useState(DEFAULT_VIEW);
   const [savingEdit, setSavingEdit] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -421,6 +550,8 @@ export default function ListView() {
           setList(data);
           setEditTitle(data.title);
           setEditDesc(data.description || "");
+          setEditStats({ ...DEFAULT_STATS, ...(data.stats || {}) });
+          setEditView(mergeView(data.view_prefs));
           getListSaveCounts([data.id])
             .then((m) => active && setSaveCount(m.get(data.id) || 0))
             .catch(() => {});
@@ -644,6 +775,24 @@ export default function ListView() {
     bookRatings,
     userBookTbr,
   ]);
+
+  const shownStats = useMemo(
+    () => STAT_ROWS.filter(({ key }) => (list?.stats ?? DEFAULT_STATS)[key]),
+    [list],
+  );
+
+  const view = useMemo(() => mergeView(list?.view_prefs), [list]);
+
+  // The viewer's own score for an item, whichever table it lives in.
+  const userRatingFor = (item, data) => {
+    if (item.media_type === "book") {
+      const hid = getBookInfo(data).hardcover_id;
+      if (!hid) return null;
+      const row = bookRatings.find((r) => r.book_entries?.hardcover_id === hid);
+      return row?.book_rating ?? null;
+    }
+    return getRatingForMovie(userRatings, data)?.rating ?? null;
+  };
 
   // Items as currently viewed: text/type filters plus sort. "position" keeps
   // the stored list order (what reordering/syncs produce).
@@ -1013,6 +1162,8 @@ export default function ListView() {
       const updated = await updateList(list.id, {
         title: editTitle.trim(),
         description: editDesc.trim() || null,
+        stats: editStats,
+        view_prefs: editView,
       });
       setList((prev) => ({ ...prev, ...updated }));
       setEditing(false);
@@ -1130,34 +1281,33 @@ export default function ListView() {
           </span>
         </p>
 
-        {progress && (
+        {progress && shownStats.length > 0 && (
           <div className="lv-progress">
-            {[
-              { key: "logged", label: "Logged", data: progress.logged },
-              { key: "rated", label: "Rated", data: progress.rated },
-              { key: "saved", label: "Watchlisted", data: progress.saved },
-            ].map(({ key, label, data }) => (
-              <div
-                key={key}
-                className="lv-progress-row"
-                title={`${data.n} of ${progress.total} ${label.toLowerCase()}`}
-              >
-                <span className="lv-progress-label">{label}</span>
-                <span className="lv-progress-track">
-                  <span
-                    className={`lv-progress-fill lv-progress-fill-${key}`}
-                    style={{ width: `${data.pct}%` }}
-                  />
-                </span>
-                <span className="lv-progress-value">
-                  {data.pct}%
-                  <span className="lv-progress-count">
-                    {" "}
-                    ({data.n}/{progress.total})
+            {shownStats.map(({ key, label }) => {
+              const data = progress[key];
+              return (
+                <div
+                  key={key}
+                  className="lv-progress-row"
+                  title={`${data.n} of ${progress.total} ${label.toLowerCase()}`}
+                >
+                  <span className="lv-progress-label">{label}</span>
+                  <span className="lv-progress-track">
+                    <span
+                      className={`lv-progress-fill lv-progress-fill-${key}`}
+                      style={{ width: `${data.pct}%` }}
+                    />
                   </span>
-                </span>
-              </div>
-            ))}
+                  <span className="lv-progress-value">
+                    {data.pct}%
+                    <span className="lv-progress-count">
+                      {" "}
+                      ({data.n}/{progress.total})
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1506,6 +1656,27 @@ export default function ListView() {
         <div className="empty-msg">This list is empty.</div>
       ) : visibleItems.length === 0 ? (
         <div className="empty-msg">No items match this filter.</div>
+      ) : view.mode === "poster" ? (
+        <div className="lv-poster-grid">
+          {visibleItems.map((item, index) => {
+            const full = movieDetails.get(item.id) || item.item_data;
+            const isBook = item.media_type === "book";
+            return (
+              <PosterTile
+                key={item.id}
+                item={item}
+                full={isBook ? bookDetails.get(item.id) || item.item_data : full}
+                fields={view.fields}
+                rank={ranked ? rankIndex(item, index) + 1 : null}
+                imdbRating={isBook ? null : imdbRatingFor(imdbTable, full)}
+                userRating={userRatingFor(item, full)}
+                isOwner={isOwner}
+                onRemove={() => handleRemoveItem(item.id)}
+                removing={removingId === item.id}
+              />
+            );
+          })}
+        </div>
       ) : (
         <div className="list-col" ref={dragOrder.containerRef}>
           {visibleItems.map((item, index) => {
@@ -1603,6 +1774,63 @@ export default function ListView() {
                 maxLength={500}
                 rows={3}
               />
+              <fieldset className="lv-stats-picker">
+                <legend>Layout</legend>
+                {[
+                  { value: "list", label: "List" },
+                  { value: "poster", label: "Posters" },
+                ].map(({ value, label }) => (
+                  <label key={value} className="lv-stats-option">
+                    <input
+                      type="radio"
+                      name="lv-view-mode"
+                      checked={editView.mode === value}
+                      onChange={() =>
+                        setEditView((prev) => ({ ...prev, mode: value }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
+              {editView.mode === "poster" && (
+                <fieldset className="lv-stats-picker lv-stats-picker-wrap">
+                  <legend>Show under each poster</legend>
+                  {POSTER_FIELDS.map(({ key, label }) => (
+                    <label key={key} className="lv-stats-option">
+                      <input
+                        type="checkbox"
+                        checked={!!editView.fields[key]}
+                        onChange={(e) =>
+                          setEditView((prev) => ({
+                            ...prev,
+                            fields: { ...prev.fields, [key]: e.target.checked },
+                          }))
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+              <fieldset className="lv-stats-picker">
+                <legend>Progress bars</legend>
+                {STAT_ROWS.map(({ key, label }) => (
+                  <label key={key} className="lv-stats-option">
+                    <input
+                      type="checkbox"
+                      checked={editStats[key]}
+                      onChange={(e) =>
+                        setEditStats((prev) => ({
+                          ...prev,
+                          [key]: e.target.checked,
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </fieldset>
               <button type="submit" disabled={!editTitle.trim() || savingEdit}>
                 {savingEdit ? <Spinner /> : "Save changes"}
               </button>

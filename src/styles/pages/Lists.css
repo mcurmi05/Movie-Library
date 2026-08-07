@@ -256,10 +256,9 @@
   white-space: nowrap;
 }
 
-/* Magic badge with its scope tag stacked underneath. */
+/* Magic badge and its scope tag, side by side. */
 .list-card-magic-stack {
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
   gap: 3px;
 }
@@ -269,8 +268,16 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
+/* Updated and created sit under the author on their own lines, so neither
+   date can be squeezed off the side of a narrow card. */
+.list-card-dates {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.5));
+}
+
 .list-card-updated {
-  margin-left: auto;
   white-space: nowrap;
 }
 
@@ -571,6 +578,133 @@
 }
 
 /* How much of the list the viewer has logged / rated / watchlisted */
+/* Poster view: the search page's grid, captioned per the list's settings. */
+.lv-poster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.1rem;
+  width: 100%;
+}
+
+.lv-poster-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.lv-poster-img {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  outline: none;
+  transition: transform 180ms var(--ease-out, ease);
+}
+
+.lv-poster-tile:hover .lv-poster-img {
+  transform: translateY(-4px);
+}
+
+.lv-poster-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lv-poster-rank {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+}
+
+.lv-poster-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.lv-poster-tile:hover .lv-poster-remove {
+  opacity: 1;
+}
+
+.lv-poster-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lv-poster-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lv-poster-meta {
+  font-size: 0.78rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.55));
+}
+
+@media (max-width: 600px) {
+  .lv-poster-grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* Which progress bars this list shows, picked in the edit modal. */
+.lv-stats-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0.5rem 0.7rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.lv-stats-picker-wrap {
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+.lv-stats-picker legend {
+  padding: 0 4px;
+  font-size: 0.78rem;
+  color: var(--text-dim, rgba(255, 255, 255, 0.55));
+}
+
+.lv-stats-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Beats the text-input styling the modal form applies to every input. */
+.lists-create-form .lv-stats-option input {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 0;
+  appearance: auto;
+  background: none;
+  border: none;
+  accent-color: var(--accent, #e50914);
+  cursor: pointer;
+}
+
 .lv-progress {
   max-width: 380px;
   margin: 0 auto 1rem;
@@ -1624,16 +1758,46 @@
   opacity: 1;
 }
 
+/* The card being dragged keeps its slot, dimmed to an empty outline, so the
+   cards around it show where the drop will land. */
 .list-card-dragging {
-  z-index: 30;
-  cursor: grabbing;
-  opacity: 0.85;
+  opacity: 0.35;
   pointer-events: none;
+  border-style: dashed;
+  background-color: transparent;
+}
+
+.list-card-dragging > * {
+  visibility: hidden;
+}
+
+/* The copy that follows the pointer, and the glide into the open slot when
+   it is released. */
+.lists-drag-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.lists-drag-ghost.is-settling {
+  transition: left 180ms var(--ease-out, ease), top 180ms var(--ease-out, ease);
+}
+
+/* Nothing inside a card may start a native drag of its own. */
+.list-card,
+.list-card img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.lists-drag-ghost .list-card {
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
-.list-card-drop {
-  border-color: var(--app-accent);
+.lists-drag-ghost .list-card-grip {
+  opacity: 1;
 }
 
 .list-card-created {

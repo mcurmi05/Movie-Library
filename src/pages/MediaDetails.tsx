@@ -384,39 +384,6 @@ function MediaDetails() {
                 </>
               )}
             </div>
-            {/* Same "Rated: ..." line and history the Ratings page shows. */}
-            {(() => {
-              const rated = getRatingForMovie(userRatings, movie);
-              if (!rated) return null;
-              return (
-                <RatingDetails
-                  title={movie.primaryTitle}
-                  createdAt={rated.created_at}
-                  updatedAt={rated.updated_at}
-                  previousRating={rated.previous_rating}
-                  dateUnknown={rated.date_unknown}
-                  history={rated.rating_history}
-                  onDeleteEvent={(idx) =>
-                    deleteRatingHistoryEvent(rated.movie_entry_id, idx)
-                  }
-                />
-              );
-            })()}
-            {inLists.length > 0 && (
-              <div className="media-details-in-lists">
-                <span className="media-details-in-lists-label">In</span>
-                {inLists.map((l) => (
-                  <button
-                    key={l.id}
-                    type="button"
-                    className="media-details-list-chip"
-                    onClick={() => navigate(`/lists/${l.id}`)}
-                  >
-                    {l.title}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
           {movie.media_type === "movie" ? (
             <div className="director-and-writer">
@@ -449,6 +416,45 @@ function MediaDetails() {
               )}
             </div>
           ) : null}
+        </div>
+
+        {/* The rated date and the lists this title sits in, on their own row
+            above the cast: in the hero they crowded the title block, which
+            wrapped badly on narrow screens. */}
+        <div className="media-details-meta-row">
+          {/* Same "Rated: ..." line and history the Ratings page shows. */}
+          {(() => {
+            const rated = getRatingForMovie(userRatings, movie);
+            if (!rated) return null;
+            return (
+              <RatingDetails
+                title={movie.primaryTitle}
+                createdAt={rated.created_at}
+                updatedAt={rated.updated_at}
+                previousRating={rated.previous_rating}
+                dateUnknown={rated.date_unknown}
+                history={rated.rating_history}
+                onDeleteEvent={(idx) =>
+                  deleteRatingHistoryEvent(rated.movie_entry_id, idx)
+                }
+              />
+            );
+          })()}
+          {inLists.length > 0 && (
+            <div className="media-details-in-lists">
+              <span className="media-details-in-lists-label">In</span>
+              {inLists.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  className="media-details-list-chip"
+                  onClick={() => navigate(`/lists/${l.id}`)}
+                >
+                  {l.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="cast-list">
