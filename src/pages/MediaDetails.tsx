@@ -601,7 +601,7 @@ function MediaDetails() {
             </div>
           )}
 
-        {/* One IMDb/Letterboxd choice drives the chart and the reviews below it. */}
+        {/* The chart owns the IMDb/Letterboxd tabs; the reviews follow them. */}
         <RatingHistogram
           imdbId={movie.id}
           tmdbId={movie.tmdb_id}
@@ -614,7 +614,6 @@ function MediaDetails() {
           tmdbId={movie.tmdb_id}
           mediaType={movie.media_type}
           source={reviewSource}
-          onSourceChange={setReviewSource}
         />
 
         {recommendations.length > 0 && (

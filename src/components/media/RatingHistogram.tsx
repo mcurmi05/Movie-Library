@@ -11,28 +11,71 @@ import "../../styles/media/ExternalReviews.css";
 // share.
 //
 // Letterboxd serves its chart from an endpoint behind a bot challenge, so that
-// half can fail where the rest of the page works - when it does the tab is
-// still offered (the reviews below always offer it for a film) and this half
-// says so, instead of leaving IMDb's 1-10 bars up under a Letterboxd tab.
+// half can fail where the rest of the page works - when it does the tab stays
+// on offer and this half says the distribution is unavailable, instead of
+// leaving IMDb's 1-10 bars up under a Letterboxd tab.
 //
-// `source` is owned by the page and shared with the reviews section below, so
-// one tab click switches both.
+// This header also owns the only source switcher on the page: `source` lives
+// on the page and the reviews below follow it, so one click moves both.
+
+function ImdbMark() {
+  return (
+    <svg className="xr-mark" viewBox="0 0 64 32" aria-hidden="true">
+      <rect width="64" height="32" rx="5" fill="#f5c518" />
+      <text
+        x="32"
+        y="23"
+        textAnchor="middle"
+        fontSize="17"
+        fontWeight="700"
+        fontFamily="Helvetica, Arial, sans-serif"
+        fill="#000"
+      >
+        IMDb
+      </text>
+    </svg>
+  );
+}
+
+function LetterboxdMark() {
+  return (
+    <svg className="xr-mark" viewBox="0 0 64 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="12" fill="#ff8000" />
+      <circle cx="48" cy="16" r="12" fill="#40bcf4" />
+      <circle cx="32" cy="16" r="12" fill="#00e054" />
+    </svg>
+  );
+}
+
 function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) {
   const [imdb, setImdb] = useState(null);
   const [lb, setLb] = useState(null);
-  // "loading" | "ready" | "failed": the Letterboxd tab is offered whenever the
-  // film could have one, so this half has to say which of those it is rather
-  // than quietly leaving the IMDb chart up under a Letterboxd tab.
+  // "loading" | "ready" | "failed" per source. The tabs are offered for what a
+  // title could have, not for what actually came back, so the chart has to be
+  // able to say which of those it is.
+  const [imdbState, setImdbState] = useState("loading");
   const [lbState, setLbState] = useState("loading");
   const [active, setActive] = useState(null);
+
+  const canImdb = !!imdbId;
+  // Letterboxd is film-only, matching the reviews below.
+  const canLb = mediaType === "movie" && tmdbId != null;
 
   useEffect(() => {
     let cancelled = false;
     setImdb(null);
-    if (!imdbId) return;
+    if (!imdbId) {
+      setImdbState("failed");
+      return;
+    }
+    setImdbState("loading");
     getImdbHistogram(imdbId)
-      .then((res) => !cancelled && setImdb(res))
-      .catch(() => {});
+      .then((res) => {
+        if (cancelled) return;
+        setImdb(res);
+        setImdbState(res?.histogram?.length ? "ready" : "failed");
+      })
+      .catch(() => !cancelled && setImdbState("failed"));
     return () => {
       cancelled = true;
     };
@@ -41,7 +84,7 @@ function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) 
   useEffect(() => {
     let cancelled = false;
     setLb(null);
-    if (mediaType !== "movie" || tmdbId == null) {
+    if (!canLb) {
       setLbState("failed");
       return;
     }
@@ -56,54 +99,50 @@ function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) 
     return () => {
       cancelled = true;
     };
-  }, [tmdbId, mediaType]);
+  }, [tmdbId, canLb]);
 
   useEffect(() => {
     setActive(null);
   }, [source]);
 
-  const hasImdb = !!imdb?.histogram?.length;
-  const hasLb = !!lb?.histogram?.length;
-  const canLb = mediaType === "movie" && tmdbId != null;
-  // The reviews below offer a Letterboxd tab for any film, so this chart has
-  // to follow that choice even before (or without) its own data: showing the
-  // IMDb 1-10 chart under a Letterboxd tab is what used to happen.
-  const wantLb = source === "letterboxd" && canLb;
-  const pendingLb = wantLb && !hasLb && lbState === "loading";
-  if (!hasImdb && !hasLb && !pendingLb) return null;
+  if (!canImdb && !canLb) return null;
 
-  const isLb = wantLb || !hasImdb;
-  const data = isLb ? (hasLb ? lb : null) : imdb;
+  const isLb = (source === "letterboxd" && canLb) || !canImdb;
+  const data = isLb ? lb : imdb;
+  const state = isLb ? lbState : imdbState;
+  const hasBars = !!data?.histogram?.length;
 
-  const max = data ? Math.max(...data.histogram.map((b) => b.votes)) : 0;
-  const total = data
+  const max = hasBars ? Math.max(...data.histogram.map((b) => b.votes)) : 0;
+  const total = hasBars
     ? data.total || data.histogram.reduce((sum, b) => sum + b.votes, 0)
     : 0;
-  const shown = data?.histogram.find((b) => b.rating === active);
+  const shown = hasBars && data.histogram.find((b) => b.rating === active);
   const label = (rating) => (isLb ? `★ ${rating}` : `${rating}/10`);
 
   return (
     <div className={`rating-dist${isLb ? " is-letterboxd" : ""}`}>
       <div className="rating-dist-head">
         <span className="rating-dist-title">Rating distribution</span>
-        {hasImdb && canLb && (
+        {canImdb && canLb && (
           <div className="xr-tabs">
             <button
               className={`xr-tab${!isLb ? " is-active" : ""}`}
               onClick={() => onSourceChange("imdb")}
             >
+              <ImdbMark />
               IMDb
             </button>
             <button
               className={`xr-tab${isLb ? " is-active" : ""}`}
               onClick={() => onSourceChange("letterboxd")}
             >
+              <LetterboxdMark />
               Letterboxd
             </button>
           </div>
         )}
         <span className="rating-dist-readout">
-          {!data
+          {!hasBars
             ? ""
             : shown
               ? `${label(shown.rating)} · ${shown.votes.toLocaleString()} votes · ` +
@@ -112,13 +151,7 @@ function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) 
         </span>
       </div>
 
-      {!data ? (
-        <p className="rating-dist-note">
-          {lbState === "loading"
-            ? "Loading Letterboxd distribution…"
-            : "Letterboxd distribution unavailable."}
-        </p>
-      ) : (
+      {hasBars ? (
         <div className="rating-dist-bars" onMouseLeave={() => setActive(null)}>
           {data.histogram.map((bucket) => (
             <button
@@ -140,6 +173,12 @@ function RatingHistogram({ imdbId, tmdbId, mediaType, source, onSourceChange }) 
             </button>
           ))}
         </div>
+      ) : (
+        <p className="rating-dist-note">
+          {state === "loading"
+            ? "Loading distribution…"
+            : `${isLb ? "Letterboxd" : "IMDb"} distribution unavailable.`}
+        </p>
       )}
     </div>
   );

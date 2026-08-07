@@ -77,11 +77,10 @@ function ExternalReviews({
   tmdbId,
   mediaType,
   source: requestedSource,
-  onSourceChange,
 }) {
-  // Letterboxd is film-only, so TV shows just get the IMDb tab.
+  // Letterboxd is film-only, so TV shows just get IMDb.
   const hasLetterboxd = mediaType === "movie" && tmdbId != null;
-  // The tab strip is shared with the rating histogram above, so follow the
+  // The source switcher lives in the rating distribution above, so follow the
   // page's choice but fall back when this half can't serve it.
   const source =
     requestedSource === "letterboxd" && hasLetterboxd
@@ -184,23 +183,9 @@ function ExternalReviews({
   return (
     <div className="xr-section">
       <div className="xr-head">
-        <p className="xr-heading">Reviews</p>
-        {imdbId && hasLetterboxd && (
-          <div className="xr-tabs">
-            <button
-              className={`xr-tab${!isLb ? " is-active" : ""}`}
-              onClick={() => onSourceChange("imdb")}
-            >
-              IMDb
-            </button>
-            <button
-              className={`xr-tab${isLb ? " is-active" : ""}`}
-              onClick={() => onSourceChange("letterboxd")}
-            >
-              Letterboxd
-            </button>
-          </div>
-        )}
+        <p className="xr-heading">
+          {isLb ? "Letterboxd reviews" : "IMDb reviews"}
+        </p>
       </div>
 
       <div className="xr-controls">

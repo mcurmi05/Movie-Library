@@ -8,8 +8,15 @@
 .rating-dist-head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
+}
+
+/* The tabs sit against the title rather than being pushed out to the edge:
+   they switch the reviews below too, so they read as part of the heading. */
+.rating-dist-head .xr-tabs {
+  margin-left: 0;
 }
 
 .rating-dist-title {
@@ -106,6 +113,9 @@
 }
 
 .xr-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 10px;
   font-size: 0.8rem;
   border-radius: 999px;
@@ -118,6 +128,19 @@
 .xr-tab.is-active {
   background: var(--secondary);
   color: var(--foreground);
+}
+
+/* Dimmed on the tab you are not on, so the colour marks the live source. */
+.xr-mark {
+  height: 12px;
+  width: 24px;
+  opacity: 0.55;
+  transition: opacity 150ms ease;
+}
+
+.xr-tab.is-active .xr-mark,
+.xr-tab:hover .xr-mark {
+  opacity: 1;
 }
 
 .xr-controls {
