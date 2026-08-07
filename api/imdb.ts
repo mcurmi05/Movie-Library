@@ -65,7 +65,7 @@ const REVIEWS_QUERY = `
             authorRating
             submissionDate
             spoiler
-            author { nickName }
+            author { userId nickName }
             helpfulness { upVotes }
           }
         }
@@ -104,6 +104,9 @@ async function reviews(imdbId, { first, after, sort, rating }) {
       id: node.id,
       url: `https://www.imdb.com/review/${node.id}/`,
       author: node.author?.nickName || "IMDb user",
+      authorUrl: node.author?.userId
+        ? `https://www.imdb.com/user/${node.author.userId}/`
+        : null,
       title: node.summary?.originalText || null,
       text: node.text?.originalText?.plainText || "",
       rating: node.authorRating ?? null,

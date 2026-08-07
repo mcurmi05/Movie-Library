@@ -1702,6 +1702,37 @@
   flex-shrink: 0;
 }
 
+.lists-folder-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim, rgba(255, 255, 255, 0.4));
+  cursor: grab;
+  outline: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.lists-folder-head:hover .lists-folder-grip {
+  color: #fff;
+}
+
+.lists-folder-grip:active {
+  cursor: grabbing;
+}
+
+/* The folder being dragged rides above the ones sliding around it. */
+.lists-folder-dragging {
+  position: relative;
+  z-index: 40;
+  cursor: grabbing;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  will-change: transform;
+}
+
 .lists-folder-name {
   font-weight: 600;
   font-size: 0.95rem;
@@ -1773,16 +1804,21 @@
 
 /* The copy that follows the pointer, and the glide into the open slot when
    it is released. */
+/* Positioned with a transform from 0,0 rather than left/top, so following the
+   pointer never triggers a layout pass. */
 .lists-drag-ghost {
   position: fixed;
+  left: 0;
+  top: 0;
   z-index: 60;
   pointer-events: none;
   cursor: grabbing;
   opacity: 0.9;
+  will-change: transform;
 }
 
 .lists-drag-ghost.is-settling {
-  transition: left 180ms var(--ease-out, ease), top 180ms var(--ease-out, ease);
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Nothing inside a card may start a native drag of its own. */

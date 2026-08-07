@@ -5,7 +5,11 @@ import { useNavigate } from "react-router-dom";
 import RatingModal from "../common/RatingModal";
 import { useRatings } from "../../contexts/UserRatingsContext";
 import { supabase } from "../../services/supabase-client";
-import { getRatingForMovie } from "../../services/ratingsfromtable";
+import {
+  archiveRatingHistory,
+  getArchivedRatingHistory,
+  getRatingForMovie,
+} from "../../services/ratingsfromtable";
 import { upsertMovie, resolveFullMovie } from "../../services/movieMetadata";
 
 function MovieRatingStar({movie}) {
@@ -75,6 +79,7 @@ function MovieRatingStar({movie}) {
 
       try {
         let error;
+        let history = null;
 
         if (rated) {
           const result = await supabase
@@ -84,14 +89,20 @@ function MovieRatingStar({movie}) {
             .eq('user_id', user.id);
           error = result.error;
         } else {
-
+          // Rating a title that was unrated before picks its old timeline back
+          // up rather than starting from scratch.
+          const archived = await getArchivedRatingHistory(user.id, movieEntryId);
+          history = [
+            ...archived,
+            { rating: newRating, at: new Date().toISOString() },
+          ];
           const result = await supabase
             .from('user_ratings')
             .insert({
               user_id: user.id,
               rating: newRating,
               entry_id: movieEntryId,
-              rating_history: [{ rating: newRating, at: new Date().toISOString() }],
+              rating_history: history,
             });
           error = result.error;
         }
@@ -104,7 +115,7 @@ function MovieRatingStar({movie}) {
           if (rated) {
             updateRating(movieEntryId, newRating, full);
           } else {
-            addRating(movieEntryId, newRating, full);
+            addRating(movieEntryId, newRating, full, history);
           }
         }
       } catch (err) {
@@ -122,6 +133,11 @@ function MovieRatingStar({movie}) {
       }
       if (!entryId) return;
       try {
+        // The row is about to go, and rating_history goes with it - park the
+        // timeline so re-rating this title can pick it up again.
+        const ratingRow = getRatingForMovie(userRatings, movie);
+        await archiveRatingHistory(user.id, entryId, ratingRow?.rating_history);
+
         const { error } = await supabase
           .from('user_ratings')
           .delete()

@@ -28,14 +28,16 @@ export const UserRatingsProvider = ({ children }) => {
 
   // Ratings are identified in memory by movie_entry_id (the movies_and_tv_entries
   // uuid), matching how they're stored and referenced in the DB.
-  const addRating = (movieEntryId, rating, movie) => {
+  // `history` is passed when the title was rated before: unrating archives the
+  // timeline, and rating it again carries on from there.
+  const addRating = (movieEntryId, rating, movie, history = null) => {
     const newRating = {
       movie_entry_id: movieEntryId,
       user_id: user.id,
       rating: rating,
       movie_object: movie,
       created_at: new Date().toISOString(),
-      rating_history: [{ rating, at: new Date().toISOString() }],
+      rating_history: history ?? [{ rating, at: new Date().toISOString() }],
     };
     setUserRatings((prev) => [...prev, newRating]);
   };

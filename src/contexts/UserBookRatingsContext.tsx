@@ -11,6 +11,8 @@ import {
   updateBookRating as updateBookRatingService,
   deleteBookRating as deleteBookRatingService,
   findOrCreateBookEntry,
+  archiveRatingHistory,
+  getArchivedRatingHistory,
 } from "../services/ratingsfromtable";
 import { useAuth } from "./AuthContext";
 import { isSameBook } from "./UserBookTbrContext";
@@ -73,6 +75,9 @@ export const UserBookRatingsProvider = ({ children }) => {
     if (isClear) {
       if (existing) {
         try {
+          // The row carries rating_history, so park it before the delete and
+          // rating this book again picks the timeline back up.
+          await archiveRatingHistory(user.id, bookId, existing.rating_history);
           await deleteBookRatingService(existing.id);
           setBookRatings((prev) => prev.filter((r) => r.id !== existing.id));
         } catch (err) {
@@ -112,12 +117,14 @@ export const UserBookRatingsProvider = ({ children }) => {
         0,
       );
       try {
+        const archived = await getArchivedRatingHistory(user.id, bookId);
         const newRow = await createBookRatingService({
           user_id: user.id,
           book_id: bookId,
           book_rating: newRating,
           ranking: maxRanking + 1,
           rating_history: [
+            ...archived,
             { rating: newRating, at: new Date().toISOString() },
           ],
         });

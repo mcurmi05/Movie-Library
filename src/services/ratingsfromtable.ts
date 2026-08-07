@@ -88,6 +88,39 @@ export const updateUserRating = async (
   return data;
 };
 
+// Rating history outlives the rating itself: unrating drops the user_ratings
+// row, so the timeline is parked in user_rating_history first and read back
+// when the same title is rated again. Both calls are best-effort - a missing
+// table or a failed write must not stop someone unrating a film.
+export const archiveRatingHistory = async (userId, movieEntryId, history) => {
+  if (!userId || !movieEntryId || !history?.length) return;
+  const { error } = await supabase.from("user_rating_history").upsert(
+    {
+      user_id: userId,
+      entry_id: movieEntryId,
+      history,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,entry_id" },
+  );
+  if (error) console.error("Failed to archive rating history:", error);
+};
+
+export const getArchivedRatingHistory = async (userId, movieEntryId) => {
+  if (!userId || !movieEntryId) return [];
+  const { data, error } = await supabase
+    .from("user_rating_history")
+    .select("history")
+    .eq("user_id", userId)
+    .eq("entry_id", movieEntryId)
+    .maybeSingle();
+  if (error) {
+    console.error("Failed to read archived rating history:", error);
+    return [];
+  }
+  return data?.history ?? [];
+};
+
 // Overwrite a rating's history array (used when deleting a history event).
 export const updateUserRatingHistory = async (userId, movieEntryId, history) => {
   const { error } = await supabase

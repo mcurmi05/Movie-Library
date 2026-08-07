@@ -107,6 +107,9 @@ function parseReview(block, slug) {
     id: link,
     url: `https://letterboxd.com${link}`,
     author: decode(author.trim()),
+    // Review links are /{username}/film/{slug}/, so the profile is the first
+    // segment on its own.
+    authorUrl: `https://letterboxd.com/${link.split("/")[1]}/`,
     text,
     rating: starsToRating(
       block.match(/class="glyph -rating"[^>]*aria-label="([^"]*)"/)?.[1],
@@ -142,16 +145,23 @@ async function scrapeReviews(tmdbId, page) {
     return { reviews, hasMore: reviews.length > 0, slug };
   }
 
-  const listing = await fetch(
-    `https://letterboxd.com/film/${slug}/reviews/by/activity/page/${page}/`,
-    {
-      headers: {
-        "User-Agent": UA,
-        "Accept-Language": "en-US,en;q=0.9",
-        Referer: `https://letterboxd.com/film/${slug}/`,
+  // Cloudflare turns away a chunk of these at random, and the same URL goes
+  // through on the next try, so a refusal gets a couple of retries first.
+  let listing;
+  for (let i = 0; i < 3; i++) {
+    if (i) await new Promise((r) => setTimeout(r, 250 * i));
+    listing = await fetch(
+      `https://letterboxd.com/film/${slug}/reviews/by/activity/page/${page}/`,
+      {
+        headers: {
+          "User-Agent": UA,
+          "Accept-Language": "en-US,en;q=0.9",
+          Referer: `https://letterboxd.com/film/${slug}/`,
+        },
       },
-    },
-  );
+    );
+    if (listing.ok) break;
+  }
   if (!listing.ok) return { reviews: [], hasMore: false, slug };
 
   const html = await listing.text();

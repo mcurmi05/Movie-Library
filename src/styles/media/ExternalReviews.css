@@ -214,6 +214,11 @@
 .xr-author {
   font-weight: 600;
   color: var(--foreground);
+  text-decoration: none;
+}
+
+a.xr-author:hover {
+  text-decoration: underline;
 }
 
 .xr-rating {
@@ -253,9 +258,18 @@
 }
 
 .xr-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   margin-left: auto;
   color: var(--muted-foreground);
   text-decoration: none;
+}
+
+.xr-source-logo {
+  height: 14px;
+  width: auto;
+  border-radius: 3px;
 }
 
 .xr-link:hover {

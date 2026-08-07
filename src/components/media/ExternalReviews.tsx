@@ -34,7 +34,18 @@ function ReviewCard({ review, source }) {
   return (
     <article className="xr-card">
       <div className="xr-card-head">
-        <span className="xr-author">{review.author}</span>
+        {review.authorUrl ? (
+          <a
+            className="xr-author"
+            href={review.authorUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {review.author}
+          </a>
+        ) : (
+          <span className="xr-author">{review.author}</span>
+        )}
         {review.rating != null && (
           <span className="xr-rating">
             <img
@@ -59,7 +70,12 @@ function ReviewCard({ review, source }) {
           target="_blank"
           rel="noreferrer"
         >
-          Read on {source === "letterboxd" ? "Letterboxd" : "IMDb"}
+          <img
+            className="xr-source-logo"
+            src={isLb ? "/images/letterboxdicon.png" : "/images/imdbicon.png"}
+            alt=""
+          />
+          Read on {isLb ? "Letterboxd" : "IMDb"}
         </a>
       </div>
 

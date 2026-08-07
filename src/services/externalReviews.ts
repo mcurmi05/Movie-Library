@@ -7,6 +7,7 @@ export type ExternalReview = {
   id: string;
   url: string;
   author: string;
+  authorUrl: string | null;
   text: string;
   rating: number | null;
   likes: number | null;

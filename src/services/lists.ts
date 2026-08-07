@@ -355,6 +355,18 @@ export async function createListFolder(userId, name, position = 0) {
   return data;
 }
 
+// Folders are drawn in `position` order. There are only ever a handful, so
+// writing them one at a time beats round-tripping every column for an upsert.
+export async function reorderListFolders(orderedIds) {
+  const results = await Promise.all(
+    orderedIds.map((id, position) =>
+      supabase.from("list_folders").update({ position }).eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed) throw failed.error;
+}
+
 export async function renameListFolder(folderId, name) {
   const { error } = await supabase
     .from("list_folders")

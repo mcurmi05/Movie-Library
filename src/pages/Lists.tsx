@@ -28,6 +28,7 @@ import {
   bulkAddListItems,
   getListFolders,
   createListFolder,
+  reorderListFolders,
   renameListFolder,
   deleteListFolder,
   getListPlacements,
@@ -290,6 +291,14 @@ export default function Lists() {
   // Where every card sat on the last render, for the reflow animation.
   const cardRectsRef = useRef(new Map());
 
+  // Folder reordering runs on the same idea one level up: the dragged section
+  // is lifted by writing a transform straight to the node, and the sections it
+  // passes shuffle around it.
+  const folderDragRef = useRef(null);
+  const [folderDragId, setFolderDragId] = useState(null);
+  const [folderOrder, setFolderOrder] = useState(null);
+  const folderRectsRef = useRef(new Map());
+
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -504,11 +513,12 @@ export default function Lists() {
     setPreview(null);
   };
 
+  // Moved with a transform rather than left/top: those relayout the page on
+  // every pointer move, which is what makes the cards behind it stutter.
   const positionGhost = (left, top) => {
     const el = ghostRef.current;
     if (!el) return;
-    el.style.left = `${left}px`;
-    el.style.top = `${top}px`;
+    el.style.transform = `translate3d(${left}px, ${top}px, 0)`;
   };
 
   const startDrag = (id) => (e) => {
@@ -605,21 +615,31 @@ export default function Lists() {
       return { folderId: kind === "folder" ? value : null, index: null };
     };
 
-    const move = (e) => {
+    // A mouse can report moves several times per frame, and every one of them
+    // used to re-render the grids and restart the card animations. The pointer
+    // is read once a frame instead, and the grids only re-render when the card
+    // would actually land somewhere new.
+    let frame = 0;
+    let point = null;
+    const samePlacement = (a, b) =>
+      !!a && !!b && a.folderId === b.folderId && a.index === b.index;
+    const apply = () => {
+      frame = 0;
       const drag = dragRef.current;
-      if (!drag) return;
-      e.preventDefault();
-      positionGhost(e.clientX - drag.grabX, e.clientY - drag.grabY);
-      const target = dropTargetAt(
-        e.clientX,
-        e.clientY,
-        drag.id,
-        cardRectsRef.current,
-      );
+      if (!drag || !point) return;
+      positionGhost(point.x - drag.grabX, point.y - drag.grabY);
+      const target = dropTargetAt(point.x, point.y, drag.id, cardRectsRef.current);
       if (!target || target.self) return;
-      const next = placementFor(target, drag.id, e.clientX);
+      const next = placementFor(target, drag.id, point.x);
+      if (samePlacement(previewRef.current, next)) return;
       previewRef.current = next;
       setPreview(next);
+    };
+    const move = (e) => {
+      if (!dragRef.current) return;
+      e.preventDefault();
+      point = { x: e.clientX, y: e.clientY };
+      if (!frame) frame = requestAnimationFrame(apply);
     };
     const up = () => {
       const drag = dragRef.current;
@@ -655,6 +675,7 @@ export default function Lists() {
     document.body.style.touchAction = "none";
     document.body.style.userSelect = "none";
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", up);
@@ -664,17 +685,181 @@ export default function Lists() {
     };
   }, [dragId, grouped, placements, moveList]);
 
+  // Folder order as drawn: the live one, or the in-flight one while a folder
+  // is being dragged.
+  const shownFolders = useMemo(() => {
+    if (!folderOrder) return folders;
+    const byId = new Map(folders.map((f) => [f.id, f]));
+    return folderOrder.map((id) => byId.get(id)).filter(Boolean);
+  }, [folders, folderOrder]);
+
+  const startFolderDrag = (folder) => (e) => {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const sections = [...document.querySelectorAll("[data-folder-section]")];
+    const order = folders.map((f) => f.id);
+    folderDragRef.current = {
+      id: folder.id,
+      startY: e.clientY,
+      order,
+      applied: 0,
+      // Where the sections sat when the drag began. The lifted one is placed
+      // against these, so the reflow underneath it never drags it off course.
+      rects: new Map(
+        sections.map((el) => [
+          el.getAttribute("data-folder-section"),
+          el.getBoundingClientRect(),
+        ]),
+      ),
+    };
+    setFolderOrder(order);
+    setFolderDragId(folder.id);
+  };
+
+  useEffect(() => {
+    if (folderDragId == null) return;
+    const nodeFor = (id) =>
+      document.querySelector(`[data-folder-section="${id}"]`);
+    let frame = 0;
+    let y = null;
+    let order = folderDragRef.current?.order ?? [];
+
+    const apply = () => {
+      frame = 0;
+      const drag = folderDragRef.current;
+      if (!drag || y == null) return;
+      const dy = y - drag.startY;
+
+      // Glued to the pointer against the section's live layout box, so the
+      // shuffle happening underneath doesn't shift it.
+      const el = nodeFor(drag.id);
+      if (el) {
+        const layoutTop = el.getBoundingClientRect().top - drag.applied;
+        const offset = drag.rects.get(drag.id).top + dy - layoutTop;
+        el.style.transform = `translate3d(0, ${offset}px, 0)`;
+        drag.applied = offset;
+      }
+
+      // Which slot the lifted section's middle is over now.
+      const start = drag.rects.get(drag.id);
+      const middle = start.top + start.height / 2 + dy;
+      const others = drag.order.filter((id) => id !== drag.id);
+      let index = others.length;
+      for (let i = 0; i < others.length; i++) {
+        const rect = drag.rects.get(others[i]);
+        if (rect && middle < rect.top + rect.height / 2) {
+          index = i;
+          break;
+        }
+      }
+      const next = [...others.slice(0, index), drag.id, ...others.slice(index)];
+      if (next.length === order.length && next.every((id, i) => id === order[i])) {
+        return;
+      }
+      order = next;
+      setFolderOrder(next);
+    };
+
+    const move = (e) => {
+      if (!folderDragRef.current) return;
+      e.preventDefault();
+      y = e.clientY;
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+
+    const up = () => {
+      const drag = folderDragRef.current;
+      folderDragRef.current = null;
+      const el = drag && nodeFor(drag.id);
+      if (el) {
+        el.style.transition = "";
+        el.style.transform = "";
+      }
+      setFolderDragId(null);
+      setFolderOrder(null);
+      setFolders((prev) => {
+        const byId = new Map(prev.map((f) => [f.id, f]));
+        return order.map((id, i) => ({ ...byId.get(id), position: i }));
+      });
+      reorderListFolders(order).catch((err) =>
+        console.error("Failed to save folder order:", err),
+      );
+    };
+
+    const blockScroll = (e) => e.preventDefault();
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    window.addEventListener("touchmove", blockScroll, { passive: false });
+    const prevTouch = document.body.style.touchAction;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.touchAction = "none";
+    document.body.style.userSelect = "none";
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("touchmove", blockScroll);
+      document.body.style.touchAction = prevTouch;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [folderDragId]);
+
+  // The sections a dragged folder passes slide around it, same reflow
+  // animation the cards get. The lifted one is left alone - it follows the
+  // pointer instead.
+  useLayoutEffect(() => {
+    const sections = [...document.querySelectorAll("[data-folder-section]")];
+    if (folderDragId == null) {
+      folderRectsRef.current = new Map();
+      sections.forEach((el) => {
+        el.style.willChange = "";
+      });
+      return;
+    }
+    const others = sections.filter(
+      (el) => el.getAttribute("data-folder-section") !== folderDragId,
+    );
+    const seen = new Map();
+    const drawn = new Map(others.map((el) => [el, el.getBoundingClientRect()]));
+    others.forEach((el) => {
+      el.style.transition = "none";
+      el.style.transform = "";
+    });
+    others.forEach((el) => {
+      const key = el.getAttribute("data-folder-section");
+      const rect = el.getBoundingClientRect();
+      seen.set(key, rect);
+      const dy = drawn.get(el).top - rect.top;
+      if (Math.abs(dy) < 0.5) return;
+      el.style.willChange = "transform";
+      el.style.transform = `translate3d(0, ${dy}px, 0)`;
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 260ms cubic-bezier(0.2, 0, 0, 1)";
+        el.style.transform = "translate3d(0, 0, 0)";
+      });
+    });
+    folderRectsRef.current = seen;
+  });
+
   // Cards jump straight to their new grid slot when the preview changes, so
   // each one is put back where it was and animated across the gap.
   useLayoutEffect(() => {
+    const cards = [...document.querySelectorAll("[data-drop^='card:']")];
     if (dragId == null) {
       cardRectsRef.current = new Map();
+      cards.forEach((el) => {
+        el.style.willChange = "";
+      });
       return;
     }
     const seen = new Map();
-    const cards = [...document.querySelectorAll("[data-drop^='card:']")];
-    // Drop any animation still running first, so what gets measured is the
-    // real layout box and not a frame of the last move.
+    // Where each card is drawn at this instant, half-finished animations
+    // included. Starting from there rather than from its last settled box is
+    // what keeps a card that gets reordered again mid-glide from snapping.
+    const drawn = new Map(cards.map((el) => [el, el.getBoundingClientRect()]));
     cards.forEach((el) => {
       el.style.transition = "none";
       el.style.transform = "";
@@ -683,16 +868,15 @@ export default function Lists() {
       const key = el.getAttribute("data-drop");
       const rect = el.getBoundingClientRect();
       seen.set(key, rect);
-      const was = cardRectsRef.current.get(key);
-      if (!was) return;
-      const dx = was.left - rect.left;
-      const dy = was.top - rect.top;
-      if (!dx && !dy) return;
-      el.style.transition = "none";
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      const from = drawn.get(el);
+      const dx = from.left - rect.left;
+      const dy = from.top - rect.top;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+      el.style.willChange = "transform";
+      el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
       requestAnimationFrame(() => {
-        el.style.transition = "transform 200ms var(--ease-out, ease)";
-        el.style.transform = "";
+        el.style.transition = "transform 260ms cubic-bezier(0.2, 0, 0, 1)";
+        el.style.transform = "translate3d(0, 0, 0)";
       });
     });
     cardRectsRef.current = seen;
@@ -956,18 +1140,29 @@ export default function Lists() {
                 )}
               </div>
 
-              {folders.map((folder) => {
+              {shownFolders.map((folder) => {
                 const inFolder = previewGroups.get(folder.id) || [];
                 const open = !collapsed.has(folder.id);
                 return (
                   <section
                     key={folder.id}
                     data-drop={`folder:${folder.id}`}
+                    data-folder-section={folder.id}
                     className={`lists-folder${
                       preview?.folderId === folder.id ? " lists-drop-over" : ""
-                    }`}
+                    }${folderDragId === folder.id ? " lists-folder-dragging" : ""}`}
                   >
                     <div className="lists-folder-head">
+                      <button
+                        type="button"
+                        className="lists-folder-grip"
+                        onPointerDown={startFolderDrag(folder)}
+                        onClick={(e) => e.preventDefault()}
+                        title="Drag to reorder folders"
+                        aria-label="Drag folder"
+                      >
+                        <GripVertical size={14} />
+                      </button>
                       <button
                         type="button"
                         className={`lists-folder-toggle${open ? " open" : ""}`}
@@ -1047,7 +1242,10 @@ export default function Lists() {
         <div
           ref={ghostRef}
           className={`lists-drag-ghost${ghost.settling ? " is-settling" : ""}`}
-          style={{ left: ghost.left, top: ghost.top, width: ghost.width }}
+          style={{
+            width: ghost.width,
+            transform: `translate3d(${ghost.left}px, ${ghost.top}px, 0)`,
+          }}
         >
           <ListCard
             list={draggedList}

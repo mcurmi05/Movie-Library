@@ -30,11 +30,21 @@ function starsToRating(stars) {
   return full + (stars.includes("½") ? 0.5 : 0) || null;
 }
 
+// Cloudflare turns away roughly a third of these even from the edge, and the
+// same URL goes through on the next try, so a refusal is worth a couple of
+// retries before the tab is told the distribution is gone.
+async function fetchWithRetry(url, headers, attempts = 3) {
+  let res;
+  for (let i = 0; i < attempts; i++) {
+    if (i) await new Promise((r) => setTimeout(r, 250 * i));
+    res = await fetch(url, { headers, redirect: "follow" });
+    if (res.ok) return res;
+  }
+  return res;
+}
+
 async function slugFor(tmdbId) {
-  const res = await fetch(`https://letterboxd.com/tmdb/${tmdbId}/`, {
-    headers: HEADERS,
-    redirect: "follow",
-  });
+  const res = await fetchWithRetry(`https://letterboxd.com/tmdb/${tmdbId}/`, HEADERS);
   if (!res.ok || !res.url.includes("/film/")) return null;
   return new URL(res.url).pathname.replace(/^\/film\//, "").replace(/\/$/, "");
 }
@@ -66,9 +76,9 @@ export default async function handler(req) {
     const slug = await slugFor(tmdbId);
     if (!slug) return json({ error: "Film not found" }, 404);
 
-    const res = await fetch(
+    const res = await fetchWithRetry(
       `https://letterboxd.com/csi/film/${slug}/rating-histogram/`,
-      { headers: { ...HEADERS, Referer: `https://letterboxd.com/film/${slug}/` } },
+      { ...HEADERS, Referer: `https://letterboxd.com/film/${slug}/` },
     );
     if (!res.ok) return json({ error: `Letterboxd responded ${res.status}` }, 502);
 
