@@ -58,3 +58,26 @@
   }
 }
 
+
+/* Brief highlight on a row the stats card jumped to, so it's obvious which
+   log the number was talking about once the page scrolls. */
+.row-flash {
+  animation: row-flash 1.8s ease-out;
+  border-radius: 10px;
+}
+
+@keyframes row-flash {
+  0%,
+  35% {
+    box-shadow: 0 0 0 2px var(--app-accent);
+  }
+  100% {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-flash {
+    animation-duration: 1ms;
+  }
+}

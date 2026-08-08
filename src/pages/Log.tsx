@@ -35,6 +35,7 @@ import ExtraFiltersPanel from "../components/filters/ExtraFiltersPanel";
 import { useDebouncedValue } from "../utils/useDebouncedValue";
 import PaginationControls from "../components/common/PaginationControls";
 import { usePagination, pageBounds } from "../hooks/usePagination";
+import LogStatsHover from "../components/common/LogStatsHover";
 
 const SORT_OPTIONS = [
   { value: "date", label: "Date Added" },
@@ -95,6 +96,22 @@ function Log() {
   useEffect(() => {
     localStorage.setItem("log-hide-notes", String(hideNotes));
   }, [hideNotes]);
+  // DOM id of a row the stats card asked us to jump to. Set alongside the page
+  // change, so by the time this effect runs the row is rendered.
+  // The counter is what makes clicking the same stat twice re-trigger it.
+  const [reveal, setReveal] = useState({ id: null, n: 0 });
+  useEffect(() => {
+    if (!reveal.id) return;
+    const el = document.getElementById(reveal.id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("row-flash");
+    const t = setTimeout(() => el.classList.remove("row-flash"), 1800);
+    return () => {
+      clearTimeout(t);
+      el.classList.remove("row-flash");
+    };
+  }, [reveal]);
   const pag = usePagination(
     [
       debouncedSearch,
@@ -557,12 +574,87 @@ function Log() {
         })
       : null;
 
+  // Flat shape the stats card counts over. Built from the filtered lists, so
+  // the numbers always describe what's currently on screen.
+  // Letterboxd and Goodreads are 0-5 natively; double them so every crowd
+  // number the stats card sees is on the same 0-10 scale as a user rating.
+  const doubled = (v) => (v == null ? null : v * 2);
+  const statsItems = [
+    ...filteredLogs.map((log) => ({
+      kind: "log",
+      isTV: isTV(log.movie_object),
+      note: log.log,
+      title: log.movie_object?.primaryTitle || "",
+      year: movieYear(log),
+      ref: { kind: "log", id: log.id },
+      titleKey:
+        log.movie_object?.tmdb_id != null
+          ? `${log.movie_object.media_type}:${log.movie_object.tmdb_id}`
+          : log.imdb_movie_id || null,
+      rating: movieRating(log),
+      isRepeat: movieRepeatIds.has(log.id),
+      dateUnknown: movieDateUnknown(log),
+      date: getMostRecentDate(log),
+      runtimeMinutes: Number(log.movie_object?.runtimeMinutes) || 0,
+      genres: log.movie_object?.interests || [],
+      crowdImdb: imdbRatingOf(log.movie_object),
+      crowdLb: doubled(lbRatingOf(log.movie_object)),
+      crowdGr: null,
+    })),
+    ...filteredBookLogs.map((bookLog) => {
+      const info = getBookInfo(bookLog);
+      return {
+        kind: "book",
+        isTV: false,
+        note: bookLog.log,
+        title: info.title || "",
+        year: bookYear(bookLog),
+        ref: { kind: "book", id: bookLog.id },
+        titleKey: info.title
+          ? `${info.title}|${info.author || ""}`.toLowerCase()
+          : null,
+        rating: bookRating(bookLog),
+        isRepeat: bookRepeatIds.has(bookLog.id),
+        dateUnknown: bookDateUnknown(bookLog),
+        date: getMostRecentBookDate(bookLog),
+        runtimeMinutes: 0,
+        genres: [],
+        crowdImdb: null,
+        crowdLb: null,
+        crowdGr: doubled(grRatingOf(bookLog)),
+      };
+    }),
+  ];
+  const statsFiltered =
+    activeFilterCount > 0 ||
+    !!debouncedSearch.trim() ||
+    mediaTypeFilter !== "all";
+
   const displayCount =
     mediaTypeFilter === "all"
       ? combinedAllItems.length
       : mediaTypeFilter === "books"
         ? filteredBookLogs.length
         : filteredLogs.length;
+
+  // Jump to one specific log from the stats card: work out where it sits in the
+  // list as currently filtered and sorted, page to it, then flash the row.
+  const revealLog = (ref) => {
+    if (!ref) return;
+    const index =
+      mediaTypeFilter === "all"
+        ? combinedAllItems.findIndex((i) => i.id === `${ref.kind}-${ref.id}`)
+        : mediaTypeFilter === "books"
+          ? filteredBookLogs.findIndex((b) => b.id === ref.id)
+          : filteredLogs.findIndex((l) => l.id === ref.id);
+    if (index < 0) return;
+    if (pag.pageSize !== "all")
+      pag.setPage(Math.floor(index / pag.pageSize));
+    setReveal((r) => ({
+      id: ref.kind === "book" ? `book-row-${ref.id}` : `log-row-${ref.id}`,
+      n: r.n + 1,
+    }));
+  };
 
   // Slice bounds for the current page, clamped after the list shrinks.
   const { pageStart, pageEnd } = pageBounds(
@@ -716,6 +808,16 @@ function Log() {
         >
           {hideNotes ? "Show notes" : "Hide notes"}
         </button>
+        <LogStatsHover
+          items={statsItems}
+          filtered={statsFiltered}
+          onSearch={(t) => setSearchTerm(t)}
+          onReveal={revealLog}
+          onGenre={(g) => {
+            setGenreFilter(g);
+            setFiltersOpen(true);
+          }}
+        />
         <span className="toolbar-count">{displayCount}</span>
       </div>
       <PaginationControls pag={pag} totalCount={displayCount} />
@@ -749,7 +851,11 @@ function Log() {
                   key={item.id}
                   className="list-row"
                 >
-                  <BookLogCard bookLog={item.data} hideNotes={hideNotes} />
+                  <BookLogCard
+                    bookLog={item.data}
+                    hideNotes={hideNotes}
+                    rowId={`book-row-${item.data.id}`}
+                  />
                 </div>
               ),
             )}
@@ -767,7 +873,12 @@ function Log() {
           )}
           <div className="list-col" style={{ gap: "1rem" }}>
             {filteredBookLogs.slice(pageStart, pageEnd).map((bookLog) => (
-              <BookLogCard key={bookLog.id} bookLog={bookLog} hideNotes={hideNotes} />
+              <BookLogCard
+                key={bookLog.id}
+                bookLog={bookLog}
+                hideNotes={hideNotes}
+                rowId={`book-row-${bookLog.id}`}
+              />
             ))}
           </div>
         </>

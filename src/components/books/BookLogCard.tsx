@@ -33,7 +33,8 @@ const modalStyle = {
   fontWeight: "bold",
 };
 
-const BookLogCard = ({ bookLog, hideNotes = false }) => {
+// `rowId` lets a list give the card a DOM id it can scroll back to.
+const BookLogCard = ({ bookLog, hideNotes = false, rowId = undefined }) => {
   const { deleteBookLog, updateBookLog } = useBookLogs();
   const { rateBook, findRatingForBook } = useBookRatings();
   const navigate = useNavigate();
@@ -256,7 +257,7 @@ const BookLogCard = ({ bookLog, hideNotes = false }) => {
   ) : null;
 
   return (
-    <div className="book-log-card">
+    <div className="book-log-card" id={rowId}>
       <img
         src="/images/logdelete.png"
         className="log-delete-icon"

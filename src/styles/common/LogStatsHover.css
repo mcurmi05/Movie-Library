@@ -1,0 +1,214 @@
+/* Stats hover card in the log toolbar */
+
+.lsh-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.lsh-trigger {
+  background: none;
+  border: 1px solid var(--app-border);
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  outline: none;
+  transition: background-color 120ms ease, color 120ms ease,
+    border-color 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lsh-trigger:hover {
+    background-color: var(--surface-hover);
+    color: var(--text);
+    border-color: var(--app-border-strong);
+  }
+}
+
+/* Pinned open by a click, so it reads as a toggle rather than a hover peek. */
+.lsh-trigger--on {
+  color: var(--text);
+  border-color: var(--app-border-strong);
+  background-color: var(--surface);
+}
+
+.lsh-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  width: 290px;
+  max-width: min(320px, 90vw);
+  padding: 10px 4px 6px 12px;
+  background: var(--panel);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-sm);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  font-size: 0.78rem;
+  cursor: default;
+  animation: lsh-in 130ms var(--ease-out);
+}
+
+@keyframes lsh-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.lsh-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 6px;
+}
+
+.lsh-head-count {
+  font-variant-numeric: tabular-nums;
+  background: var(--app-accent);
+  color: white;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.9em;
+}
+
+/* The card carries a lot of rows, so it scrolls rather than running off the
+   bottom of the viewport. Padding-right lives here so the scrollbar sits
+   outside the text. */
+.lsh-scroll {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding-right: 8px;
+  overscroll-behavior: contain;
+}
+
+.lsh-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lsh-scroll::-webkit-scrollbar-thumb {
+  background: var(--app-border-strong);
+  border-radius: 999px;
+}
+
+.lsh-group {
+  padding: 6px 0;
+  border-top: 1px solid var(--app-border);
+}
+
+.lsh-group-title {
+  color: var(--text-faint, rgba(255, 255, 255, 0.45));
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-bottom: 3px;
+}
+
+/* Free-text line under a row, for the bits that don't fit a label/value pair. */
+.lsh-note {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  padding: 1px 0 2px;
+}
+
+.lsh-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 1px 0;
+}
+
+.lsh-label {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.lsh-value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lsh-sub {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+/* Weekday breakdown: name, proportional bar, count, share. */
+.lsh-day {
+  display: grid;
+  grid-template-columns: 2.2em 1fr 2em 2.4em;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+}
+
+.lsh-day-name {
+  color: var(--text-dim);
+}
+
+.lsh-day-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.lsh-day-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--app-accent);
+}
+
+.lsh-day-count,
+.lsh-day-pct {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.lsh-day-count {
+  color: var(--text);
+}
+
+.lsh-day-pct {
+  color: var(--text-dim);
+}
+
+/* Values that filter the page down to whatever the stat is about. */
+.lsh-link {
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--app-border-strong);
+  text-underline-offset: 2px;
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lsh-link:hover {
+    color: var(--app-accent);
+    text-decoration-color: var(--app-accent);
+  }
+}

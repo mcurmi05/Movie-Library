@@ -17,6 +17,13 @@
   outline: none;
 }
 
+/* The note box is 96% wide, so each side sits 2% in from the wrapper's own
+   10px padding. Percentage margins resolve against the container's width, so
+   this makes the gap under the box match the gap either side of it exactly. */
+.log-rating-wrapper .log-input {
+  margin-bottom: 2%;
+}
+
 .log-rating-wrapper {
   border-radius: 8px;
   margin-top: 10px;
@@ -45,7 +52,7 @@
 }
 
 .log-delete-icon {
-  width: 20px;
+  width: 11px;
   position: absolute;
   right: 10px;
   cursor: pointer;
