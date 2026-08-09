@@ -37,6 +37,9 @@ import {
   reorderListItems,
 } from "../services/lists";
 import { useDragOrder } from "../hooks/useDragOrder";
+import TierList from "../components/common/TierList";
+import { ratingLadder, mediaGroupOf, MEDIA_GROUP_ORDER } from "../utils/rankedRatings";
+import { writeMovieRating, removeMovieRating } from "../services/rateMovie";
 import { getCachedMovieObjects } from "../services/movieMetadata";
 import {
   computeMagicSnapshots,
@@ -109,8 +112,10 @@ const DEFAULT_VIEW = {
   },
 };
 
+const VIEW_MODES = ["list", "poster", "tier"];
+
 const mergeView = (stored) => ({
-  mode: stored?.mode === "poster" ? "poster" : "list",
+  mode: VIEW_MODES.includes(stored?.mode) ? stored.mode : "list",
   fields: { ...DEFAULT_VIEW.fields, ...(stored?.fields || {}) },
 });
 
@@ -462,11 +467,18 @@ export default function ListView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { coverForTmdb, coverForHardcover } = useCovers();
   const { userLogs } = useLogs();
-  const { userRatings } = useRatings();
+  const {
+    userRatings,
+    addRating,
+    updateRating,
+    removeRating,
+    applyRankings,
+  } = useRatings();
   const { userWatchlist } = useWatchlist();
   const { bookLogs } = useBookLogs();
-  const { bookRatings } = useBookRatings();
+  const { bookRatings, rateBook, applyBookRankings } = useBookRatings();
   const { userBookTbr } = useBookTbr();
 
   const [list, setList] = useState(null);
@@ -857,6 +869,125 @@ export default function ListView() {
     grTable,
     movieDetails,
   ]);
+
+  // Tier list: one row per rating value plus an Unrated row for everything the
+  // viewer hasn't scored yet. Dragging a poster into a row rates it.
+  const { tierRows, tierIndex } = useMemo(() => {
+    if (view.mode !== "tier") return { tierRows: [], tierIndex: new Map() };
+    const values = ratingLadder(user) ?? [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+    const byValue = new Map(values.map((v) => [v, []]));
+    byValue.set("unrated", []);
+    const index = new Map();
+    const entries = visibleItems.map((item) => {
+      const isBook = item.media_type === "book";
+      const data = isBook
+        ? bookDetails.get(item.id) || item.item_data
+        : movieDetails.get(item.id) || item.item_data;
+      const info = isBook ? getBookInfo(data) : null;
+      const ratingRow = isBook
+        ? bookRatings.find(
+            (r) => info.hardcover_id &&
+              r.book_entries?.hardcover_id === info.hardcover_id,
+          )
+        : getRatingForMovie(userRatings, data);
+      const value = isBook ? ratingRow?.book_rating : ratingRow?.rating;
+      return {
+        tile: {
+          id: item.id,
+          title: isBook ? info.title : data.primaryTitle || data.title || "",
+          image: isBook
+            ? coverForHardcover(info.hardcover_id) || info.cover_image
+            : coverForTmdb(data.media_type, data.tmdb_id) || data.primaryImage,
+        },
+        kind: isBook ? "book" : "rating",
+        group: isBook ? "book" : mediaGroupOf(data.media_type),
+        data,
+        ratingRow,
+        rating: value ?? null,
+      };
+    });
+    // Inside a row: movies, then TV, then books, each in ranked order.
+    entries.sort((a, b) => {
+      const g = MEDIA_GROUP_ORDER[a.group] - MEDIA_GROUP_ORDER[b.group];
+      if (g !== 0) return g;
+      const ra = a.ratingRow?.ranking ?? Number.MAX_SAFE_INTEGER;
+      const rb = b.ratingRow?.ranking ?? Number.MAX_SAFE_INTEGER;
+      return ra - rb;
+    });
+    entries.forEach((entry) => {
+      const key = entry.rating == null ? "unrated" : Number(entry.rating);
+      if (!byValue.has(key)) byValue.set(key, []);
+      byValue.get(key).push(entry.tile);
+      index.set(entry.tile.id, entry);
+    });
+    const rows = [...byValue.entries()]
+      .filter(([value]) => value !== "unrated")
+      .sort((a, b) => b[0] - a[0])
+      .map(([value, items]) => ({ value, label: String(value), items }));
+    rows.push({
+      value: "unrated",
+      label: "Unrated",
+      items: byValue.get("unrated"),
+    });
+    return { tierRows: rows, tierIndex: index };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view.mode, user, visibleItems, movieDetails, bookDetails, userRatings, bookRatings]);
+
+  const handleTierMove = async (id, rowValue, index) => {
+    const entry = tierIndex.get(id);
+    const row = tierRows.find((r) => r.value === rowValue);
+    if (!entry || !row) return;
+
+    if (rowValue === "unrated") {
+      if (entry.rating == null) return;
+      if (entry.kind === "book") await rateBook(entry.data, null);
+      else
+        await removeMovieRating({
+          user,
+          movieEntryId: entry.ratingRow?.movie_entry_id,
+          ratingHistory: entry.ratingRow?.rating_history,
+          removeRating,
+        });
+      return;
+    }
+
+    let entryId = entry.ratingRow?.movie_entry_id ?? null;
+    if (Number(entry.rating) !== Number(rowValue)) {
+      if (entry.kind === "book") {
+        await rateBook(entry.data, rowValue);
+      } else {
+        entryId = await writeMovieRating({
+          user,
+          movie: entry.data,
+          isRated: !!entry.ratingRow,
+          newRating: rowValue,
+          addRating,
+          updateRating,
+        });
+      }
+    }
+
+    // Renumber the dragged item's media group inside the target row. A book
+    // rated for the first time has no row id to order by yet, so it just lands
+    // at the bottom of its bucket.
+    const ordered = row.items.filter((item) => item.id !== id);
+    ordered.splice(index, 0, { id });
+    const ids = ordered
+      .map((item) => tierIndex.get(item.id))
+      .filter((e) => e && e.group === entry.group)
+      .map((e) =>
+        e.tile.id === id
+          ? entry.kind === "book"
+            ? e.ratingRow?.id
+            : entryId
+          : e.kind === "book"
+            ? e.ratingRow?.id
+            : e.ratingRow?.movie_entry_id,
+      );
+    if (ids.some((v) => v == null)) return;
+    if (entry.group === "book") await applyBookRankings(ids);
+    else await applyRankings(ids);
+  };
 
   // Ranked lists show 1..n and can be dragged into order. Plain lists don't,
   // since most lists aren't meant to be a ranking.
@@ -1656,8 +1787,16 @@ export default function ListView() {
         <div className="empty-msg">This list is empty.</div>
       ) : visibleItems.length === 0 ? (
         <div className="empty-msg">No items match this filter.</div>
+      ) : view.mode === "tier" ? (
+        <TierList rows={tierRows} onMove={isOwner ? handleTierMove : () => {}} />
       ) : view.mode === "poster" ? (
-        <div className="lv-poster-grid">
+        <div
+          className={`lv-poster-grid${
+            // Nothing captioned under the posters: pack them tighter so the
+            // list reads as a collage.
+            Object.values(view.fields).some(Boolean) ? "" : " lv-poster-grid-bare"
+          }`}
+        >
           {visibleItems.map((item, index) => {
             const full = movieDetails.get(item.id) || item.item_data;
             const isBook = item.media_type === "book";
@@ -1779,6 +1918,7 @@ export default function ListView() {
                 {[
                   { value: "list", label: "List" },
                   { value: "poster", label: "Posters" },
+                  { value: "tier", label: "Tier list" },
                 ].map(({ value, label }) => (
                   <label key={value} className="lv-stats-option">
                     <input

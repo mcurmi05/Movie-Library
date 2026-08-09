@@ -1,0 +1,37 @@
+.rrp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rrp-saving {
+  opacity: 0.6;
+}
+
+.rrp-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.rrp-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.rrp-chip {
+  min-width: 34px;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--app-border);
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.rrp-chip-on {
+  background: var(--app-accent);
+  border-color: var(--app-accent);
+  color: #fff;
+}

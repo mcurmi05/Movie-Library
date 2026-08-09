@@ -1,0 +1,119 @@
+.tl-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.tl-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  min-height: 84px;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tl-row-over {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--app-accent);
+}
+
+.tl-label {
+  flex: 0 0 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tl-label-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.tl-label-count {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.tl-items {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.4rem;
+}
+
+.tl-tile {
+  width: 54px;
+  aspect-ratio: 2 / 3;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: grab;
+  background: rgba(255, 255, 255, 0.05);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.tl-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.tl-tile:hover {
+  transform: translateY(-2px);
+}
+
+.tl-tile-active {
+  box-shadow: 0 0 0 2px var(--app-accent);
+  opacity: 0.75;
+}
+
+.tl-empty {
+  align-self: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.tl-hint {
+  position: sticky;
+  bottom: 0.5rem;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #1c1c1c;
+  border: 1px solid var(--app-border);
+  font-size: 0.8rem;
+}
+
+.tl-hint button {
+  background: none;
+  border: none;
+  color: var(--app-accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 700px) {
+  .tl-label {
+    flex-basis: 44px;
+  }
+
+  .tl-tile {
+    width: 42px;
+  }
+}

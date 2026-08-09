@@ -5,9 +5,21 @@ import AddToList from "../components/common/AddToList";
 import BookRating from "../components/books/BookRating";
 import PaginationControls from "../components/common/PaginationControls";
 import { usePagination, pageBounds } from "../hooks/usePagination";
+import PosterWall from "../components/common/PosterWall";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookInfo } from "../utils/bookInfo";
+import { bookDetailsRouteForBook } from "../utils/goodreads";
+import { movieCoverFor, bookCoverFor } from "../utils/coverImage";
+import { useCovers } from "../contexts/UserCoversContext";
+import { useAuth } from "../contexts/AuthContext";
+import RankedRatingsPicker from "../components/common/RankedRatingsPicker";
+import {
+  getRankedRatings,
+  isRankedRating,
+  MEDIA_GROUP_ORDER,
+  mediaGroupOf,
+} from "../utils/rankedRatings";
 import SortByMenu from "../components/filters/SortByMenu";
 import ReleaseYearFilter from "../components/filters/ReleaseYearFilter";
 import DateAddedFilter from "../components/filters/DateAddedFilter";
@@ -41,9 +53,22 @@ function Ratings() {
   const { ratings: imdbRatings } = useImdbRatings();
   const { ratings: lbRatings } = useLetterboxdRatings();
   const { ratings: grRatings } = useGoodreadsRatings();
+  const covers = useCovers();
+  const { user } = useAuth();
+  const rankedRatings = useMemo(() => getRankedRatings(user), [user]);
 
   const navigate = useNavigate();
   const location = useLocation();
+  // posters = the poster wall (default), default = the detailed list.
+  const [viewMode, setViewMode] = useState(() => {
+    const saved = localStorage.getItem("ratings-view-mode");
+    if (saved === "default") return saved;
+    // Older builds stored wall/extended.
+    return saved === "extended" ? "default" : "posters";
+  });
+  useEffect(() => {
+    localStorage.setItem("ratings-view-mode", viewMode);
+  }, [viewMode]);
   const [searchTerm, setSearchTerm] = useState(
     location.state?.searchTerm || "",
   );
@@ -55,7 +80,9 @@ function Ratings() {
   const [mediaTypeFilter, setMediaTypeFilter] = useState(
     location.state?.mediaTypeFilter || "all",
   );
-  const [sortKey, setSortKey] = useState(location.state?.sortKey || "date");
+  const [sortKey, setSortKey] = useState(
+    location.state?.sortKey || "date",
+  );
   const [sortDir, setSortDir] = useState(location.state?.sortDir || "desc");
   const [yearFrom, setYearFrom] = useState(location.state?.yearFrom || "");
   const [yearTo, setYearTo] = useState(location.state?.yearTo || "");
@@ -77,6 +104,15 @@ function Ratings() {
   });
   //rank mode: none | movies | tv | books
   const [rankModeType, setRankModeType] = useState("none");
+  // Poster view option: split the wall into one panel per rating value.
+  const [groupByRating, setGroupByRating] = useState(
+    () => localStorage.getItem("ratings-poster-groups") === "1",
+  );
+  useEffect(() => {
+    localStorage.setItem("ratings-poster-groups", groupByRating ? "1" : "0");
+  }, [groupByRating]);
+  // Drag posters inside a rating panel to set their ranking.
+  const [posterRankMode, setPosterRankMode] = useState(false);
 
   const pag = usePagination(
     [
@@ -179,29 +215,33 @@ function Ratings() {
     return Array.from(set).sort();
   }, [userRatings]);
 
-  //rank mode forces the rating + media filters to match
+  // Rank mode ranks one bucket at a time: one media type at one rating value.
+  // Turning it on pins the media filter to that type and the rating filter to
+  // a value that has ranking switched on.
   useEffect(() => {
-    if (rankModeType === "movies") {
-      setRatingFilter("10");
-      setMediaTypeFilter("movies");
-    } else if (rankModeType === "tv") {
-      setRatingFilter("10");
-      setMediaTypeFilter("tv");
-    } else if (rankModeType === "books") {
-      setRatingFilter("all");
-      setMediaTypeFilter("books");
-    }
+    if (rankModeType === "none") return;
+    setMediaTypeFilter(rankModeType);
+    setRatingFilter((current) =>
+      isRankedRating(rankedRatings, current)
+        ? current
+        : String(rankedRatings[0] ?? 10),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rankModeType]);
 
   const handleRatingFilterChange = (newValue) => {
     setRatingFilter(newValue);
-    if (
-      (rankModeType === "movies" || rankModeType === "tv") &&
-      newValue !== "10"
-    ) {
+    // Ranking a value that isn't ranked means nothing, so leave rank mode.
+    if (rankModeType !== "none" && !isRankedRating(rankedRatings, newValue)) {
       setRankModeType("none");
     }
   };
+
+  // Is the page currently showing exactly one ranked bucket? That's what makes
+  // rank order meaningful, and what the reorder controls need.
+  const rankedValue = isRankedRating(rankedRatings, ratingFilter)
+    ? Number(ratingFilter)
+    : null;
 
   //no early return before hooks, loading state renders in jsx
   const isTVItem = (item) => isTV(item.movie_object);
@@ -235,20 +275,21 @@ function Ratings() {
     return true;
   });
 
-  // Compute 10s with ranking and default sort
-  const allTens = useMemo(() => {
-    return filteredRatings.filter((r) => Number(r.rating) === 10);
-  }, [filteredRatings]);
+  // The rows of the bucket rank mode is currently reordering.
+  const rankBucket = useMemo(() => {
+    if (rankedValue == null) return [];
+    return filteredRatings.filter((r) => Number(r.rating) === rankedValue);
+  }, [filteredRatings, rankedValue]);
 
-  // Sort helper for rankings: rank asc (1..n), then created_at desc
+  // Rank order within a bucket: movies before TV, then rank asc (1..n), then
+  // created_at desc for anything still unranked.
   const rankSort = useCallback((a, b) => {
+    const ga = MEDIA_GROUP_ORDER[mediaGroupOf(a.movie_object?.media_type)];
+    const gb = MEDIA_GROUP_ORDER[mediaGroupOf(b.movie_object?.media_type)];
+    if (ga !== gb) return ga - gb;
     const ra = a.ranking ?? Number.MAX_SAFE_INTEGER;
     const rb = b.ranking ?? Number.MAX_SAFE_INTEGER;
     if (ra !== rb) return ra - rb;
-    // Same rank: show TV first, then movies
-    const aIsTV = isTVItem(a);
-    const bIsTV = isTVItem(b);
-    if (aIsTV !== bIsTV) return aIsTV ? -1 : 1;
     const dateA = new Date(a.created_at);
     const dateB = new Date(b.created_at);
     return dateB - dateA;
@@ -264,10 +305,12 @@ function Ratings() {
       });
     }
     if (sortKey === "rating") {
+      // Rating sort reads as blocks: every 10 (movies in rank order, then TV),
+      // then every 9.5, and so on down.
       return filteredRatings.slice().sort((a, b) => {
         const rc = compareNumeric(movieRatingValue(a), movieRatingValue(b));
         if (rc !== 0) return rc;
-        return new Date(b.created_at) - new Date(a.created_at);
+        return rankSort(a, b);
       });
     }
     if (sortKey === "imdb" || sortKey === "imdbVotes") {
@@ -286,8 +329,10 @@ function Ratings() {
         return new Date(b.created_at) - new Date(a.created_at);
       });
     }
-    if (ratingFilter === "10") {
-      return [...allTens].sort(rankSort);
+    // Filtered down to a single ranked rating value: show that bucket in its
+    // own order rather than by date.
+    if (rankedValue != null) {
+      return [...rankBucket].sort(rankSort);
     }
     return filteredRatings.slice().sort((a, b) => {
       const dateA = new Date(a.created_at);
@@ -295,7 +340,7 @@ function Ratings() {
       return sortDir === "asc" ? dateA - dateB : dateB - dateA;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredRatings, allTens, ratingFilter, rankSort, sortKey, sortDir, imdbRatings, lbRatings]);
+  }, [filteredRatings, rankBucket, rankedValue, rankSort, sortKey, sortDir, imdbRatings, lbRatings]);
 
   // Books: every row in book_ratings is a rated book
   const filteredBooks = useMemo(() => {
@@ -341,7 +386,7 @@ function Ratings() {
       return filteredBooks.slice().sort((a, b) => {
         const rc = compareNumeric(bookRatingValue(a), bookRatingValue(b));
         if (rc !== 0) return rc;
-        return bookSortDate(b) - bookSortDate(a);
+        return bookRankSort(a, b);
       });
     }
     if (sortKey === "goodreads" || sortKey === "goodreadsCount") {
@@ -352,7 +397,7 @@ function Ratings() {
         return bookSortDate(b) - bookSortDate(a);
       });
     }
-    if (rankModeType === "books") {
+    if (rankedValue != null) {
       return filteredBooks.slice().sort(bookRankSort);
     }
     return filteredBooks
@@ -363,7 +408,7 @@ function Ratings() {
           : bookSortDate(b) - bookSortDate(a),
       );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredBooks, rankModeType, bookRankSort, sortKey, sortDir, grRatings]);
+  }, [filteredBooks, rankedValue, bookRankSort, sortKey, sortDir, grRatings]);
 
   // Move rank up/down among 10s by swapping ranking values and normalizing
   // Note: normalization handled implicitly by applyRankOrder indices
@@ -371,7 +416,7 @@ function Ratings() {
   const applyRankOrder = (orderedIds) => applyRankings(orderedIds);
 
   const handleMove = async (entryId, direction) => {
-    const tensSorted = [...allTens].sort(rankSort);
+    const tensSorted = [...rankBucket].sort(rankSort);
     const index = tensSorted.findIndex((r) => r.movie_entry_id === entryId);
     if (index === -1) return;
     const swapWith = direction === "up" ? index - 1 : index + 1;
@@ -382,7 +427,7 @@ function Ratings() {
   };
 
   const handleSendTop = async (entryId) => {
-    const tensSorted = [...allTens].sort(rankSort);
+    const tensSorted = [...rankBucket].sort(rankSort);
     const index = tensSorted.findIndex((r) => r.movie_entry_id === entryId);
     if (index <= 0) return;
     const ids = tensSorted.map((r) => r.movie_entry_id);
@@ -392,7 +437,7 @@ function Ratings() {
   };
 
   const handleSendBottom = async (entryId) => {
-    const tensSorted = [...allTens].sort(rankSort);
+    const tensSorted = [...rankBucket].sort(rankSort);
     const index = tensSorted.findIndex((r) => r.movie_entry_id === entryId);
     if (index === -1 || index === tensSorted.length - 1) return;
     const ids = tensSorted.map((r) => r.movie_entry_id);
@@ -404,8 +449,12 @@ function Ratings() {
   // Book rank handlers operate on book log ids and persist via updateBookRanking
   const applyBookRankOrder = (orderedIds) => applyBookRankings(orderedIds);
 
-  // Rank reorder operates on all rated books (every row in book_ratings).
-  const finishedSortedForRank = () => bookRatings.slice().sort(bookRankSort);
+  // Rank reorder operates on the ranked bucket the page is showing: every
+  // book sharing the rating value being ranked.
+  const finishedSortedForRank = () =>
+    bookRatings
+      .filter((b) => Number(b.book_rating) === rankedValue)
+      .sort(bookRankSort);
 
   const handleBookMove = async (bookId, direction) => {
     const sorted = finishedSortedForRank();
@@ -502,7 +551,10 @@ function Ratings() {
   // order - any other sort and a dropped position would mean nothing. Rows are
   // dragged within the current page and spliced back into the full order.
   const rankDragEnabled =
-    rankModeType !== "none" && !isAllView && sortKey === "date";
+    rankModeType !== "none" &&
+    rankedValue != null &&
+    !isAllView &&
+    sortKey === "date";
   const rankRowId = (row) => (isBooksView ? row.id : row.movie_entry_id);
   const rankedRows = isBooksView ? sortedBooks : sortedRatings;
 
@@ -550,11 +602,145 @@ function Ratings() {
   const draggedRankRows = rankedRows.slice(pageStart, pageEnd);
   const rankRowProps = (id) => (rankDragEnabled ? rankDrag.rowProps(id) : null);
 
+  // Poster wall tiles, in the order the list is already sorted in. Clicking a
+  // poster opens the title, same as clicking one in the default list.
+  const ratingTile = (rating) => ({
+    id: `rating-${rating.id || rating.movie_entry_id}`,
+    title: rating.movie_object?.primaryTitle || "",
+    image: movieCoverFor(covers, rating.movie_object, rating.movie_entry_id),
+    rating: movieRatingValue(rating),
+    onClick: () => {
+      if (rating.movie_object?.tmdb_id == null) return;
+      navigate(
+        `/mediadetails/${rating.movie_object.media_type}/${rating.movie_object.tmdb_id}`,
+      );
+    },
+  });
+  const bookTile = (bookRating) => {
+    const info = getBookInfo(bookRating);
+    const route = bookDetailsRouteForBook(info);
+    return {
+      id: `book-${bookRating.id}`,
+      title: info.title,
+      image: bookCoverFor(covers, bookRating),
+      rating: bookRatingValue(bookRating),
+      onClick: () => {
+        if (!route) return;
+        navigate(route, { state: { book: bookRating.book_entries || info } });
+      },
+    };
+  };
+
+  // One shape for the wall whichever media the page is showing, so grouping
+  // and rank dragging don't need three code paths.
+  const wallRows = useMemo(() => {
+    if (viewMode !== "posters") return [];
+    if (isAllView) return combinedAll;
+    if (isBooksView) return sortedBooks.map((b) => ({ kind: "book", data: b }));
+    return sortedRatings.map((r) => ({ kind: "rating", data: r }));
+  }, [viewMode, isAllView, isBooksView, combinedAll, sortedBooks, sortedRatings]);
+
+  const rowTile = (row) =>
+    row.kind === "book" ? bookTile(row.data) : ratingTile(row.data);
+  const rowRating = (row) =>
+    row.kind === "book" ? bookRatingValue(row.data) : movieRatingValue(row.data);
+  const rowGroup = (row) =>
+    row.kind === "book" ? "book" : mediaGroupOf(row.data.movie_object?.media_type);
+  const rowRankId = (row) =>
+    row.kind === "book" ? row.data.id : row.data.movie_entry_id;
+
+  // The wall shows everything at once - paging a collage defeats the point -
+  // so it reads the whole sorted list rather than the current page.
+  const wallItems = useMemo(
+    () => (groupByRating ? [] : wallRows.map(rowTile)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [wallRows, groupByRating, covers],
+  );
+
+  // Grouped wall: one panel per rating value, highest first, unrated last. The
+  // value is already in the panel heading, so the posters drop their caption.
+  // Inside a panel the order is the ranking (movies, then TV, then books) -
+  // that's the whole point of grouping - unless another sort is active.
+  const groupsUseRank = sortKey === "date" || posterRankMode;
+  const { wallGroups, wallRowIndex } = useMemo(() => {
+    if (!groupByRating) return { wallGroups: [], wallRowIndex: new Map() };
+    const byValue = new Map();
+    wallRows.forEach((row) => {
+      const value = rowRating(row);
+      const key = value == null ? "none" : Number(value);
+      if (!byValue.has(key)) byValue.set(key, []);
+      byValue.get(key).push(row);
+    });
+    const byRank = (a, b) => {
+      const ga = MEDIA_GROUP_ORDER[rowGroup(a)];
+      const gb = MEDIA_GROUP_ORDER[rowGroup(b)];
+      if (ga !== gb) return ga - gb;
+      const ra = a.data.ranking ?? Number.MAX_SAFE_INTEGER;
+      const rb = b.data.ranking ?? Number.MAX_SAFE_INTEGER;
+      if (ra !== rb) return ra - rb;
+      return new Date(b.data.created_at) - new Date(a.data.created_at);
+    };
+    const index = new Map();
+    const groups = [...byValue.entries()]
+      .sort((a, b) => {
+        if (a[0] === "none") return 1;
+        if (b[0] === "none") return -1;
+        return b[0] - a[0];
+      })
+      .map(([value, rows]) => {
+        const ranked = value !== "none" && isRankedRating(rankedRatings, value);
+        // Ranking is per media type, so a panel is split into a movies, a TV
+        // and a books section. Each counts its own 1..n, and a drag can only
+        // reorder within one section.
+        const sorted = groupsUseRank ? [...rows].sort(byRank) : rows;
+        const sections = new Map();
+        sorted.forEach((row) => {
+          const group = rowGroup(row);
+          if (!sections.has(group)) sections.set(group, []);
+          const tile = rowTile(row);
+          index.set(tile.id, row);
+          sections.get(group).push({
+            ...tile,
+            rating: null,
+            rank: ranked ? sections.get(group).length + 1 : null,
+          });
+        });
+        return {
+          value,
+          ranked,
+          count: sorted.length,
+          sections: [...sections.entries()]
+            .sort((a, b) => MEDIA_GROUP_ORDER[a[0]] - MEDIA_GROUP_ORDER[b[0]])
+            .map(([group, items]) => ({ group, items })),
+        };
+      });
+    return { wallGroups: groups, wallRowIndex: index };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupByRating, wallRows, groupsUseRank, rankedRatings, covers]);
+
+  // Posters dropped into a new order inside one rating panel. Ranking is per
+  // media type, so each type in the panel is renumbered against its own 1..n.
+  const handleGroupReorder = async (orderedTileIds) => {
+    const rows = orderedTileIds
+      .map((tileId) => wallRowIndex.get(tileId))
+      .filter(Boolean);
+    const byGroup = new Map();
+    rows.forEach((row) => {
+      const group = rowGroup(row);
+      if (!byGroup.has(group)) byGroup.set(group, []);
+      byGroup.get(group).push(rowRankId(row));
+    });
+    for (const [group, ids] of byGroup) {
+      if (group === "book") await applyBookRankings(ids);
+      else await applyRankings(ids);
+    }
+  };
+
   if (isLoading) return <Loader />;
 
   return (
     <div className="page-stack">
-      <h1 className="page-title">Your Ratings</h1>
+      <h1 className="page-title">Ratings &amp; Rankings</h1>
       <div className="toolbar">
         <div className="toolbar-search">
           <input
@@ -579,7 +765,7 @@ function Ratings() {
           value={mediaTypeFilter}
           onChange={(e) => setMediaTypeFilter(e.target.value)}
         >
-          <option value="all">All</option>
+          <option value="all">All media</option>
           <option value="moviesAndTV">Movies & TV</option>
           <option value="movies">Movies</option>
           <option value="tv">TV</option>
@@ -650,29 +836,77 @@ function Ratings() {
           />
         </ExtraFiltersPanel>
 
-        {/*rank mode: pick what to reorder (single-select, so a dropdown)*/}
         <select
-          className={`toolbar-select${
-            rankModeType !== "none" ? " toolbar-select--active" : ""
-          }`}
-          value={rankModeType}
+          className="toolbar-select"
+          value={viewMode}
           onChange={(e) => {
-            const value = e.target.value;
-            setRankModeType(value);
-            // Turning ranking off clears the rating + media filters that the
-            // rank modes force on, back to their defaults.
-            if (value === "none") {
+            const next = e.target.value;
+            setViewMode(next);
+            // The rank controls only exist in the default list, so leaving it
+            // drops rank mode and the filters it forces on.
+            if (next !== "default" && rankModeType !== "none") {
+              setRankModeType("none");
               setRatingFilter("all");
               setMediaTypeFilter("all");
             }
           }}
-          title="Reorder your top-ranked items"
+          title="View"
         >
-          <option value="none">Rank: Off</option>
-          <option value="movies">Rank 10s Movies</option>
-          <option value="tv">Rank 10s TV</option>
-          <option value="books">Rank Books</option>
+          <option value="posters">Posters</option>
+          <option value="default">Default</option>
         </select>
+
+        {viewMode === "posters" && (
+          <button
+            className={`toolbar-text-btn${
+              groupByRating ? " toolbar-text-btn--on" : ""
+            }`}
+            onClick={() => {
+              setGroupByRating((v) => !v);
+              setPosterRankMode(false);
+            }}
+            title="Split the wall into a panel per rating"
+          >
+            Group by rating
+          </button>
+        )}
+        {viewMode === "posters" && groupByRating && (
+          <button
+            className={`toolbar-text-btn${
+              posterRankMode ? " toolbar-text-btn--on" : ""
+            }`}
+            onClick={() => setPosterRankMode((v) => !v)}
+            title="Pick which ratings are rankable, then drag their posters"
+          >
+            Rank mode
+          </button>
+        )}
+
+        {/*rank mode: pick what to reorder (single-select, so a dropdown)*/}
+        {viewMode === "default" && (
+          <select
+            className={`toolbar-select${
+              rankModeType !== "none" ? " toolbar-select--active" : ""
+            }`}
+            value={rankModeType}
+            onChange={(e) => {
+              const value = e.target.value;
+              setRankModeType(value);
+              // Turning ranking off clears the rating + media filters that the
+              // rank modes force on, back to their defaults.
+              if (value === "none") {
+                setRatingFilter("all");
+                setMediaTypeFilter("all");
+              }
+            }}
+            title="Reorder your top-ranked items"
+          >
+            <option value="none">Rank: Off</option>
+            <option value="movies">Rank Movies</option>
+            <option value="tv">Rank TV</option>
+            <option value="books">Rank Books</option>
+          </select>
+        )}
         <button
           className="toolbar-icon-btn"
           onClick={goToWatchlist}
@@ -698,103 +932,171 @@ function Ratings() {
               : `No ratings found for "${searchTerm}"!`}
         </div>
       ) : null}
-      <PaginationControls pag={pag} totalCount={displayCount} />
-      <div className="list-col" ref={rankDrag.containerRef}>
-        {isAllView
-          ? combinedAll.slice(pageStart, pageEnd).map((item) =>
-              item.kind === "rating" ? (
-                <div
-                  key={item.id}
-                  className="list-row"
-                >
-                  <div className="div-wrapper-rating-testing">
-                    <ListComponent
-                      movie_object={item.data.movie_object}
-                      betweenSlot={<AddToList movie={item.data.movie_object} />}
-                      ratingDate={item.data.created_at}
-                      ratingUpdatedDate={item.data.updated_at}
-                      ratingPreviousValue={item.data.previous_rating}
-                      ratingDateUnknown={item.data.date_unknown}
-                      posterEditable={item.data.movie_object?.tmdb_id != null}
-                      posterEntryId={item.data.movie_entry_id}
-                      ratingHistory={item.data.rating_history}
-                      rankNumber={
-                        Number(item.data.rating) === 10
-                          ? item.data.ranking
+      {viewMode === "default" && (
+        <PaginationControls pag={pag} totalCount={displayCount} />
+      )}
+      {viewMode === "posters" && groupByRating && posterRankMode && (
+        <div className="pw-rank-panel">
+          <RankedRatingsPicker
+            extraValues={[
+              ...userRatings.map((r) => Number(r.rating)),
+              ...bookRatings.map((b) => Number(b.book_rating)),
+            ].filter(Number.isFinite)}
+          />
+          <span className="pw-rank-panel-hint">
+            Drag posters inside a highlighted rating to rank them. Movies, TV
+            and books are ranked separately.
+          </span>
+        </div>
+      )}
+      {viewMode === "posters" ? (
+        groupByRating ? (
+          <div className="pw-groups">
+            {wallGroups.map((group) => (
+              <div className="pw-group" key={group.value}>
+                <div className="pw-group-head">
+                  {group.value === "none" ? (
+                    "Unrated"
+                  ) : (
+                    <>
+                      <img src="/images/user-rating-star2.png" alt="" />
+                      {group.value}
+                    </>
+                  )}
+                  <span className="pw-group-count">{group.count}</span>
+                </div>
+                {group.sections.map((section, i) => (
+                  <div className="pw-section" key={section.group}>
+                    {i > 0 && <div className="pw-section-line" />}
+                    <PosterWall
+                      items={section.items}
+                      onReorder={
+                        posterRankMode && group.ranked
+                          ? handleGroupReorder
                           : null
                       }
                     />
                   </div>
-                </div>
-              ) : (
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <PosterWall items={wallItems} />
+        )
+      ) : (
+        <div className="list-col" ref={rankDrag.containerRef}>
+          {isAllView
+            ? combinedAll.slice(pageStart, pageEnd).map((item) =>
+                item.kind === "rating" ? (
+                  <div
+                    key={item.id}
+                    className="list-row"
+                  >
+                    <div className="div-wrapper-rating-testing">
+                      <ListComponent
+                        movie_object={item.data.movie_object}
+                        betweenSlot={<AddToList movie={item.data.movie_object} />}
+                        ratingDate={item.data.created_at}
+                        ratingUpdatedDate={item.data.updated_at}
+                        ratingPreviousValue={item.data.previous_rating}
+                        ratingDateUnknown={item.data.date_unknown}
+                        posterEditable={item.data.movie_object?.tmdb_id != null}
+                        posterEntryId={item.data.movie_entry_id}
+                        ratingHistory={item.data.rating_history}
+                        rankNumber={
+                          isRankedRating(rankedRatings, item.data.rating)
+                            ? item.data.ranking
+                            : null
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    key={item.id}
+                    className="list-row"
+                  >
+                    <div className="div-wrapper-rating-testing">
+                      <BookRating
+                        bookLog={item.data}
+                        rankNumber={
+                          isRankedRating(rankedRatings, item.data.book_rating)
+                            ? item.data.ranking
+                            : null
+                        }
+                      />
+                    </div>
+                  </div>
+                ),
+              )
+            : isBooksView
+            ? draggedRankRows.map((bookLog) => (
                 <div
-                  key={item.id}
-                  className="list-row"
+                  key={bookLog.id}
+                  className={rankRowClass(bookLog.id)}
+                  {...rankRowProps(bookLog.id)}
                 >
+                  {rankGrip(bookLog.id)}
                   <div className="div-wrapper-rating-testing">
                     <BookRating
-                      bookLog={item.data}
-                      rankNumber={item.data.ranking || null}
+                      bookLog={bookLog}
+                      rankNumber={
+                        isRankedRating(rankedRatings, bookLog.book_rating)
+                          ? bookLog.ranking
+                          : null
+                      }
+                      showRankControls={
+                        rankModeType === "books" && rankedValue != null
+                      }
+                      onMoveUp={() => handleBookMove(bookLog.id, "up")}
+                      onMoveDown={() => handleBookMove(bookLog.id, "down")}
+                      onSendTop={() => handleBookSendTop(bookLog.id)}
+                      onSendBottom={() => handleBookSendBottom(bookLog.id)}
                     />
                   </div>
                 </div>
-              ),
-            )
-          : isBooksView
-          ? draggedRankRows.map((bookLog) => (
-              <div
-                key={bookLog.id}
-                className={rankRowClass(bookLog.id)}
-                {...rankRowProps(bookLog.id)}
-              >
-                {rankGrip(bookLog.id)}
-                <div className="div-wrapper-rating-testing">
-                  <BookRating
-                    bookLog={bookLog}
-                    rankNumber={bookLog.ranking || null}
-                    showRankControls={rankModeType === "books"}
-                    onMoveUp={() => handleBookMove(bookLog.id, "up")}
-                    onMoveDown={() => handleBookMove(bookLog.id, "down")}
-                    onSendTop={() => handleBookSendTop(bookLog.id)}
-                    onSendBottom={() => handleBookSendBottom(bookLog.id)}
-                  />
+              ))
+            : draggedRankRows.map((rating) => (
+                <div
+                  key={rating.id || rating.movie_entry_id}
+                  className={rankRowClass(rating.movie_entry_id)}
+                  {...rankRowProps(rating.movie_entry_id)}
+                >
+                  {rankGrip(rating.movie_entry_id)}
+                  <div className="div-wrapper-rating-testing">
+                    <ListComponent
+                      movie_object={rating.movie_object}
+                      betweenSlot={<AddToList movie={rating.movie_object} />}
+                      ratingDate={rating.created_at}
+                      ratingUpdatedDate={rating.updated_at}
+                      ratingPreviousValue={rating.previous_rating}
+                      ratingDateUnknown={rating.date_unknown}
+                      posterEditable={rating.movie_object?.tmdb_id != null}
+                      posterEntryId={rating.movie_entry_id}
+                      ratingHistory={rating.rating_history}
+                      rankNumber={
+                        isRankedRating(rankedRatings, rating.rating)
+                          ? rating.ranking
+                          : null
+                      }
+                      showRankControls={
+                        rankModeType !== "none" &&
+                        Number(rating.rating) === rankedValue
+                      }
+                      onMoveUp={() => handleMove(rating.movie_entry_id, "up")}
+                      onMoveDown={() => handleMove(rating.movie_entry_id, "down")}
+                      onSendTop={() => handleSendTop(rating.movie_entry_id)}
+                      onSendBottom={() => handleSendBottom(rating.movie_entry_id)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))
-          : draggedRankRows.map((rating) => (
-              <div
-                key={rating.id || rating.movie_entry_id}
-                className={rankRowClass(rating.movie_entry_id)}
-                {...rankRowProps(rating.movie_entry_id)}
-              >
-                {rankGrip(rating.movie_entry_id)}
-                <div className="div-wrapper-rating-testing">
-                  <ListComponent
-                    movie_object={rating.movie_object}
-                    betweenSlot={<AddToList movie={rating.movie_object} />}
-                    ratingDate={rating.created_at}
-                    ratingUpdatedDate={rating.updated_at}
-                    ratingPreviousValue={rating.previous_rating}
-                    ratingDateUnknown={rating.date_unknown}
-                    posterEditable={rating.movie_object?.tmdb_id != null}
-                    posterEntryId={rating.movie_entry_id}
-                    ratingHistory={rating.rating_history}
-                    rankNumber={
-                      Number(rating.rating) === 10 ? rating.ranking : null
-                    }
-                    showRankControls={
-                      rankModeType !== "none" && Number(rating.rating) === 10
-                    }
-                    onMoveUp={() => handleMove(rating.movie_entry_id, "up")}
-                    onMoveDown={() => handleMove(rating.movie_entry_id, "down")}
-                    onSendTop={() => handleSendTop(rating.movie_entry_id)}
-                    onSendBottom={() => handleSendBottom(rating.movie_entry_id)}
-                  />
-                </div>
-              </div>
-            ))}
-      </div>
-      <PaginationControls pag={pag} totalCount={displayCount} position="bottom" />
+              ))}
+        </div>
+      )}
+      {viewMode === "default" && (
+        <PaginationControls pag={pag} totalCount={displayCount} position="bottom" />
+      )}
     </div>
   );
 }

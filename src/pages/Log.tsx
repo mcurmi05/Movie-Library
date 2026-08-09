@@ -21,6 +21,9 @@ import { useLogs } from "../contexts/UserLogsContext";
 import { useBookLogs } from "../contexts/UserBookLogsContext";
 import { useBookRatings } from "../contexts/UserBookRatingsContext";
 import BookLogCard from "../components/books/BookLogCard";
+import PosterWall from "../components/common/PosterWall";
+import { movieCoverFor, bookCoverFor } from "../utils/coverImage";
+import { useCovers } from "../contexts/UserCoversContext";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getBookInfo } from "../utils/bookInfo";
@@ -57,6 +60,7 @@ function Log() {
   const { ratings: imdbRatings } = useImdbRatings();
   const { ratings: lbRatings } = useLetterboxdRatings();
   const { ratings: grRatings } = useGoodreadsRatings();
+  const covers = useCovers();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState(
@@ -96,6 +100,14 @@ function Log() {
   useEffect(() => {
     localStorage.setItem("log-hide-notes", String(hideNotes));
   }, [hideNotes]);
+  // Poster mode: the log as a wall of covers, a log card opening under the row
+  // of whichever poster is clicked. Persisted like hideNotes.
+  const [posterMode, setPosterMode] = useState(
+    () => localStorage.getItem("log-poster-mode") === "true",
+  );
+  useEffect(() => {
+    localStorage.setItem("log-poster-mode", String(posterMode));
+  }, [posterMode]);
   // DOM id of a row the stats card asked us to jump to. Set alongside the page
   // change, so by the time this effect runs the row is rendered.
   // The counter is what makes clicking the same stat twice re-trigger it.
@@ -663,6 +675,52 @@ function Log() {
     displayCount,
   );
 
+  // Poster mode tiles for the current page, in the order the list is already
+  // sorted in. Clicking one opens its normal log card underneath.
+  const logTile = (log) => ({
+    id: `log-${log.id}`,
+    kind: "log",
+    data: log,
+    title: log.movie_object?.primaryTitle || "",
+    image: movieCoverFor(covers, log.movie_object, log.movie_entry_id),
+  });
+  const bookLogTile = (bookLog) => ({
+    id: `book-${bookLog.id}`,
+    kind: "book",
+    data: bookLog,
+    title: getBookInfo(bookLog).title || "",
+    image: bookCoverFor(covers, bookLog),
+  });
+  const wallItems = !posterMode
+    ? []
+    : mediaTypeFilter === "all"
+      ? combinedAllItems
+          .slice(pageStart, pageEnd)
+          .map((item) =>
+            item.kind === "log" ? logTile(item.data) : bookLogTile(item.data),
+          )
+      : mediaTypeFilter === "books"
+        ? filteredBookLogs.slice(pageStart, pageEnd).map(bookLogTile)
+        : filteredLogs.slice(pageStart, pageEnd).map(logTile);
+
+  const renderExpandedLog = (item) =>
+    item.kind === "log" ? (
+      <LogComponent
+        log_id={item.data.id}
+        created_at={item.data.created_at}
+        movie_end_date={item.data.movie_end_date}
+        movie={item.data.movie_object}
+        logtext={item.data.log}
+        hideNotes={hideNotes}
+      />
+    ) : (
+      <BookLogCard
+        bookLog={item.data}
+        hideNotes={hideNotes}
+        rowId={`book-row-${item.data.id}`}
+      />
+    );
+
   return (
     <div className="page-stack">
       <h1 className="page-title">Your Log</h1>
@@ -808,6 +866,17 @@ function Log() {
         >
           {hideNotes ? "Show notes" : "Hide notes"}
         </button>
+        <button
+          className={`toolbar-text-btn${posterMode ? " toolbar-text-btn--on" : ""}`}
+          onClick={() => setPosterMode((v) => !v)}
+          title={
+            posterMode
+              ? "Back to the log list"
+              : "Show the log as a wall of posters"
+          }
+        >
+          Posters
+        </button>
         <LogStatsHover
           items={statsItems}
           filtered={statsFiltered}
@@ -821,7 +890,14 @@ function Log() {
         <span className="toolbar-count">{displayCount}</span>
       </div>
       <PaginationControls pag={pag} totalCount={displayCount} />
-      {mediaTypeFilter === "all" ? (
+      {posterMode ? (
+        <>
+          {displayCount === 0 && (
+            <div className="empty-msg">No logs match your applied filters</div>
+          )}
+          <PosterWall items={wallItems} renderExpanded={renderExpandedLog} />
+        </>
+      ) : mediaTypeFilter === "all" ? (
         // Combined view: movies, TV, and books interleaved by date
         <>
           {combinedAllItems.length === 0 && (

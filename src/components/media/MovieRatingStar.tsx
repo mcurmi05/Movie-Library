@@ -4,13 +4,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import RatingModal from "../common/RatingModal";
 import { useRatings } from "../../contexts/UserRatingsContext";
-import { supabase } from "../../services/supabase-client";
-import {
-  archiveRatingHistory,
-  getArchivedRatingHistory,
-  getRatingForMovie,
-} from "../../services/ratingsfromtable";
-import { upsertMovie, resolveFullMovie } from "../../services/movieMetadata";
+import { getRatingForMovie } from "../../services/ratingsfromtable";
+import { writeMovieRating, removeMovieRating } from "../../services/rateMovie";
 
 function MovieRatingStar({movie}) {
 
@@ -69,57 +64,17 @@ function MovieRatingStar({movie}) {
         return;
       }
       setRating(newRating);
-      // Ensure full metadata (browse cards only carry tmdb_id), cache it in the
-      // shared movies table, and reference it by uuid.
-      const full =
-        movie.tmdb_id != null && movie.id
-          ? movie
-          : await resolveFullMovie(movie);
-      const movieEntryId = await upsertMovie(full);
-
-      try {
-        let error;
-        let history = null;
-
-        if (rated) {
-          const result = await supabase
-            .from('user_ratings')
-            .update({rating: newRating})
-            .eq('entry_id', movieEntryId)
-            .eq('user_id', user.id);
-          error = result.error;
-        } else {
-          // Rating a title that was unrated before picks its old timeline back
-          // up rather than starting from scratch.
-          const archived = await getArchivedRatingHistory(user.id, movieEntryId);
-          history = [
-            ...archived,
-            { rating: newRating, at: new Date().toISOString() },
-          ];
-          const result = await supabase
-            .from('user_ratings')
-            .insert({
-              user_id: user.id,
-              rating: newRating,
-              entry_id: movieEntryId,
-              rating_history: history,
-            });
-          error = result.error;
-        }
-
-        if (error) {
-          console.error(error);
-        } else {
-          setRated(true);
-          setRatingEntryId(movieEntryId);
-          if (rated) {
-            updateRating(movieEntryId, newRating, full);
-          } else {
-            addRating(movieEntryId, newRating, full, history);
-          }
-        }
-      } catch (err) {
-        console.error(err);
+      const movieEntryId = await writeMovieRating({
+        user,
+        movie,
+        isRated: rated,
+        newRating,
+        addRating,
+        updateRating,
+      });
+      if (movieEntryId) {
+        setRated(true);
+        setRatingEntryId(movieEntryId);
       }
     }
 
@@ -132,28 +87,16 @@ function MovieRatingStar({movie}) {
         entryId = ratingRow?.movie_entry_id ?? null;
       }
       if (!entryId) return;
-      try {
-        // The row is about to go, and rating_history goes with it - park the
-        // timeline so re-rating this title can pick it up again.
-        const ratingRow = getRatingForMovie(userRatings, movie);
-        await archiveRatingHistory(user.id, entryId, ratingRow?.rating_history);
-
-        const { error } = await supabase
-          .from('user_ratings')
-          .delete()
-          .eq('entry_id', entryId)
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error(error);
-        } else {
-          setRating(0);
-          setRated(false);
-          setRatingEntryId(null);
-          removeRating(entryId);
-        }
-      } catch (err) {
-        console.error(err);
+      const removed = await removeMovieRating({
+        user,
+        movieEntryId: entryId,
+        ratingHistory: getRatingForMovie(userRatings, movie)?.rating_history,
+        removeRating,
+      });
+      if (removed) {
+        setRating(0);
+        setRated(false);
+        setRatingEntryId(null);
       }
     }
 

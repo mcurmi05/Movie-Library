@@ -270,4 +270,218 @@ export function useDragOrder(ids, onCommit) {
   return { containerRef, order, draggingId, handleProps, rowProps };
 }
 
+// The same idea in two dimensions, for a grid of posters.
+//
+// Tiles keep their DOM order for the whole drag; each one is transformed from
+// the slot it started in to the slot the preview order gives it, so everything
+// slides around the poster being dragged instead of snapping on release.
+export function useGridDragOrder(ids, onCommit) {
+  const containerRef = useRef(null);
+  const [draggingId, setDraggingId] = useState(null);
+  const [order, setOrder] = useState(ids);
+  const [offsets, setOffsets] = useState(null);
+  const dragRef = useRef(null);
+  const orderRef = useRef(ids);
+
+  orderRef.current = order;
+
+  useEffect(() => {
+    if (draggingId != null) return;
+    setOrder((prev) =>
+      prev.length === ids.length && prev.every((v, i) => v === ids[i])
+        ? prev
+        : ids,
+    );
+  }, [ids, draggingId]);
+
+  // Slot geometry, in DOM order, measured once at drag start.
+  const measure = () => {
+    const el = containerRef.current;
+    if (!el) return null;
+    const tiles = Array.from(el.querySelectorAll("[data-drag-id]")).map((n) => {
+      const r = n.getBoundingClientRect();
+      return {
+        id: n.getAttribute("data-drag-id"),
+        left: r.left,
+        top: r.top,
+        width: r.width,
+        height: r.height,
+      };
+    });
+    return tiles.length >= 2 ? tiles : null;
+  };
+
+  const applyPointer = useCallback((clientX, clientY) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const { tiles, slotOf, index, startX, startY, startScroll, scroller } = drag;
+    drag.clientX = clientX;
+    drag.clientY = clientY;
+    if (Math.abs(clientX - startX) > 3 || Math.abs(clientY - startY) > 3) {
+      drag.moved = true;
+    }
+
+    // Slots were measured in viewport coordinates, so page scrolling since the
+    // drag started has to be added back in.
+    const dx = clientX - startX;
+    const dy = clientY - startY + scrollTopOf(scroller) - startScroll;
+    const source = tiles[index];
+    const cx = source.left + source.width / 2 + dx;
+    const cy = source.top + source.height / 2 + dy;
+
+    // The slot whose centre the poster is closest to.
+    let to = index;
+    let best = Infinity;
+    tiles.forEach((tile, i) => {
+      const ox = tile.left + tile.width / 2 - cx;
+      const oy = tile.top + tile.height / 2 - cy;
+      const distance = ox * ox + oy * oy;
+      if (distance < best) {
+        best = distance;
+        to = i;
+      }
+    });
+
+    const ordered = tiles.map((t) => t.id);
+    const [moved] = ordered.splice(index, 1);
+    ordered.splice(to, 0, moved);
+
+    const next = {};
+    ordered.forEach((id, position) => {
+      const from = slotOf.get(id);
+      if (from === index) return;
+      next[id] = {
+        x: tiles[position].left - tiles[from].left,
+        y: tiles[position].top - tiles[from].top,
+      };
+    });
+    next[source.id] = { x: dx, y: dy };
+    setOffsets(next);
+
+    if (to !== drag.to) {
+      drag.to = to;
+      setOrder(ordered);
+    }
+  }, []);
+
+  const endDrag = useCallback(() => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    setDraggingId(null);
+    setOffsets(null);
+    if (!drag) return;
+    const started = drag.tiles.map((t) => t.id);
+    const current = orderRef.current;
+    const changed =
+      started.length !== current.length ||
+      started.some((v, i) => v !== current[i]);
+    if (changed) onCommit(current);
+  }, [onCommit]);
+
+  useEffect(() => {
+    if (draggingId == null) return;
+    const move = (e) => {
+      e.preventDefault();
+      applyPointer(e.clientX, e.clientY);
+    };
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+
+    let frame = requestAnimationFrame(function step() {
+      frame = requestAnimationFrame(step);
+      const drag = dragRef.current;
+      if (!drag?.moved) return;
+      const { scroller, clientX, clientY } = drag;
+      const { top, bottom, max } = scrollBoundsOf(scroller);
+      const above = clientY - (top + SCROLL_ZONE);
+      const below = clientY - (bottom - SCROLL_ZONE);
+      const speed =
+        above < 0
+          ? Math.max(above / SCROLL_ZONE, -1) * SCROLL_MAX
+          : below > 0
+            ? Math.min(below / SCROLL_ZONE, 1) * SCROLL_MAX
+            : 0;
+      if (!speed) return;
+      const at = scrollTopOf(scroller);
+      const next = Math.min(Math.max(at + speed, 0), max);
+      if (next === at) return;
+      scroller === window
+        ? window.scrollTo(0, next)
+        : (scroller.scrollTop = next);
+      applyPointer(clientX, clientY);
+    });
+
+    const prevTouchAction = document.body.style.touchAction;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.touchAction = "none";
+    document.body.style.userSelect = "none";
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      document.body.style.touchAction = prevTouchAction;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [draggingId, applyPointer, endDrag]);
+
+  // The whole tile is the handle here - there's nowhere to put a grip on a
+  // poster this small.
+  const handleProps = useCallback(
+    (id) => ({
+      style: { touchAction: "none" },
+      onPointerDown: (e) => {
+        if (e.button != null && e.button !== 0) return;
+        const tiles = measure();
+        const index = tiles ? tiles.findIndex((t) => t.id === String(id)) : -1;
+        if (index === -1) return;
+        e.preventDefault();
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        const scroller = scrollParentOf(containerRef.current);
+        dragRef.current = {
+          tiles,
+          slotOf: new Map(tiles.map((t, i) => [t.id, i])),
+          index,
+          to: index,
+          startX: e.clientX,
+          startY: e.clientY,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          scroller,
+          startScroll: scrollTopOf(scroller),
+        };
+        setOffsets(Object.fromEntries(tiles.map((t) => [t.id, { x: 0, y: 0 }])));
+        setDraggingId(id);
+      },
+    }),
+    [],
+  );
+
+  const tileProps = useCallback(
+    (id) => {
+      const dragging = draggingId === id;
+      const shift = offsets?.[String(id)];
+      return {
+        "data-drag-id": id,
+        style: {
+          transform: shift
+            ? `translate(${shift.x}px, ${shift.y}px)`
+            : undefined,
+          transition: dragging
+            ? "none"
+            : offsets
+              ? "transform 180ms cubic-bezier(0.2, 0, 0, 1)"
+              : undefined,
+          position: dragging ? "relative" : undefined,
+          zIndex: dragging ? 20 : undefined,
+        },
+      };
+    },
+    [draggingId, offsets],
+  );
+
+  return { containerRef, order, draggingId, handleProps, tileProps };
+}
+
 export default useDragOrder;

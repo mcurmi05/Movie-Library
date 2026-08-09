@@ -6,6 +6,7 @@ import {
   updateUserRatingHistory,
 } from "../services/ratingsfromtable";
 import { useAuth } from "./AuthContext";
+import { mediaGroupOf } from "../utils/rankedRatings";
 import { useEffect, useRef } from "react";
 
 /* eslint-disable react-refresh/only-export-components */
@@ -43,21 +44,30 @@ export const UserRatingsProvider = ({ children }) => {
   };
 
   const updateRating = async (movieEntryId, newRating, movie) => {
+    const current = userRatings.find((r) => r.movie_entry_id === movieEntryId);
     // The value the rating had before this change, recorded so the UI can
     // show what it was updated from.
-    const previousRating =
-      userRatings.find((r) => r.movie_entry_id === movieEntryId)?.rating ?? null;
-    setUserRatings((prev) => {
-      // compute next rank if moving to 10 and currently unranked
-      const isBecomingTen = Number(newRating) === 10;
-      const maxRank = prev.reduce((max, r) => {
-        return Number(r.rating) === 10 && Number.isInteger(r.ranking)
-          ? Math.max(max, r.ranking)
-          : max;
-      }, 0);
-      return prev.map((rating) => {
+    const previousRating = current?.rating ?? null;
+    // Ranking is per rating value and per media type, so changing the rating
+    // moves the title into a different ranked bucket - it lands at the bottom
+    // of the new one. An unchanged value keeps the rank it already had.
+    const valueChanged = Number(previousRating) !== Number(newRating);
+    const group = mediaGroupOf(movie?.media_type);
+    const nextRanking = valueChanged
+      ? userRatings.reduce(
+          (max, r) =>
+            Number(r.rating) === Number(newRating) &&
+            mediaGroupOf(r.movie_object?.media_type) === group &&
+            Number.isInteger(r.ranking)
+              ? Math.max(max, r.ranking)
+              : max,
+          0,
+        ) + 1
+      : null;
+    setUserRatings((prev) =>
+      prev.map((rating) => {
         if (rating.movie_entry_id !== movieEntryId) return rating;
-        const next = {
+        return {
           ...rating,
           rating: newRating,
           previous_rating: previousRating,
@@ -67,33 +77,15 @@ export const UserRatingsProvider = ({ children }) => {
             ...(rating.rating_history ?? []),
             { rating: newRating, at: new Date().toISOString() },
           ],
+          ...(nextRanking != null ? { ranking: nextRanking } : {}),
         };
-        if (isBecomingTen && !Number.isInteger(rating.ranking)) {
-          next.ranking = maxRank + 1; // default to bottom
-        }
-        return next;
-      });
-    });
+      }),
+    );
     if (user && movieEntryId) {
       try {
         await updateUserRating(user.id, movieEntryId, newRating, previousRating);
-        // If becoming 10 and was unranked, persist bottom rank as well
-        if (Number(newRating) === 10) {
-          const current = userRatings.find(
-            (r) => r.movie_entry_id === movieEntryId
-          );
-          if (!current?.ranking) {
-            // recompute max on latest state
-            const latestMax = Math.max(
-              0,
-              ...userRatings
-                .filter(
-                  (r) => Number(r.rating) === 10 && Number.isInteger(r.ranking)
-                )
-                .map((r) => r.ranking)
-            );
-            await updateUserRanking(user.id, movieEntryId, latestMax + 1);
-          }
+        if (nextRanking != null) {
+          await updateUserRanking(user.id, movieEntryId, nextRanking);
         }
       } catch (err) {
         console.error("Failed to update rating in Supabase:", err);

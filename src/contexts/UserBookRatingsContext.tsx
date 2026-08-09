@@ -66,6 +66,16 @@ export const UserBookRatingsProvider = ({ children }) => {
   const findRatingForBook = (book) =>
     bookRatings.find((r) => r.user_id === user?.id && matchesBook(r, book));
 
+  // Bottom of the ranked bucket a book rated `value` belongs to.
+  const bottomRankFor = (value) =>
+    bookRatings.reduce(
+      (max, r) =>
+        Number(r.book_rating) === Number(value) && Number.isInteger(r.ranking)
+          ? Math.max(max, r.ranking)
+          : max,
+      0,
+    ) + 1;
+
   const rateBook = async (book, newRating) => {
     if (!user) return;
     const isClear = newRating == null || Number(newRating) === 0;
@@ -96,6 +106,9 @@ export const UserBookRatingsProvider = ({ children }) => {
       try {
         const updated = await updateBookRatingService(existing.id, {
           book_rating: newRating,
+          // Ranking is per rating value, so a new value means a new bucket -
+          // the book lands at the bottom of it.
+          ranking: bottomRankFor(newRating),
           previous_rating: existing.book_rating ?? null,
           updated_at: new Date().toISOString(),
           rating_history: [
@@ -112,17 +125,13 @@ export const UserBookRatingsProvider = ({ children }) => {
         console.error("Error updating book rating:", err);
       }
     } else {
-      const maxRanking = bookRatings.reduce(
-        (m, r) => (Number.isInteger(r.ranking) ? Math.max(m, r.ranking) : m),
-        0,
-      );
       try {
         const archived = await getArchivedRatingHistory(user.id, bookId);
         const newRow = await createBookRatingService({
           user_id: user.id,
           book_id: bookId,
           book_rating: newRating,
-          ranking: maxRanking + 1,
+          ranking: bottomRankFor(newRating),
           rating_history: [
             ...archived,
             { rating: newRating, at: new Date().toISOString() },

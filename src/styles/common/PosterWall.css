@@ -1,0 +1,215 @@
+/* Poster wall: small covers packed tight so a whole page of viewing reads as
+   one picture. Used by the ratings page (default view) and the log page's
+   poster mode. */
+.pw-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.85rem 0.7rem;
+  align-items: start;
+}
+
+.pw-tile {
+  /* Thousands of posters on one page: skip rendering the off-screen ones.
+     The intrinsic size keeps the scrollbar honest until they're reached. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.pw-poster {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background-color: #1a1a1a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pw-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pw-tile:hover .pw-poster {
+    transform: translateY(-3px);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+  }
+}
+
+.pw-tile-open .pw-poster {
+  box-shadow: 0 0 0 2px var(--app-accent);
+}
+
+.pw-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-dim, rgba(255, 255, 255, 0.6));
+  line-height: 1;
+}
+
+.pw-star {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+  display: block;
+}
+
+/* The log card that drops in under the clicked poster's row. */
+.pw-expand {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding: 0.9rem 0.2rem 0.4rem;
+  border-top: 1px solid var(--app-border);
+  border-bottom: 1px solid var(--app-border);
+  animation: pw-expand-in 180ms ease-out;
+}
+
+.pw-expand > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@keyframes pw-expand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-expand {
+    animation-duration: 1ms;
+  }
+}
+
+/* Optional grouping: one lighter panel per rating value, stacked highest
+   first, so the shape of a rating reads at a glance. */
+.pw-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 100%;
+}
+
+.pw-group {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 0.75rem 0.8rem 0.85rem;
+}
+
+.pw-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.pw-group-head img {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+}
+
+.pw-group-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-dim, rgba(255, 255, 255, 0.6));
+}
+
+@media (max-width: 700px) {
+  .pw-group {
+    padding: 0.55rem 0.55rem 0.65rem;
+  }
+
+  .pw-grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 0.6rem 0.45rem;
+  }
+
+  .pw-caption {
+    font-size: 0.68rem;
+  }
+}
+
+.pw-grid-reorder .pw-tile {
+  cursor: grab;
+  /* Drag geometry is measured once at pointer-down, so every tile in a
+     reorderable grid has to be really laid out, not stood in for by its
+     intrinsic size. Rank mode only ever covers one rating at a time, so this
+     is a handful of posters. */
+  content-visibility: visible;
+}
+
+.pw-tile-dragging {
+  opacity: 0.4;
+}
+
+/* Rank number over the poster's top-left corner, small enough to read as a
+   label rather than compete with the art. */
+.pw-rank {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: 6px 0 6px 0;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* The little window the Rank mode button opens. */
+.pw-rank-panel {
+  margin-bottom: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pw-rank-panel-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Movies, TV and books each get their own block inside a rating panel, with a
+   hairline between them. */
+.pw-section-line {
+  height: 1px;
+  background: var(--app-border);
+  margin: 0.75rem 0;
+}
